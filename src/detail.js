@@ -75,6 +75,10 @@
   }
 
   // --- Copy prompt ------------------------------------------------------------
+  var zhPage = /^zh/i.test(document.documentElement.lang);
+  var MSG = zhPage
+    ? { ok: '已复制提示词。', fail: '无法自动复制，请在下方手动选择复制。' }
+    : { ok: 'Prompt copied.', fail: 'Could not copy automatically; select the text below.' };
   var status = document.querySelector('.copy-status');
   var statusTimer;
 
@@ -110,14 +114,13 @@
     btn.addEventListener('click', function () {
       var src = document.getElementById(btn.getAttribute('data-copy'));
       if (!src) return;
-      var zh = btn.getAttribute('data-copy') === 'prompt-zh';
       copy(src.textContent).then(function (ok) {
         if (ok) {
-          say(zh ? '已复制中文提示词。' : 'Prompt copied. 提示词已复制。');
+          say(MSG.ok);
         } else {
           var d = src.closest('details');
           if (d) d.open = true;
-          say(zh ? '无法自动复制，请在下方手动选择复制。' : 'Could not copy automatically; select the text below. 请手动复制。');
+          say(MSG.fail);
         }
       });
     });

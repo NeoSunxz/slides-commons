@@ -26,7 +26,7 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
-import { indexPage, detailPage, creditsPage, setSources, SITE_NAME } from '../src/pages.mjs';
+import { indexPage, detailPage, creditsPage, setSources, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -805,12 +805,16 @@ function main() {
       promptEn: en,
       promptZh: zh,
     };
-    writeFile(path.join(SITE, 't', t.slug, 'index.html'), detailPage(data));
+    for (const lang of LANGS) {
+      writeFile(path.join(SITE, ...pagePath(lang, `t/${t.slug}/index.html`).split('/')), detailPage(data, lang));
+    }
     pageData.push(data);
   }
 
-  writeFile(path.join(SITE, 'index.html'), indexPage({ templates: pageData }));
-  writeFile(path.join(SITE, 'credits.html'), creditsPage({ sources, templates: pageData }));
+  for (const lang of LANGS) {
+    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources, templates: pageData, lang }));
+  }
 
   const ms = Date.now() - started;
   console.log(`built ${templates.length} template(s) from ${sources.length} source(s) into ${rel(SITE).startsWith('..') ? SITE : rel(SITE)}${path.sep} in ${ms} ms` +
