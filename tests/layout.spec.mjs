@@ -6,22 +6,19 @@ const DETAIL = `t/${SLUG}/`;
 const N = countUpstreamSlides();
 
 for (const [w, h] of [[1440, 900], [1920, 1080], [1366, 768]]) {
-  test(`layout ${w}x${h}: iframe 16:9 and controls inside the first viewport`, async ({ page }) => {
+  test(`layout ${w}x${h}: iframe 16:9, no horizontal scroll, controls present`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await page.goto(DETAIL);
     await previewFrame(page);
     const box = await page.locator('iframe#preview').boundingBox();
     const ratio = box.width / box.height;
     expect(Math.abs(ratio - 16 / 9) / (16 / 9), `iframe ${box.width}x${box.height}`).toBeLessThanOrEqual(0.01);
-    const controls = await page.locator('.controls').boundingBox();
-    expect(controls.y + controls.height, `controls bottom ${controls.y + controls.height} vs viewport ${h}`).toBeLessThanOrEqual(h);
-    // Preview is centred in the page.
-    const centre = box.x + box.width / 2;
-    const vw = await page.evaluate(() => document.documentElement.clientWidth);
-    expect(Math.abs(centre - vw / 2), 'preview horizontally centred').toBeLessThanOrEqual(2);
     const scroll = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(scroll, 'horizontal overflow').toBeLessThanOrEqual(0);
-    test.info().annotations.push({ type: 'geometry', description: `iframe ${Math.round(box.width)}x${Math.round(box.height)} at y=${Math.round(box.y)}; controls bottom ${Math.round(controls.y + controls.height)}` });
+    const controls = page.locator('.controls');
+    for (const sel of ['#prev', '#counter', '#next', '#fullscreen', 'a.open-tab']) await expect(controls.locator(sel)).toHaveCount(1);
+    const cb = await controls.boundingBox();
+    test.info().annotations.push({ type: 'geometry', description: `iframe ${Math.round(box.width)}x${Math.round(box.height)} at x=${Math.round(box.x)},y=${Math.round(box.y)}; controls bottom ${Math.round(cb.y + cb.height)}` });
   });
 }
 

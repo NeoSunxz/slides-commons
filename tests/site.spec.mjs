@@ -139,31 +139,30 @@ test.describe('detail page', () => {
     expect((await deckState(frame)).index).toBe(1);
   });
 
-  test('copy prompt buttons put PROMPT.md / PROMPT.zh.md on the clipboard', async ({ page, context, baseURL }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(baseURL).origin });
-    const { entries } = readZip(fs.readFileSync(path.join(SITE, 'zip', `${SLUG}.zip`)));
-    const file = (n) => entries.find((e) => e.name === `${SLUG}/${n}`)?.data.toString('utf8');
-    const promptEn = file('PROMPT.md');
-    const promptZh = file('PROMPT.zh.md');
-    expect(promptEn, 'PROMPT.md in zip').toBeTruthy();
-    expect(promptZh, 'PROMPT.zh.md in zip').toBeTruthy();
+  for (const [lang, url, id, zipName] of [
+    ['en', DETAIL, 'prompt-en', 'PROMPT.md'],
+    ['zh', `zh/${DETAIL}`, 'prompt-zh', 'PROMPT.zh.md'],
+  ]) {
+    test(`copy prompt (${lang}) puts ${zipName} on the clipboard`, async ({ page, context, baseURL }) => {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(baseURL).origin });
+      const { entries } = readZip(fs.readFileSync(path.join(SITE, 'zip', `${SLUG}.zip`)));
+      const expected = entries.find((e) => e.name === `${SLUG}/${zipName}`)?.data.toString('utf8');
+      expect(expected, `${zipName} in zip`).toBeTruthy();
 
-    await page.goto(DETAIL);
-    const buttons = page.locator('[data-copy]');
-    await expect(buttons).toHaveCount(2);
+      await page.goto(url);
+      const buttons = page.locator('[data-copy]');
+      await expect(buttons, 'exactly one copy button per language page').toHaveCount(1);
+      await expect(buttons).toHaveAttribute('data-copy', id);
+      await expect(page.locator(`pre#${id}`)).toHaveCount(1);
 
-    for (const [sel, expected, label] of [
-      ['[data-copy="prompt-en"]', promptEn, 'en'],
-      ['[data-copy="prompt-zh"]', promptZh, 'zh'],
-    ]) {
       await page.evaluate(() => navigator.clipboard.writeText('__sentinel__'));
-      await page.locator(sel).click();
+      await buttons.click();
       await expect(page.locator('.copy-status')).not.toBeEmpty();
       const clip = await page.evaluate(() => navigator.clipboard.readText());
-      expect(clip, `${label} clipboard was not updated`).not.toBe('__sentinel__');
-      expect(normalizeEol(clip), `${label} clipboard differs from zip prompt`).toBe(normalizeEol(expected));
-    }
-  });
+      expect(clip, `${lang} clipboard was not updated`).not.toBe('__sentinel__');
+      expect(normalizeEol(clip), `${lang} clipboard differs from zip ${zipName}`).toBe(normalizeEol(expected));
+    });
+  }
 
   test('attribution: author, license, source links, not official', async ({ page }) => {
     await page.goto(DETAIL);
