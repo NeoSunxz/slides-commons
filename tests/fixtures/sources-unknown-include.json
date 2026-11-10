@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "zarazhangrui",
+      "name": "Beautiful HTML Templates",
+      "author": "Zara Zhang",
+      "authorUrl": "https://github.com/zarazhangrui",
+      "license": "MIT",
+      "repo": "https://github.com/zarazhangrui/beautiful-html-templates",
+      "branch": "main",
+      "path": "upstream/templates",
+      "layout": {
+        "templatesDir": "templates",
+        "metaFile": "template.json",
+        "htmlFile": "template.html",
+        "designFile": "design.md",
+        "screenshotsDir": "screenshots",
+        "licenseFile": "LICENSE"
+      },
+      "companion": {
+        "id": "frontend-slides",
+        "name": "Frontend Slides",
+        "author": "Zara Zhang",
+        "license": "MIT",
+        "repo": "https://github.com/zarazhangrui/frontend-slides",
+        "branch": "main",
+        "path": "upstream/skill",
+        "licenseFile": "LICENSE",
+        "designOverride": "bold-template-pack/templates/{slug}/design.md",
+        "previewCard": "bold-template-pack/templates/{slug}/preview.md",
+        "viewportBase": "viewport-base.css"
+      },
+      "include": [
+        "neo-grid-bold",
+        "no-such-template"
+      ]
+    }
+  ]
+}
