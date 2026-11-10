@@ -117,6 +117,51 @@ export function monitor(page) {
   return log;
 }
 
+/** Context-wide monitor: also catches popups opened from the page. */
+export function monitorContext(context) {
+  const log = { consoleErrors: [], pageErrors: [], failed: [], badStatus: [] };
+  context.on('console', (m) => {
+    if (m.type() === 'error') log.consoleErrors.push(`${m.text()} @ ${m.location()?.url ?? ''}`);
+  });
+  context.on('weberror', (e) => log.pageErrors.push(String(e.error()?.stack || e.error())));
+  context.on('requestfailed', (r) => log.failed.push(`${r.url()} — ${r.failure()?.errorText ?? 'failed'}`));
+  context.on('response', (res) => { if (res.status() >= 400) log.badStatus.push(`${res.status()} ${res.url()}`); });
+  return log;
+}
+
+/** The detail page's preview frame, once <deck-stage> has upgraded. */
+export async function previewFrame(page) {
+  const handle = await page.locator('iframe#preview').elementHandle();
+  const frame = await handle.contentFrame();
+  await frame.waitForFunction(() => {
+    const d = document.querySelector('deck-stage');
+    return d && typeof d.length === 'number' && d.length > 0;
+  });
+  return frame;
+}
+
+/** Deck state + rendering facts, evaluated inside a page or frame running the deck. */
+export function deckFacts(target) {
+  return target.evaluate(async () => {
+    await document.fonts.ready;
+    const d = document.querySelector('deck-stage');
+    const slides = [...d.querySelectorAll(':scope > [data-deck-slide]')];
+    const visible = slides.filter((s) => {
+      const cs = getComputedStyle(s);
+      return cs.visibility === 'visible' && Number(cs.opacity) > 0;
+    });
+    const title = document.querySelector('[data-deck-active] h1.title, [data-deck-active] h1');
+    return {
+      index: d.index,
+      total: d.length,
+      visibleSlides: visible.length,
+      activeLabel: document.querySelector('[data-deck-active]')?.getAttribute('data-label') ?? null,
+      titleFont: title ? getComputedStyle(title).fontFamily : null,
+      spaceGroteskLoaded: [...document.fonts].some((f) => /Space Grotesk/.test(f.family) && f.status === 'loaded'),
+    };
+  });
+}
+
 export function hostOf(u) {
   try { return new URL(u).hostname; } catch { return ''; }
 }

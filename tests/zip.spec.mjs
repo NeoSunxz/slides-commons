@@ -44,6 +44,8 @@ test('download, unzip and open the pack', async ({ page }) => {
     expect(zipped.equals(original), `${f} in zip differs from upstream`).toBe(true);
   }
   expect(get('template.html')).not.toMatch(/slides-commons/);
+  expect(get('template.html'), 'zip template.html keeps the external deck-stage.js').toContain('<script src="deck-stage.js"');
+  expect(get('template.html')).not.toContain('data-inlined-from');
 
   // Prompts warn that the bundled deck-stage.js forces a system font.
   expect(get('PROMPT.md')).toMatch(/deck-stage\.js`? forces a system font/);

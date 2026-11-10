@@ -211,6 +211,14 @@ test.describe('detail page', () => {
     expect(upstream).not.toContain('slides-commons');
     expect(fs.readFileSync(path.join(SITE, 'preview', SLUG, 'deck-stage.js'))
       .equals(fs.readFileSync(path.join(UPSTREAM_TEMPLATE_DIR, 'deck-stage.js')))).toBe(true);
+
+    // Local sibling scripts are inlined (sandboxed file:// frames cannot load them).
+    const scriptSrcs = [...preview.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']?([^"'\s>]+)/gi)].map((m) => m[1]);
+    expect(scriptSrcs.filter((s) => !/^(https?:)?\/\//i.test(s)), 'local <script src> left in the preview copy').toEqual([]);
+    expect(preview).toMatch(/<script[^>]*data-inlined-from="deck-stage\.js"/);
+    const localCss = [...preview.matchAll(/<link\b[^>]*rel=["']?stylesheet[^>]*>/gi)].map((m) => m[0])
+      .filter((tag) => !/href=["']?(https?:)?\/\//i.test(tag));
+    expect.soft(localCss, 'local stylesheet <link> left in the preview copy').toEqual([]);
   });
 
   test('design description and palette swatches render', async ({ page }) => {
