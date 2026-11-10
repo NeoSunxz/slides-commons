@@ -13,7 +13,8 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 
 | 项 | 决定 |
 |---|---|
-| 网站语言 | 英文为主，中文辅助（UI 与文案英文为主，关键说明/提示词提供中文版本） |
+| 网站语言 | 英文默认 + 中文，用语言切换（英文在根目录，中文在 `zh/`），**同一页面不混用中英文**。上游模板数据（tagline、描述等）不机翻，原样显示。提示词按页面语言复制，zip 内同时带 PROMPT.md 与 PROMPT.zh.md |
+| 详情页布局 | 预览保持原尺寸（左预览 + 右侧"Use this template"面板），不要占满全宽；保留"新标签页打开"和"全屏"按钮 |
 | 开发平台 | 在 Linux 上开发；所有脚本、命令、产物必须跨平台可用（Linux / macOS / Windows PowerShell）。构建脚本用 Node（`.mjs`），不写 bash-only 或 PowerShell-only 脚本，路径一律用 `path` 模块拼接 |
 | 访客环境 | zip 和提示词必须在三大平台都能用：提示词里"打开浏览器"不写死 `open`（macOS），按平台给出 `open` / `xdg-open` / `start` |
 | 提示词方案 | "按 design.md 重新生成单文件固定画布"方案（见下文） |
