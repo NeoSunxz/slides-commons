@@ -47,6 +47,33 @@
     });
   }
 
+  // --- Fullscreen ------------------------------------------------------------
+  // Fullscreen the frame's container (not the iframe, which would need allow="fullscreen").
+  // The deck inside letterboxes itself. Esc exits (browser default).
+  var wrap = document.getElementById('preview-wrap');
+  var fsBtn = document.getElementById('fullscreen');
+  if (wrap && fsBtn) {
+    var request = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
+    var enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    var current = function () { return document.fullscreenElement || document.webkitFullscreenElement || null; };
+    if (request && enabled) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', function () {
+        try {
+          var p = request.call(wrap);
+          if (p && p.catch) p.catch(function () { /* denied; stay inline */ });
+        } catch (e) { /* ignore */ }
+      });
+      var onChange = function () {
+        // Give the deck keyboard focus while fullscreen, so arrows / space / PageDown page it
+        // directly; arrow keys on the parent page keep working too (handler above).
+        if (current() === wrap && frame) { try { frame.focus(); } catch (e) { /* ignore */ } }
+      };
+      document.addEventListener('fullscreenchange', onChange);
+      document.addEventListener('webkitfullscreenchange', onChange);
+    }
+  }
+
   // --- Copy prompt ------------------------------------------------------------
   var status = document.querySelector('.copy-status');
   var statusTimer;

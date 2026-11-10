@@ -617,8 +617,61 @@ function prepareOutDir(sources) {
 // ---------------------------------------------------------------------------
 
 // Changes made to the site's preview copy only (never to upstream, never to the zip).
-function preparePreview(html, bridge) {
-  let out = html;
+//
+// Local sibling scripts and stylesheets are inlined: the preview runs in an iframe with
+// sandbox="allow-scripts" (opaque origin), and under file:// Chrome refuses to load local
+// subresources into such a frame. Inlining makes the preview work over http and file://.
+// Remote URLs (font CSS, CDNs) are left as they are.
+const isLocalRef = (ref) => ref && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(ref.trim());
+
+function readLocalRef(dir, ref, slug) {
+  let rel;
+  try { rel = decodeURI(ref.trim().split(/[?#]/)[0]); } catch { return null; }
+  const file = path.resolve(dir, ...rel.split('/'));
+  if (!isInside(dir, file) || !exists(file) || !fs.statSync(file).isFile()) {
+    warn(`${slug}: preview cannot inline ${ref} (not a file inside the template directory)`);
+    return null;
+  }
+  return read(file);
+}
+
+const attrValue = (attrs, name) => {
+  const m = attrs.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'));
+  return m ? (m[1] ?? m[2] ?? m[3]) : null;
+};
+
+function inlineLocalAssets(html, dir, slug) {
+  let out = html.replace(/<script\b([^>]*)>\s*<\/script\s*>/gi, (tag, attrs) => {
+    const src = attrValue(attrs, 'src');
+    if (!isLocalRef(src)) return tag;
+    const code = readLocalRef(dir, src, slug);
+    if (code == null) return tag;
+    if (/\b(defer|async)\b/i.test(attrs) && !/type\s*=\s*["']?module/i.test(attrs)) {
+      warn(`${slug}: preview inlines ${src}, which was loaded with defer/async; it now runs in place`);
+    }
+    const kept = attrs
+      .replace(/\s+(?:src|defer|async|integrity|crossorigin)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
+      .trim();
+    // "</script" inside the code would end the element early; "<\/" is equivalent in JS
+    // strings, templates, regexes and comments.
+    const safe = code.replace(/<\/script/gi, '<\\/script');
+    return `<script${kept ? ' ' + kept : ''} data-inlined-from="${src.replace(/"/g, '&quot;')}">\n${safe}\n</script>`;
+  });
+  out = out.replace(/<link\b[^>]*>/gi, (tag) => {
+    const rel = (attrValue(tag, 'rel') || '').toLowerCase().split(/\s+/);
+    const href = attrValue(tag, 'href');
+    if (!rel.includes('stylesheet') || !isLocalRef(href)) return tag;
+    const css = readLocalRef(dir, href, slug);
+    if (css == null) return tag;
+    const media = attrValue(tag, 'media');
+    const safe = css.replace(/<\/style/gi, '<\\/style');
+    return `<style${media ? ` media="${media.replace(/"/g, '&quot;')}"` : ''} data-inlined-from="${href.replace(/"/g, '&quot;')}">\n${safe}\n</style>`;
+  });
+  return out;
+}
+
+function preparePreview(html, bridge, dir, slug) {
+  let out = inlineLocalAssets(html, dir, slug);
   // deck-stage.js sets a system font-family on its :host, which overrides the font the
   // template sets on <body>. An outer-document rule beats :host, so restore inheritance.
   if (/<deck-stage[\s>]/i.test(out)) {
@@ -648,6 +701,7 @@ function main() {
   fs.mkdirSync(path.join(SITE, 'assets'), { recursive: true });
   fs.copyFileSync(path.join(SRC, 'styles.css'), path.join(SITE, 'assets', 'site.css'));
   fs.copyFileSync(path.join(SRC, 'detail.js'), path.join(SITE, 'assets', 'detail.js'));
+  fs.copyFileSync(path.join(SRC, 'site.js'), path.join(SITE, 'assets', 'site.js'));
 
   setSources(sources.filter((s) => templates.some((t) => t.source === s.id)));
 
@@ -667,7 +721,7 @@ function main() {
 
     // Preview copy: template dir minus meta/design files, bridge injected into the HTML copy.
     const pdir = path.join(SITE, 'preview', t.slug);
-    writeFile(path.join(pdir, t.src.layout.htmlFile), preparePreview(info.html, bridge));
+    writeFile(path.join(pdir, t.src.layout.htmlFile), preparePreview(info.html, bridge, t.dir, t.slug));
     for (const a of info.assets) {
       const dest = path.join(pdir, ...a.split('/'));
       fs.mkdirSync(path.dirname(dest), { recursive: true });

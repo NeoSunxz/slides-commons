@@ -35,7 +35,7 @@ function layout({ root, title, description, body, scripts = [] }) {
 ${body}
 </main>
 ${footer(root, footerSources)}
-${scripts.map((s) => `<script src="${root}${s}"></script>`).join('\n')}
+${['assets/site.js', ...scripts].map((s) => `<script src="${root}${s}"></script>`).join('\n')}
 </body>
 </html>
 `;
@@ -102,6 +102,7 @@ export function detailPage(t) {
   const tags = (arr) => arr.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ');
   const shots = t.screenshots.map((s) => `<a href="${root}assets/screenshots/${esc(s.file)}"><img src="${root}assets/screenshots/${esc(s.file)}" width="${s.width}" height="${s.height}" loading="lazy" alt="${esc(t.name)}, slide ${s.n}"></a>`).join('');
 
+  const previewHref = `${root}preview/${esc(t.slug)}/${esc(t.htmlFile)}`;
   const derived = t.derived
     ? `<p>Adapted from ${link(t.derived.url, t.derived.name)} by ${authorList(t.derived.authors)} (${esc(t.derived.license)}).</p>`
     : '';
@@ -116,22 +117,27 @@ export function detailPage(t) {
   <p class="by">by ${authorList(t.authors)} · from ${link(t.sourceDirUrl, t.sourceRepoName)}</p>
 </section>
 
-<div class="detail">
-  <section class="preview" aria-label="Live preview">
-    <div class="frame16x9">
-      <iframe id="preview" src="${root}preview/${esc(t.slug)}/${esc(t.htmlFile)}" sandbox="allow-scripts" title="${esc(t.name)} live preview" loading="eager"></iframe>
-    </div>
-    <div class="controls">
+<section class="preview" aria-label="Live preview">
+  <div class="frame16x9" id="preview-wrap">
+    <iframe id="preview" src="${previewHref}" sandbox="allow-scripts" title="${esc(t.name)} live preview" loading="eager"></iframe>
+  </div>
+  <div class="controls">
+    <div class="pager">
       <button type="button" id="prev" aria-label="Previous slide">← Prev</button>
       <span id="counter" aria-live="polite">–</span>
       <button type="button" id="next" aria-label="Next slide">Next →</button>
-      <a class="full" href="${root}preview/${esc(t.slug)}/${esc(t.htmlFile)}" target="_blank" rel="noopener">Open full screen ↗</a>
     </div>
-    <p class="hint">Tip: click into the preview and use the arrow keys. <span class="zh">点击预览区后可用方向键翻页。</span></p>
-  </section>
+    <div class="view">
+      <button type="button" id="fullscreen" class="ctl" hidden>⛶ Fullscreen</button>
+      <a class="ctl open-tab" href="${previewHref}" target="_blank" rel="noopener">Open in new tab ↗</a>
+    </div>
+  </div>
+  <p class="hint">Click into the preview or use ← / → to page; Esc leaves fullscreen. <span class="zh">点击预览区或用方向键翻页；按 Esc 退出全屏。</span></p>
+</section>
 
-  <aside class="actions">
-    <h2>Use this template</h2>
+<section class="actions" aria-labelledby="use-heading">
+  <div class="act-get">
+    <h2 id="use-heading">Use this template</h2>
     <ol class="steps small">
       <li>Download the pack and unzip it.</li>
       <li>Open your coding agent (Claude Code, Codex, Cursor, …) in that folder.</li>
@@ -141,12 +147,18 @@ export function detailPage(t) {
       <a class="btn primary" href="${root}zip/${esc(t.slug)}.zip" download>Download assets (.zip)</a>
     </div>
     <p class="zh help">下载素材包，解压后在该文件夹中打开你的 coding agent。</p>
+  </div>
+  <div class="act-prompt">
+    <h2>Prompt for your agent</h2>
+    <p class="small muted">The same text ships as <code>PROMPT.md</code> in the pack. It asks about purpose, length, content and density before building.</p>
     <div class="btn-row">
       <button type="button" class="btn" data-copy="prompt-en">Copy prompt</button>
       <button type="button" class="btn ghost" data-copy="prompt-zh">复制中文提示词</button>
     </div>
     <p class="zh help">复制提示词，粘贴给 coding agent；它会先问你用途、页数、内容和密度。</p>
     <p class="copy-status" role="status" aria-live="polite"></p>
+  </div>
+  <div class="act-show">
     <details>
       <summary>Show prompt</summary>
       <pre id="prompt-en" class="prompt">${esc(t.promptEn)}</pre>
@@ -155,8 +167,8 @@ export function detailPage(t) {
       <summary>查看中文提示词</summary>
       <pre id="prompt-zh" class="prompt" lang="zh">${esc(t.promptZh)}</pre>
     </details>
-  </aside>
-</div>
+  </div>
+</section>
 
 <section class="about">
   <h2>Design</h2>
