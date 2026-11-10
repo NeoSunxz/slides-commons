@@ -1,0 +1,19 @@
+{
+  "name": "slides-commons",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open HTML slide templates with prompts, for coding agents.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "playwright test -c tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

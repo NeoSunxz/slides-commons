@@ -24,3 +24,9 @@ site/
 
 # Claude Code local worktrees
 .claude/worktrees/
+
+# Test output
+tests/artifacts/
+test-results/
+playwright-report/
+tests/test-results/
