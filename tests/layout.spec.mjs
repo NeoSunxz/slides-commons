@@ -1,6 +1,6 @@
 // Detail-page layout, "Open in new tab" (http) and fullscreen.
-import { test, expect } from '@playwright/test';
-import { SLUG, countUpstreamSlides, monitorContext, previewFrame, deckFacts } from './helpers.mjs';
+import { test, expect } from './font-cache.mjs';
+import { SLUG, countUpstreamSlides, monitorContext, previewFrame, deckFacts, settled, fontLoaded } from './helpers.mjs';
 
 const DETAIL = `t/${SLUG}/`;
 const N = countUpstreamSlides();
@@ -35,13 +35,14 @@ test('"Open in new tab" (http) opens a popup running the deck without errors', a
   await popup.waitForLoadState('load');
   expect(popup.url()).toMatch(new RegExp(`/preview/${SLUG}/template\\.html(#\\d+)?$`));
   await popup.waitForFunction(() => document.querySelector('deck-stage')?.length > 0);
+  await fontLoaded(popup, 'Space Grotesk');
   const f = await deckFacts(popup);
   expect(f.total).toBe(N);
   expect(f.visibleSlides).toBe(1);
   expect(f.titleFont).toMatch(/^"?Space Grotesk/);
   await popup.keyboard.press('ArrowRight');
   await expect.poll(async () => (await deckFacts(popup)).index).toBe(1);
-  await popup.waitForLoadState('networkidle');
+  await settled(log, expect);
   expect.soft(log.consoleErrors, 'console errors').toEqual([]);
   expect.soft(log.pageErrors, 'page errors').toEqual([]);
   expect.soft(log.failed, 'failed requests').toEqual([]);
@@ -82,7 +83,6 @@ test('fullscreen button fullscreens #preview-wrap; arrows page; exit works', asy
 
   // Esc is handled by the browser UI, which headless may not emulate; try it, then fall back.
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
   const afterEsc = await page.evaluate(() => document.fullscreenElement?.id ?? null);
   test.info().annotations.push({ type: 'escape-exits-fullscreen', description: String(afterEsc === null) });
   if (afterEsc !== null) await page.evaluate(() => document.exitFullscreen());

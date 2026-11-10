@@ -97,7 +97,7 @@ export const normalizeEol = (s) => s.replace(/\r\n?/g, '\n');
 // Console / network monitor for a page (includes child frames).
 // ---------------------------------------------------------------------------
 export function monitor(page) {
-  const log = { consoleErrors: [], pageErrors: [], failed: [], badStatus: [], requests: [] };
+  const log = { consoleErrors: [], pageErrors: [], failed: [], badStatus: [], requests: [], inflight: new Set() };
   page.on('console', (m) => {
     if (m.type() === 'error') log.consoleErrors.push(`${m.text()} @ ${m.location()?.url ?? ''}`);
   });
@@ -107,8 +107,11 @@ export function monitor(page) {
     let isMain = true;
     try { const f = r.frame(); frameUrl = f.url(); isMain = f === page.mainFrame(); } catch { /* ignore */ }
     log.requests.push({ url: r.url(), frameUrl, isMain, type: r.resourceType() });
+    log.inflight.add(r);
   });
+  page.on('requestfinished', (r) => log.inflight.delete(r));
   page.on('requestfailed', (r) => {
+    log.inflight.delete(r);
     log.failed.push(`${r.url()} — ${r.failure()?.errorText ?? 'failed'}`);
   });
   page.on('response', (res) => {
@@ -119,14 +122,31 @@ export function monitor(page) {
 
 /** Context-wide monitor: also catches popups opened from the page. */
 export function monitorContext(context) {
-  const log = { consoleErrors: [], pageErrors: [], failed: [], badStatus: [] };
+  const log = { consoleErrors: [], pageErrors: [], failed: [], badStatus: [], inflight: new Set() };
   context.on('console', (m) => {
     if (m.type() === 'error') log.consoleErrors.push(`${m.text()} @ ${m.location()?.url ?? ''}`);
   });
   context.on('weberror', (e) => log.pageErrors.push(String(e.error()?.stack || e.error())));
-  context.on('requestfailed', (r) => log.failed.push(`${r.url()} — ${r.failure()?.errorText ?? 'failed'}`));
+  context.on('request', (r) => log.inflight.add(r));
+  context.on('requestfinished', (r) => log.inflight.delete(r));
+  context.on('requestfailed', (r) => {
+    log.inflight.delete(r);
+    log.failed.push(`${r.url()} — ${r.failure()?.errorText ?? 'failed'}`);
+  });
   context.on('response', (res) => { if (res.status() >= 400) log.badStatus.push(`${res.status()} ${res.url()}`); });
   return log;
+}
+
+/** Wait until every request seen by a monitor has finished or failed (no idle-time heuristics). */
+export async function settled(log, expect, timeout = 30_000) {
+  await expect.poll(() => [...log.inflight].map((r) => r.url()), { timeout, message: 'requests still in flight' }).toEqual([]);
+}
+
+/** Wait (inside a page or frame) until a FontFace of `family` has status "loaded". */
+export async function fontLoaded(target, family, timeout = 30_000) {
+  await target.waitForFunction((fam) => [...document.fonts].some((f) => f.family.replace(/["']/g, '') === fam && f.status === 'loaded'),
+    family, { timeout });
+  await target.evaluate(() => document.fonts.ready);
 }
 
 /** The detail page's preview frame, once <deck-stage> has upgraded. */

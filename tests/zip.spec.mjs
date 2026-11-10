@@ -3,8 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { test, expect } from '@playwright/test';
-import { SLUG, UPSTREAM_TEMPLATE_DIR, makeTempDir, readZip, extractZip, monitor, countUpstreamSlides, EXTERNAL_WHITELIST, hostOf } from './helpers.mjs';
+import { test, expect } from './font-cache.mjs';
+import { SLUG, UPSTREAM_TEMPLATE_DIR, settled, fontLoaded, makeTempDir, readZip, extractZip, monitor, countUpstreamSlides, EXTERNAL_WHITELIST, hostOf } from './helpers.mjs';
 
 const EXPECTED_FILES = [
   'template.html', 'deck-stage.js', 'design.md', 'viewport-base.css',
@@ -51,6 +51,31 @@ test('download, unzip and open the pack', async ({ page }) => {
   expect(get('PROMPT.md')).toMatch(/deck-stage\.js`? forces a system font/);
   expect(get('PROMPT.zh.md')).toMatch(/deck-stage\.js`? 会在 `<deck-stage>` 上强制使用系统字体/);
 
+  // Prompt sections (round 6): §0 unzip fallbacks in order, §4 CJK font link, §6 no-display fallback.
+  const section = (md, n) => {
+    const m = md.match(new RegExp(`^## ${n}\\.[^\\n]*\\n([\\s\\S]*?)(?=^## \\d+\\.|(?![\\s\\S]))`, 'm'));
+    return m ? m[1] : '';
+  };
+  const design = get('design.md');
+  const lines = design.split(/\r?\n/);
+  const cjkStart = lines.findIndex((l) => /^#{2,3}\s.*\bCJK\b/i.test(l));
+  expect(cjkStart, 'design.md has a CJK section').toBeGreaterThan(-1);
+  const level = lines[cjkStart].match(/^#+/)[0].length;
+  let cjkEnd = lines.findIndex((l, i) => i > cjkStart && new RegExp(`^#{1,${level}}\\s`).test(l));
+  if (cjkEnd < 0) cjkEnd = lines.length;
+  const cjkLinks = [...new Set(lines.slice(cjkStart, cjkEnd).join('\n').match(/https:\/\/fonts\.googleapis\.com\/css2\?[^"'\s)<>`]+/g) ?? [])];
+  expect(cjkLinks, 'one CJK font link in design.md').toHaveLength(1);
+
+  for (const [name, noDisplay] of [['PROMPT.md', /no display/], ['PROMPT.zh.md', /没有图形界面/]]) {
+    const md = get(name);
+    const s0 = section(md, 0);
+    const order = ['unzip ', 'tar -xf ', 'python3 -m zipfile -e ', 'Expand-Archive '].map((k) => s0.indexOf(k));
+    expect(order.every((x) => x >= 0), `${name} §0 lists all four extract commands (${order})`).toBe(true);
+    expect([...order].sort((a, b) => a - b), `${name} §0 order unzip → tar → python → Expand-Archive`).toEqual(order);
+    expect(section(md, 4), `${name} §4 contains design.md's CJK font link`).toContain(cjkLinks[0]);
+    expect(section(md, 6), `${name} §6 no-display fallback`).toMatch(noDisplay);
+  }
+
   // Extract into a fresh temp dir and open via file://
   const dest = makeTempDir('slides-commons-unzip-');
   extractZip(entries, dest);
@@ -62,8 +87,9 @@ test('download, unzip and open the pack', async ({ page }) => {
   page.on('requestfinished', (r) => { if (r.url().startsWith('file:')) fileRequests.push(r.url()); });
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(pathToFileURL(htmlPath).href);
-  await page.waitForLoadState('networkidle');
   await page.waitForFunction(() => !!customElements.get('deck-stage') && document.querySelector('deck-stage')?.length > 0);
+  await fontLoaded(page, 'JetBrains Mono');
+  await settled(log, expect);
 
   const state = await page.evaluate(() => {
     const d = document.querySelector('deck-stage');

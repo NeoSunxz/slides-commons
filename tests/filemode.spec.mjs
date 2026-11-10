@@ -2,8 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { test, expect } from '@playwright/test';
-import { SITE, SLUG, countUpstreamSlides, monitorContext, previewFrame, deckFacts } from './helpers.mjs';
+import { test, expect } from './font-cache.mjs';
+import { SITE, SLUG, countUpstreamSlides, monitorContext, previewFrame, deckFacts, settled, fontLoaded } from './helpers.mjs';
 
 const fileUrl = (...p) => pathToFileURL(path.join(SITE, ...p)).href;
 const N = countUpstreamSlides();
@@ -24,6 +24,7 @@ test('detail page works from file://: paging, one visible slide, Space Grotesk',
   const log = monitorContext(context);
   await page.goto(fileUrl('t', SLUG, 'index.html'));
   const frame = await previewFrame(page);
+  await fontLoaded(frame, 'Space Grotesk');
   const counter = page.locator('#counter');
   await expect(counter).toHaveText(`1 / ${N}`);
 
@@ -43,7 +44,7 @@ test('detail page works from file://: paging, one visible slide, Space Grotesk',
   expect(f.index).toBe(N - 1);
   expect(f.visibleSlides, 'visible slides on last slide').toBe(1);
 
-  await page.waitForLoadState('networkidle');
+  await settled(log, expect);
   expectClean(log, 'file:// detail');
 });
 
@@ -62,6 +63,8 @@ test('gallery card from file:// lands on t/<slug>/index.html', async ({ page, co
     .map((a) => a.getAttribute('href'))
     .filter((h) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(h) && /\/(?:[?#].*)?$/.test(h)));
   expect(dirLinks, 'relative links still ending in "/" under file://').toEqual([]);
+  await previewFrame(page);
+  await settled(log, expect);
   expectClean(log, 'file:// gallery → detail');
 });
 
@@ -74,11 +77,12 @@ test('"Open in new tab" from file:// opens a working deck', async ({ page, conte
   await popup.waitForLoadState('load');
   expect(popup.url().replace(/#.*$/, '')).toBe(fileUrl('preview', SLUG, 'template.html')); // deck-stage adds #<n>
   await popup.waitForFunction(() => document.querySelector('deck-stage')?.length > 0);
+  await fontLoaded(popup, 'Space Grotesk');
   let f = await deckFacts(popup);
   expect(f.total).toBe(N);
   expect(f.visibleSlides).toBe(1);
   await popup.keyboard.press('ArrowRight');
   await expect.poll(async () => (await deckFacts(popup)).index).toBe(1);
-  await popup.waitForLoadState('networkidle');
+  await settled(log, expect);
   expectClean(log, 'file:// open-in-new-tab');
 });

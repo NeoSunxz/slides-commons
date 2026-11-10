@@ -1,24 +1,25 @@
 // 16:9 overflow (best effort): with the preview at 1280x720 (the size the iframe content
 // would get), walk every slide and look for elements whose box leaves the 1920x1080 stage.
-import { test, expect } from '@playwright/test';
-import { SLUG, artifactPath } from './helpers.mjs';
+import { test, expect } from './font-cache.mjs';
+import { SLUG, artifactPath, fontLoaded } from './helpers.mjs';
 
 const TOL = 1; // stage px
 
 test('no element leaves the 1920x1080 stage on any slide', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`preview/${SLUG}/template.html`);
-  await page.waitForLoadState('networkidle');
   await page.waitForFunction(() => document.querySelector('deck-stage')?.length > 0);
-  await page.evaluate(() => document.fonts.ready);
+  await fontLoaded(page, 'Space Grotesk'); // geometry depends on the real font
+  await fontLoaded(page, 'JetBrains Mono');
   const total = await page.evaluate(() => document.querySelector('deck-stage').length);
 
   const report = [];
   for (let i = 0; i < total; i++) {
     await page.evaluate((n) => document.querySelector('deck-stage').goTo(n), i);
-    await page.waitForTimeout(450);
+    await page.waitForFunction((n) => document.querySelector('deck-stage').index === n, i);
     if (i === 0 || i === 4) {
-      await page.waitForTimeout(1800); // let the deck's slide-count overlay fade
+      // Cosmetic: wait for the deck's own slide-count overlay to hide before the screenshot.
+      await page.waitForFunction(() => !document.querySelector('deck-stage').shadowRoot?.querySelector('.overlay[data-visible]'), null, { timeout: 5000 });
       await page.screenshot({ path: artifactPath(`preview-slide-${String(i + 1).padStart(2, '0')}.png`) });
     }
     const res = await page.evaluate(({ tol }) => {

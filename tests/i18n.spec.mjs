@@ -1,8 +1,9 @@
 // English / Chinese site trees: errors, language purity, switcher, zh detail, layout.
+import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { test, expect } from '@playwright/test';
-import { SITE, SLUG, EXTERNAL_WHITELIST, countUpstreamSlides, monitor, artifactPath, hostOf, previewFrame } from './helpers.mjs';
+import { test, expect } from './font-cache.mjs';
+import { SITE, SLUG, EXTERNAL_WHITELIST, countUpstreamSlides, monitor, artifactPath, settled, fontLoaded, hostOf, previewFrame } from './helpers.mjs';
 
 const N = countUpstreamSlides();
 const UPSTREAM_DIR = `https://github.com/zarazhangrui/beautiful-html-templates/tree/main/templates/${SLUG}`;
@@ -31,8 +32,8 @@ for (const mode of ['http', 'file']) {
       test(`[${mode}] ${lang} ${name}: no errors, no failed requests, whitelist respected`, async ({ page, baseURL }) => {
         const log = monitor(page);
         await page.goto(mode === 'http' ? httpPath : fileUrl(fileParts));
-        if (name === 'detail') await previewFrame(page);
-        await page.waitForLoadState('networkidle');
+        if (name === 'detail') await fontLoaded(await previewFrame(page), 'Space Grotesk');
+        await settled(log, expect);
         await expect(page.locator('html')).toHaveAttribute('lang', lang === 'en' ? 'en' : 'zh-CN');
 
         const ownHost = new URL(baseURL).host;
@@ -171,12 +172,19 @@ test('language choice: 中文 is remembered for "/", detail pages never redirect
   await page.goto('index.html');
   await expect(page).toHaveURL(/\/zh\/index\.html$/);
 
-  // Detail and credits pages never redirect.
-  await page.goto(`t/${SLUG}/`);
-  await page.waitForTimeout(300);
+  // Detail and credits pages never redirect: they carry no redirect code at all
+  // (deterministic), and loading them with 'zh' stored keeps the URL.
+  for (const parts of [['t', SLUG, 'index.html'], ['credits.html'], ['zh', 'index.html'], ['zh', 't', SLUG, 'index.html'], ['zh', 'credits.html']]) {
+    const html = fs.readFileSync(path.join(SITE, ...parts), 'utf8');
+    expect(html, `${parts.join('/')} contains redirect code`).not.toMatch(/location\.(replace|assign|href\s*=)|slides-commons:lang/);
+  }
+  const homeHtml = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
+  expect(homeHtml, 'only the English home reads the stored language').toMatch(/slides-commons:lang/);
+  await page.goto(`t/${SLUG}/`, { waitUntil: 'load' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   expect(new URL(page.url()).pathname).toBe(`/t/${SLUG}/`);
-  await page.goto('credits.html');
-  await page.waitForTimeout(300);
+  await page.goto('credits.html', { waitUntil: 'load' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   expect(new URL(page.url()).pathname).toBe('/credits.html');
 
   // Choose English from the zh home.
@@ -185,8 +193,8 @@ test('language choice: 中文 is remembered for "/", detail pages never redirect
   await expect(page).toHaveURL(/\/index\.html$/);
   expect(page.url()).not.toMatch(/\/zh\//);
   expect(await page.evaluate(() => localStorage.getItem('slides-commons:lang'))).not.toBe('zh');
-  await page.goto('/');
-  await page.waitForTimeout(300);
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   expect(new URL(page.url()).pathname).toBe('/');
 });
 

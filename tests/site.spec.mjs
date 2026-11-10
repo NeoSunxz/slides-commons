@@ -1,10 +1,11 @@
 // Gallery, detail page, attribution, console & network checks.
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './font-cache.mjs';
 import {
   SITE, SLUG, UPSTREAM_TEMPLATE_DIR, EXTERNAL_WHITELIST,
-  artifactPath, countUpstreamSlides, readZip, normalizeEol, monitor, hostOf,
+  artifactPath, countUpstreamSlides, readZip, normalizeEol, monitor, hostOf, settled, fontLoaded,
+  previewFrame,
 } from './helpers.mjs';
 
 const DETAIL = `t/${SLUG}/`;
@@ -12,15 +13,6 @@ const SOURCE_DIR_URL = `https://github.com/zarazhangrui/beautiful-html-templates
 const SKILL_REPO = 'https://github.com/zarazhangrui/frontend-slides';
 const meta = JSON.parse(fs.readFileSync(path.join(UPSTREAM_TEMPLATE_DIR, 'template.json'), 'utf8'));
 
-async function previewFrame(page) {
-  const handle = await page.locator('iframe#preview').elementHandle();
-  const frame = await handle.contentFrame();
-  await frame.waitForFunction(() => {
-    const d = document.querySelector('deck-stage');
-    return d && typeof d.length === 'number' && d.length > 0;
-  });
-  return frame;
-}
 const deckState = (frame) => frame.evaluate(() => {
   const d = document.querySelector('deck-stage');
   return { index: d.index, total: d.length };
@@ -60,14 +52,13 @@ test.describe('detail page', () => {
     test(`iframe box is 16:9 and no horizontal scroll at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto(DETAIL);
-      await previewFrame(page);
+      const frame = await previewFrame(page);
       const box = await page.locator('iframe#preview').boundingBox();
       const ratio = box.width / box.height;
       expect(Math.abs(ratio - 16 / 9) / (16 / 9), `iframe ${box.width}x${box.height}`).toBeLessThanOrEqual(0.01);
       const scroll = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
       expect(scroll.sw, `scrollWidth ${scroll.sw} > clientWidth ${scroll.cw}`).toBeLessThanOrEqual(scroll.cw);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(300);
+      await fontLoaded(frame, meta.typography.display); // screenshot after the deck font is in
       await page.screenshot({ path: artifactPath(`detail-${vp.tag}.png`), fullPage: true });
     });
   }
@@ -88,13 +79,15 @@ test.describe('detail page', () => {
     await expect(counter).toHaveText(`1 / ${expected}`);
     await expect(prev).toBeDisabled();
 
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2200); // deck overlay fades after 1.8 s
+    await fontLoaded(frame, meta.typography.display);
     const shot1 = await iframe.screenshot();
     await next.click();
     await expect(counter).toHaveText(`2 / ${expected}`);
     expect((await deckState(frame)).index).toBe(1);
-    await page.waitForTimeout(400);
+    await frame.waitForFunction(() => {
+      const a = document.querySelector('[data-deck-active]');
+      return a && getComputedStyle(a).visibility === 'visible' && getComputedStyle(a).opacity === '1';
+    });
     const shot2 = await iframe.screenshot();
     expect(shot1.equals(shot2), 'iframe pixels unchanged after Next').toBe(false);
     const active = await frame.evaluate(() => document.querySelector('[data-deck-active]')?.getAttribute('data-label'));
@@ -111,16 +104,20 @@ test.describe('detail page', () => {
       await expect(counter).toHaveText(`${i} / ${expected}`);
     }
     await expect(next).toBeDisabled();
-    // Push past the end with the keyboard: must clamp, not wrap.
+    // Push past the end with the keyboard, then step back once: a clamped deck lands on
+    // N-1; a wrapping one would be at 1 (then 1 or N). No fixed sleeps needed.
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(700);
-    await expect(counter).toHaveText(`${expected} / ${expected}`);
-    expect((await deckState(frame)).index).toBe(expected - 1);
+    await page.keyboard.press('ArrowLeft');
+    await expect(counter).toHaveText(`${expected - 1} / ${expected}`);
+    expect((await deckState(frame)).index).toBe(expected - 2);
 
-    // Back to the start and past it.
+    // Back to the start, past it, then one step forward: clamped → 2.
     for (let i = 0; i < expected + 1; i++) await page.keyboard.press('ArrowLeft');
     await expect(counter).toHaveText(`1 / ${expected}`);
-    expect((await deckState(frame)).index).toBe(0);
+    await expect(prev).toBeDisabled();
+    await page.keyboard.press('ArrowRight');
+    await expect(counter).toHaveText(`2 / ${expected}`);
+    expect((await deckState(frame)).index).toBe(1);
   });
 
   test('arrow keys on the detail page page the deck', async ({ page }) => {
@@ -184,23 +181,24 @@ test.describe('detail page', () => {
   });
 
   test('preview renders with the template\'s declared display font', async ({ page }) => {
-    const fontFiles = [];
-    page.on('requestfinished', (r) => { if (/fonts\.gstatic\.com\/.*spacegrotesk/i.test(r.url())) fontFiles.push(r.url()); });
+    // Proof via the FontFaceSet inside the frame (deterministic; immune to HTTP-cache timing).
     await page.goto(DETAIL);
     const frame = await previewFrame(page);
-    await page.waitForLoadState('networkidle');
-    await expect.poll(() => fontFiles.length, 'Space Grotesk woff2 requested from fonts.gstatic.com').toBeGreaterThan(0);
-    const r = await frame.evaluate(async (family) => {
-      await document.fonts.ready;
+    const family = meta.typography.display;
+    await fontLoaded(frame, family);
+    const r = await frame.evaluate((fam) => {
       const h = document.querySelector('[data-deck-active] h1, [data-deck-active] .title');
       return {
         computed: getComputedStyle(h).fontFamily,
         deckStage: getComputedStyle(document.querySelector('deck-stage')).fontFamily,
-        loaded: [...document.fonts].some((f) => f.family.replace(/["']/g, '') === family && f.status === 'loaded'),
+        check: document.fonts.check(`700 40px "${fam}"`),
+        faces: [...document.fonts].filter((f) => f.family.replace(/["']/g, '') === fam).map((f) => `${f.weight}:${f.status}`),
       };
-    }, meta.typography.display);
-    expect.soft(r.computed, `cover title font-family (deck-stage host font is ${r.deckStage})`).toMatch(new RegExp(`^["']?${meta.typography.display}`));
-    expect.soft(r.loaded, `${meta.typography.display} never loaded in the preview`).toBe(true);
+    }, family);
+    test.info().annotations.push({ type: 'font-faces', description: r.faces.join(' ') });
+    expect.soft(r.computed, `cover title font-family (deck-stage host font is ${r.deckStage})`).toMatch(new RegExp(`^["']?${family}`));
+    expect.soft(r.check, `document.fonts.check(700 "${family}")`).toBe(true);
+    expect.soft(r.faces.some((f) => f.endsWith(':loaded')), `${family} FontFace loaded`).toBe(true);
   });
 
   test('preview copy carries the font fix; upstream files are untouched', async () => {
@@ -266,10 +264,9 @@ test.describe('every page', () => {
     test(`no console errors, failed requests, or off-whitelist hosts on ${url}`, async ({ page, baseURL }) => {
       const log = monitor(page);
       await page.goto(url);
-      await page.waitForLoadState('networkidle');
-      if (url === DETAIL) await previewFrame(page);
-      await page.waitForTimeout(500);
-      await page.waitForLoadState('networkidle');
+      if (url === DETAIL) await fontLoaded(await previewFrame(page), meta.typography.display);
+      if (url.startsWith('preview/')) await fontLoaded(page, meta.typography.display);
+      await settled(log, expect);
 
       const own = new URL(baseURL).host;
       const external = log.requests.filter((r) => /^https?:/.test(r.url) && new URL(r.url).host !== own);
