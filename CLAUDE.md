@@ -18,7 +18,7 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 | 访客环境 | zip 和提示词必须在三大平台都能用：提示词里"打开浏览器"不写死 `open`（macOS），按平台给出 `open` / `xdg-open` / `start` |
 | 提示词方案 | "按 design.md 重新生成单文件固定画布"方案（见下文） |
 | M1 模板 | `neo-grid-bold` |
-| 上游 submodule 指向 | **待定**（fork 还是原仓库） |
+| 上游 submodule 指向 | 直接指向原作者仓库（HTTPS，shallow）。以后要换 fork：`git submodule set-url upstream/<name> <fork-url>` |
 
 ---
 
@@ -157,4 +157,6 @@ zip（以 `<slug>/` 为根）：
 ## 进度
 
 - 2026-11-10：M0 完成并经维护者确认。上游浅克隆参考副本在 `~/projects/refs/`（只读阅读用，不属于本仓库）。
-- 下一步（M0.5）：等维护者决定 submodule 指向 fork 还是原仓库 → 添加 submodule；编写 `.claude/agents/` 三个子 agent；从 main 建 `dev` 分支。
+- 2026-11-10：M0.5 完成。`dev` 分支已建；submodule `upstream/templates`（e5e204f）、`upstream/skill`（9906a34）指向原作者仓库；`.claude/agents/` 下 site-builder / site-tester / release-manager 已定义。新克隆需 `git clone --recurse-submodules`，或克隆后 `git submodule update --init`。
+- 下一步（M1）：派 site-builder 实现 `neo-grid-bold` 单模板打通（sources.json、构建脚本、详情页预览翻页、复制提示词、zip），再由 site-tester 验证；维护者用 zip + 提示词实际做出一份幻灯片后才进入 M2。
+- 待维护者操作：`git push -u origin dev`，并在 GitHub 上把默认分支设为 `dev`、保护 `main`。
