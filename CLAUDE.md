@@ -160,3 +160,14 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-10：M0.5 完成。`dev` 分支已建；submodule `upstream/templates`（e5e204f）、`upstream/skill`（9906a34）指向原作者仓库；`.claude/agents/` 下 site-builder / site-tester / release-manager 已定义。新克隆需 `git clone --recurse-submodules`，或克隆后 `git submodule update --init`。
 - 下一步（M1）：派 site-builder 实现 `neo-grid-bold` 单模板打通（sources.json、构建脚本、详情页预览翻页、复制提示词、zip），再由 site-tester 验证；维护者用 zip + 提示词实际做出一份幻灯片后才进入 M2。
 - 待维护者操作：`git push -u origin dev`，并在 GitHub 上把默认分支设为 `dev`、保护 `main`。
+- 2026-11-10：M1 构建完成（site-builder）：`npm run build` → `site/`，`npm run serve` → http://localhost:4173/。zip 含 template.html、deck-stage.js、design.md（skill 版）、viewport-base.css、LICENSE-templates、LICENSE-skill、PROMPT.md、PROMPT.zh.md、README.md。根目录 CREDITS.md、LICENSE 已建。`.claude/settings.json` 设 `worktree.bgIsolation: none`（维护者要求在主目录 dev 上工作）。
+- 已解决：本机缺 Chromium 系统库的阻塞已由维护者安装依赖解决，Playwright 可正常运行。
+- 2026-11-10：M1 经 site-tester 验证通过，`npm test` 39/39：预览翻页与计数 1/12、预览字体修复、复制提示词 EN/ZH 与 zip 内 PROMPT.md/PROMPT.zh.md 逐字节一致、zip 完整性与可复现、`--out` 保护（标记文件 `.slides-commons-build`）、通过 `--sources/--out` 的 fixture 构建。已由 release-manager 在 `dev` 上提交，CHANGELOG.md 建立 `Unreleased` 一节。
+- 下一步：等待维护者亲手验收 M1——在空目录解压 zip，把提示词交给本地 coding agent，实际做出一份幻灯片。**验收通过前不进入 M2。**
+
+### M2 待处理事项（来自 M1）
+- raw-grid 原版用系统字体栈，与提示词"只用 Google Fonts/Fontshare"冲突；coral、cartesian、retro-windows 依赖 jsdelivr 的 chart.js，与"无 CDN"冲突 → 提示词需按模板加例外
+- schema `additionalProperties: false`：上游新增字段会让构建失败（有意为之，可作为上游变化的告警）
+- template.json 的 slide_count 与实际页数可能不符（neo-grid-bold 写 13，实际 12）→ 以实际渲染为准
+- ~~zip 时间戳固定化（可复现构建）~~ M1 已完成（默认 1980-01-01，支持 `SOURCE_DATE_EPOCH`）
+- ~~serve.mjs 默认监听所有网卡~~ M1 已改为默认 127.0.0.1（`HOST=0.0.0.0` 可对外）
