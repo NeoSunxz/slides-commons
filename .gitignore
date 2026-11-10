@@ -18,3 +18,9 @@ build/
 
 # Logs
 *.log
+
+# Build output
+site/
+
+# Claude Code local worktrees
+.claude/worktrees/

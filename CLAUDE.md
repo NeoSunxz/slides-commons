@@ -1,0 +1,160 @@
+# slides-commons
+
+open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻灯片模板库。
+
+公开、开源的静态网站：HTML 幻灯片模板画廊。访客可在线预览、复制提示词、下载素材包（zip），回到本地交给自己的 coding agent 完成幻灯片。
+**提示词好不好用、zip 能否直接跑通，优先级高于画廊视觉效果。**
+
+命名：仓库名、网站标题、package 名统一写作 `slides-commons`。不得用 `frontend-slides`、`beautiful-html-templates` 或其变体指代本项目。
+
+---
+
+## 维护者决定（M0 已确认）
+
+| 项 | 决定 |
+|---|---|
+| 网站语言 | 英文为主，中文辅助（UI 与文案英文为主，关键说明/提示词提供中文版本） |
+| 开发平台 | 在 Linux 上开发；所有脚本、命令、产物必须跨平台可用（Linux / macOS / Windows PowerShell）。构建脚本用 Node（`.mjs`），不写 bash-only 或 PowerShell-only 脚本，路径一律用 `path` 模块拼接 |
+| 访客环境 | zip 和提示词必须在三大平台都能用：提示词里"打开浏览器"不写死 `open`（macOS），按平台给出 `open` / `xdg-open` / `start` |
+| 提示词方案 | "按 design.md 重新生成单文件固定画布"方案（见下文） |
+| M1 模板 | `neo-grid-bold` |
+| 上游 submodule 指向 | **待定**（fork 还是原仓库） |
+
+---
+
+## 上游来源与署名（不得违反）
+
+上游：zarazhangrui 的两个 MIT 仓库
+- `upstream/templates` ← beautiful-html-templates（34 个模板，版权 2026 Zara Zhang）
+- `upstream/skill` ← frontend-slides（agent skill，版权 2025 Zara Zhang）
+
+规则：
+- `upstream/` 只读，禁止修改其中任何文件
+- 每个下载的 zip 必须包含该模板来源的 LICENSE（upstream 模板需同时带两份：templates 与 skill 的 LICENSE，因为 zip 混用了两个仓库的文件）
+- 网站页脚和每个模板详情页必须注明作者，并链接回原仓库的对应目录
+- 根目录维护 `CREDITS.md`，列出所有上游仓库、作者、协议
+- 网站文案不得暗示本项目是原作者的官方项目
+
+## 技术约束
+
+- 纯静态站点，无框架，无后端
+- 构建脚本用 Node，尽量单文件，读取数据后生成 `site/`
+- `site/` 是构建产物，已加入 `.gitignore`，不提交
+- 截图等二进制文件直接引用 submodule 里的，不复制进本仓库 git 历史
+- 部署到 GitHub Pages，由 GitHub Actions 发布
+- 跨平台：见"维护者决定"
+
+## 协作方式
+
+主会话（Opus）只做编排：拆任务、派给子 agent、审结果，不直接写业务代码。
+
+子 agent（`.claude/agents/`）：
+- `site-builder`：实现构建脚本和页面，只改 `scripts/` 和 `src/`
+- `site-tester`：构建并用 Playwright 验证，只写 `tests/`，只报告问题不修复
+- `release-manager`：提交、更新 CHANGELOG、准备发版，禁止 push 和改写历史
+- （M6 时新增）`template-designer`：只允许写 `collections/neosun/`
+
+每个里程碑顺序：site-builder → site-tester →（有问题回到 builder）→ release-manager。
+每个里程碑发版前停下等维护者确认；结束时把进度和下一步写进本文件"进度"一节。
+
+## 分支与发版
+
+- `main`：已发布版本，受保护，只能通过 PR 合并，网站从这里部署
+- `dev`：默认分支，所有开发和外部贡献都先进这里
+- 禁止切换到 `main` 上提交
+- 发版 = 从 `dev` 向 `main` 提 PR；tag 只打在合并后的 `main` 上
+- 提交信息用 Conventional Commits，版本号用语义化版本
+- 推送由维护者手动执行，agent 不执行 `git push`
+- 远程使用 SSH：`git@github.com:NeoSunxz/slides-commons.git`
+
+---
+
+## M0 核实结论（上游 commit：templates `e5e204f`，skill `9906a34`）
+
+### 上游文件结构
+
+**templates**（beautiful-html-templates）
+- `index.json`：`{schema_version:1, generated_at, template_count:34, templates:[...]}`，每项 12 字段，由 `scripts/build-index.mjs` 从各 `template.json` 生成
+- `templates/<slug>/`：`template.html` + `template.json` + `design.md`，其中 10 个另有 `deck-stage.js`
+- `screenshots/<slug>-N.png`：每模板 3 张，N 不连续（如 soft-editorial 为 4/6/10），共 102 张 / 32MB
+- `runtime/deck-stage.js`：web component，固定 1920×1080 画布整体缩放
+- `AGENTS.md`：工作流 = 问场合与情绪 → 从 index 选 3 个 → 做 3 个封面预览 → 用户挑 → 克隆模板目录、替换内容。§3 保留/替换规则、§5 补缺失版式规则可复用进提示词。注意其示例写 `template_count: 28`，实际 34，以文件为准；其中打开文件用 `open`（仅 macOS）
+
+**skill**（frontend-slides）
+- `SKILL.md`：单文件、零依赖、**固定 1920×1080 画布**（不可协商）；Phase 1 问用途/页数/内容/密度；Phase 3 读选中模板的 design.md 生成；自检文字溢出与面板重叠
+- `STYLE_PRESETS.md`：12 个基础风格，1–8 有完整配色/字体/版式说明，9–12 仅一两行描述；Neon Cyber 用 Fontshare 字体
+- `viewport-base.css`（133 行）：固定画布基础样式，要求完整内联
+- `html-template.md`、`animation-patterns.md`：生成时的辅助参考
+- `bold-template-pack/selection-index.json`：34 项，11 个选择字段 + `preview_md`/`design_md` 路径；顶层 `frontend_slides_policy` 规定 fixed-stage 1920×1080
+- `bold-template-pack/templates/<slug>/preview.md`：精简风格卡（配色、字体、signature moves、预览规则）
+- `bold-template-pack/templates/<slug>/design.md`：与 templates 仓库的 design.md 相同，**但多一节 "Frontend Slides Fixed-Stage Policy"**
+- `bold-template-pack/deck-stage.js` 与 `runtime/deck-stage.js` 相同
+
+### 字段对照
+
+| 字段 | index.json | template.json | selection-index.json |
+|---|---|---|---|
+| slug, name, tagline, mood[], tone[], formality, density, scheme, best_for, avoid_for | ✓ | ✓ | ✓ |
+| occasion[], slide_count | ✓ | ✓ | — |
+| palette{}, typography{}, navigation | — | ✓ | — |
+| preview_md, design_md | — | — | ✓ |
+
+取值：scheme ∈ light/dark/mixed；formality ∈ low/medium-low/medium/medium-high/high；density 同类。`design.md` 有 YAML frontmatter（version, name, description, colors, typography …），正文约 500 行，含 "CJK & International Content" 节。
+
+### 本项目 schema
+
+以 `template.json` 的 15 个字段为基础，再加：
+- `source`：构建时由 `sources.json` 注入，不写在模板文件里
+- `license`：默认继承来源，可按模板覆盖
+- `authors`：可选，默认继承来源 author
+- `derivedFrom`：可选，`{source, slug}`，改编时填写；详情页同时显示原作者与改编者，zip 带原 LICENSE
+
+详情页"设计说明"取 design.md frontmatter 的 `description`；缩略图取编号最小的截图。
+
+### 共享文件依赖
+
+- 没有模板引用 `runtime/`；用 deck-stage 的 10 个模板（creative-mode, editorial-forest, editorial-tri-tone, emerald-editorial, neo-grid-bold, peoples-platform, pin-and-paper, pink-script, soft-editorial, stencil-tablet）目录内自带 `deck-stage.js`，其中 editorial-forest、emerald-editorial 的副本与 runtime 版本不同 → zip 打包模板目录本身即可，**不要**用 runtime 版本替换
+- 其余 24 个模板是 vw/vh 视口自适应 + 内联键盘处理，原生**不是**固定画布
+- 外部请求白名单：`fonts.googleapis.com`、`fonts.gstatic.com`、`cdn.jsdelivr.net`（chart.js：coral、cartesian、retro-windows，其中 2 处未锁版本）；M4 起加 `api.fontshare.com`。`w3.org`（SVG xmlns）与 `quiver.ai`（SVG 注释）不是请求 → 校验需基于浏览器实际网络请求，不能正则扫源码
+
+### 提示词与 zip 组成
+
+zip（以 `<slug>/` 为根）：
+- `template.html`（参考实现，原样）+ 该模板目录内的 `deck-stage.js`（如有）
+- `design.md`（取 skill 版本，带 fixed-stage 规则）
+- `viewport-base.css`
+- `LICENSE-templates`、`LICENSE-skill`
+- `PROMPT.md`（与网站"复制提示词"相同内容，英文；另附中文版 `PROMPT.zh.md`）
+
+提示词结构：
+1. 素材包里每个文件的用途
+2. 设计系统要点（frontmatter + preview.md：配色、字体、signature moves）
+3. 工作流：先问用途/页数/密度 → 读完整 design.md → 仅缺细节时参考 template.html → 生成单 HTML 文件，完整内联 viewport-base.css
+4. 硬约束：不换字体、不改配色、不混模板（AGENTS.md §3/§5/§6）；固定 1920×1080，手机上加黑边不重排；CJK 规则；单文件零依赖（仅允许字体 CDN）
+5. 自检：1280×720 与一个手机视口截图，检查溢出与面板重叠；跨平台打开命令
+
+### 预览翻页
+
+详情页 iframe 用 `sandbox="allow-scripts"`（不加 allow-same-origin）。父页面无法直接给 iframe 发键盘事件 → 构建时生成预览副本（`site/` 内），注入一个小脚本：监听 postMessage，转发为 ArrowLeft/ArrowRight keydown。上游原文件不动。
+
+---
+
+## 里程碑（已按 M0 建议调整）
+
+| 里程碑 | 内容 | 验收 |
+|---|---|---|
+| M0 | 读上游、核实、定 schema 与提示词 | ✅ 维护者已确认 |
+| M0.5 | submodule 接入；`.claude/agents/` 三个子 agent；`dev` 分支 | submodule 可检出，agent 定义就绪 |
+| M1 | 单模板 `neo-grid-bold`：构建脚本、详情页预览翻页、复制提示词、zip | 维护者在空目录用 zip + 提示词实际做出幻灯片；**未通过不进入 M2** |
+| M2 | 全部 34 模板 + 首页 + 按来源筛选；元数据校验与 slug 去重脚本 | 全部可预览翻页、控制台无报错、署名回链正确 |
+| M3 | CI（pull_request，submodules: recursive）+ Pages 部署 | PR 自动校验，合并 main 后线上可访问 |
+| M4 | 12 个基础风格 demo，作为独立来源放 `collections/`，署名说明为衍生作品 | 纳入画廊，署名清楚 |
+| M5 | 贡献流程：CONTRIBUTING、PR/Issue 模板、校验工作流 | 就绪 |
+| M6 | `collections/neosun/` 第一个自有模板 | 跑通 |
+
+---
+
+## 进度
+
+- 2026-11-10：M0 完成并经维护者确认。上游浅克隆参考副本在 `~/projects/refs/`（只读阅读用，不属于本仓库）。
+- 下一步（M0.5）：等维护者决定 submodule 指向 fork 还是原仓库 → 添加 submodule；编写 `.claude/agents/` 三个子 agent；从 main 建 `dev` 分支。
