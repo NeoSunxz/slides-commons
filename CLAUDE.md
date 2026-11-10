@@ -164,11 +164,23 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-10：M1 构建完成（site-builder）：`npm run build` → `site/`，`npm run serve` → http://localhost:4173/。zip 含 template.html、deck-stage.js、design.md（skill 版）、viewport-base.css、LICENSE-templates、LICENSE-skill、PROMPT.md、PROMPT.zh.md、README.md。根目录 CREDITS.md、LICENSE 已建。`.claude/settings.json` 设 `worktree.bgIsolation: none`（维护者要求在主目录 dev 上工作）。
 - 已解决：本机缺 Chromium 系统库的阻塞已由维护者安装依赖解决，Playwright 可正常运行。
 - 2026-11-10：M1 经 site-tester 验证通过，`npm test` 39/39：预览翻页与计数 1/12、预览字体修复、复制提示词 EN/ZH 与 zip 内 PROMPT.md/PROMPT.zh.md 逐字节一致、zip 完整性与可复现、`--out` 保护（标记文件 `.slides-commons-build`）、通过 `--sources/--out` 的 fixture 构建。已由 release-manager 在 `dev` 上提交，CHANGELOG.md 建立 `Unreleased` 一节。
-- 下一步：等待维护者亲手验收 M1——在空目录解压 zip，把提示词交给本地 coding agent，实际做出一份幻灯片。**验收通过前不进入 M2。**
+- 2026-11-10/11：M1 维护者反馈迭代：
+  - 双击打开（file://）时预览坏掉 → 预览副本内联本地脚本；file:// 下目录链接改写为 index.html（`src/site.js`）
+  - 详情页保留原布局（左预览 + 右面板），加"新标签页打开"与"全屏"按钮
+  - 中英文语言切换：英文在根目录、中文在 `zh/`，同页不混用；"coding agent" 在中文页保留英文
+- 2026-11-11：两次模拟验收（全新 agent 只拿 zip + 提示词，在空目录制作）均产出高质量幻灯片：中文 8 页演讲型、英文 10 页高密度 QBR。据此修了提示词 15 处（解压回退链、无显示器回退、CJK 字体链接取自 design.md、CJK 字重/行高、用户密度优先、强调色对比、chrome 重叠豁免、滚轮翻页、询问演讲者/日期/链接、字体加载核验方式、大纲确认条件、`--slide-bg` 取色）。
+- 测试稳定化：`tests/font-cache.mjs` 缓存 Google Fonts 响应（本机网络偶发 ERR_CONNECTION_CLOSED），去掉所有固定等待；`npm test` 72/72，约 17 秒。
+- 下一步：维护者亲手验收 M1（空目录 + zip + 提示词 + 本地 agent）。**验收通过前不进入 M2。**
+
+### 编排经验
+- 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
+- 提示词改动后用"全新 agent + 空目录 + 只给 zip 和提示词"做模拟验收，最能暴露问题
 
 ### M2 待处理事项（来自 M1）
 - raw-grid 原版用系统字体栈，与提示词"只用 Google Fonts/Fontshare"冲突；coral、cartesian、retro-windows 依赖 jsdelivr 的 chart.js，与"无 CDN"冲突 → 提示词需按模板加例外
 - schema `additionalProperties: false`：上游新增字段会让构建失败（有意为之，可作为上游变化的告警）
+- 访客网络连不上 Google Fonts 时预览会回退系统字体（本机就偶发）——是否需要提示或兜底待定
+- 详情页色板用 template.json 的色名，提示词用 design.md 的色名，可统一
 - template.json 的 slide_count 与实际页数可能不符（neo-grid-bold 写 13，实际 12）→ 以实际渲染为准
 - ~~zip 时间戳固定化（可复现构建）~~ M1 已完成（默认 1980-01-01，支持 `SOURCE_DATE_EPOCH`）
 - ~~serve.mjs 默认监听所有网卡~~ M1 已改为默认 127.0.0.1（`HOST=0.0.0.0` 可对外）
