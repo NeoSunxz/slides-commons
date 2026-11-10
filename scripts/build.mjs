@@ -476,9 +476,23 @@ function resolveTokens(text, colors) {
 // Stylesheet URLs from Google Fonts / Fontshare referenced by the template.
 function fontLinks(html) {
   const urls = new Set();
-  const re = /https:\/\/(?:fonts\.googleapis\.com\/css2?\?|api\.fontshare\.com\/v2\/css\?)[^"'\s)<>]+/g;
+  const re = /https:\/\/(?:fonts\.googleapis\.com\/css2?\?|api\.fontshare\.com\/v2\/css\?)[^"'`\s)<>]+/g;
   for (const m of html.matchAll(re)) urls.add(m[0].replace(/&amp;/g, '&'));
   return [...urls];
+}
+
+// The "CJK & International Content" (or similar) section of design.md, if any.
+function cjkSection(md) {
+  const lines = md.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^#{2,3}\s.*\bCJK\b/i.test(l));
+  if (start < 0) return '';
+  const level = lines[start].match(/^#+/)[0].length;
+  let end = lines.length;
+  for (let k = start + 1; k < lines.length; k++) {
+    const m = lines[k].match(/^(#+)\s/);
+    if (m && m[1].length <= level) { end = k; break; }
+  }
+  return lines.slice(start, end).join('\n');
 }
 
 const isHexish = (v) => typeof v === 'string' && /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/.test(v.trim());
@@ -556,6 +570,7 @@ function buildContext(t) {
     typography,
     typographyStyle: t.typography.style ?? '',
     fontLinks: fontLinks(html),
+    cjkFontLinks: fontLinks(cjkSection(designMd)),
     signatureMoves: preview.moves.map((m) => resolveTokens(m, colorMap)),
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
     assets,
