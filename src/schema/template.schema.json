@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/NeoSunxz/slides-commons/src/schema/template.schema.json",
+  "title": "slides-commons template record",
+  "description": "A template.json as read from a source, after the build has injected `source` and filled the `license` / `authors` defaults. Validated by the hand-written checker in scripts/build.mjs (supports: type, enum, const, pattern, minLength, minimum, items, minItems, minProperties, required, properties, additionalProperties, $ref to #/$defs).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug", "name", "tagline", "mood", "occasion", "tone", "formality", "density",
+    "palette", "typography", "scheme", "best_for", "avoid_for", "slide_count", "navigation",
+    "source", "license", "authors"
+  ],
+  "properties": {
+    "slug": { "$ref": "#/$defs/slug" },
+    "name": { "type": "string", "minLength": 1 },
+    "tagline": { "type": "string", "minLength": 1 },
+    "mood": { "$ref": "#/$defs/tags" },
+    "occasion": { "$ref": "#/$defs/tags" },
+    "tone": { "$ref": "#/$defs/tags" },
+    "formality": { "$ref": "#/$defs/level" },
+    "density": { "$ref": "#/$defs/level" },
+    "palette": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "typography": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "scheme": { "enum": ["light", "dark", "mixed"] },
+    "best_for": { "type": "string", "minLength": 1 },
+    "avoid_for": { "type": "string", "minLength": 1 },
+    "slide_count": { "type": "integer", "minimum": 1 },
+    "navigation": { "type": "string", "minLength": 1 },
+    "source": {
+      "description": "Id of the sources.json entry the template came from. Injected at build time; never written in template files.",
+      "$ref": "#/$defs/id"
+    },
+    "license": {
+      "description": "SPDX-style license id. Defaults to the source license; a template may override it.",
+      "type": "string",
+      "minLength": 1
+    },
+    "authors": {
+      "description": "Defaults to the source author.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "url": { "$ref": "#/$defs/url" }
+        }
+      }
+    },
+    "derivedFrom": {
+      "description": "Set when the template adapts another one; the detail page credits both and the zip carries the original LICENSE.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "slug"],
+      "properties": {
+        "source": { "$ref": "#/$defs/id" },
+        "slug": { "$ref": "#/$defs/slug" }
+      }
+    }
+  },
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$" },
+    "url": { "type": "string", "pattern": "^https?://" },
+    "level": { "enum": ["low", "medium-low", "medium", "medium-high", "high"] },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
