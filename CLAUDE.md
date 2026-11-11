@@ -171,7 +171,10 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-11：两次模拟验收（全新 agent 只拿 zip + 提示词，在空目录制作）均产出高质量幻灯片：中文 8 页演讲型、英文 10 页高密度 QBR。据此修了提示词 15 处（解压回退链、无显示器回退、CJK 字体链接取自 design.md、CJK 字重/行高、用户密度优先、强调色对比、chrome 重叠豁免、滚轮翻页、询问演讲者/日期/链接、字体加载核验方式、大纲确认条件、`--slide-bg` 取色）。
 - 测试稳定化：`tests/font-cache.mjs` 缓存 Google Fonts 响应（本机网络偶发 ERR_CONNECTION_CLOSED），去掉所有固定等待；`npm test` 72/72，约 17 秒。
 - 2026-11-11：维护者亲手验收 M1 通过（其 agent 用 zip + 提示词做出 8 页中文幻灯片，质量好）。据其反馈再补提示词：中文孤字换行、演讲型最小字号 20px、成稿后通读自查矛盾。
-- 下一步：M2（全部 34 模板 + 首页 + 按来源筛选 + 元数据校验），发版前停下等维护者确认。
+- 2026-11-11：M2 开发与验证完成：34 模板全部构建；画廊（搜索、配色/情绪筛选，状态在 URL hash，来源筛选数据驱动、仅一个来源时隐藏）；缩略图自写 PNG 缩小（32MB→4.5MB，缓存在 `node_modules/.cache/slides-commons/thumbs`，冷构建约 21 秒，CI 需缓存）；预览桥接适配三类翻页机制（deck-stage 10 / class 22 / geometry 2：8-bit-orbit、daisy-days），页数取自实际渲染；提示词按数据生成例外（系统字体 raw-grid、禁用 CDN 图表 coral/cartesian/retro-windows、无 deck-stage 的模板不提该文件）；`npm run validate`（构建同样调用）；`npm test` 268/268，约 2.5 分钟。
+  - 桥接教训：「按键被接受」只能以页码真的变化为准，别把动画/transition 当证据，否则带按键锁的模板（broadside/grove/monochrome/signal/studio，约 1 秒锁）会丢第二次点击。
+  - 上游小错误：monochrome 演示文案写 11/18，实际 16 页，站点显示 16。
+- 下一步：等维护者确认后发版（dev → main PR）；然后 M3（CI + Pages，含提示词自动下载素材包、自托管字体计划）。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
