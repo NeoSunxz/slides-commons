@@ -170,7 +170,8 @@ zip（以 `<slug>/` 为根）：
   - 中英文语言切换：英文在根目录、中文在 `zh/`，同页不混用；"coding agent" 在中文页保留英文
 - 2026-11-11：两次模拟验收（全新 agent 只拿 zip + 提示词，在空目录制作）均产出高质量幻灯片：中文 8 页演讲型、英文 10 页高密度 QBR。据此修了提示词 15 处（解压回退链、无显示器回退、CJK 字体链接取自 design.md、CJK 字重/行高、用户密度优先、强调色对比、chrome 重叠豁免、滚轮翻页、询问演讲者/日期/链接、字体加载核验方式、大纲确认条件、`--slide-bg` 取色）。
 - 测试稳定化：`tests/font-cache.mjs` 缓存 Google Fonts 响应（本机网络偶发 ERR_CONNECTION_CLOSED），去掉所有固定等待；`npm test` 72/72，约 17 秒。
-- 下一步：维护者亲手验收 M1（空目录 + zip + 提示词 + 本地 agent）。**验收通过前不进入 M2。**
+- 2026-11-11：维护者亲手验收 M1 通过（其 agent 用 zip + 提示词做出 8 页中文幻灯片，质量好）。据其反馈再补提示词：中文孤字换行、演讲型最小字号 20px、成稿后通读自查矛盾。
+- 下一步：M2（全部 34 模板 + 首页 + 按来源筛选 + 元数据校验），发版前停下等维护者确认。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
@@ -188,6 +189,17 @@ zip（以 `<slug>/` 为根）：
 - 提示词 §0 改为：先看当前目录是否已有 `<slug>/` 文件夹或 zip → 没有则下载，按顺序尝试，命令缺失或失败就换下一个：`curl -fLO <url>` → `wget <url>` → PowerShell `Invoke-WebRequest -Uri <url> -OutFile <file>`；下载后沿用现有解压回退链；全部失败再请用户手动下载。
 - 校验：zip 内 PROMPT.md 与网页提示词仍逐字节一致（同一份 siteUrl 生成）；测试加：配置了 siteUrl 时提示词含该网址与下载命令链，未配置时不含。
 - 验收：模拟验收时只给提示词、不放 zip，让全新 agent 自行下载完成（需 Pages 已上线）。
+
+### 计划：自托管字体（M2 起，解决网络受限地区访问不了 Google Fonts）
+
+问题：fonts.googleapis.com / fonts.gstatic.com 在网络受限地区常加载失败或很慢；预览与 agent 生成的幻灯片都会回退系统字体。
+
+方案（字体均为 OFL 开源，可再分发）：
+1. 预览副本：构建时把 Google Fonts 链接换成站点自带的 woff2 + @font-face（只改 `site/` 预览副本，上游不动）。
+2. zip：放入该模板用到的字体文件；提示词要求优先用本地字体。
+3. 生成的幻灯片：字体以 base64 嵌入 HTML 保持单文件。拉丁字体体积小可直接嵌；Noto Sans SC 很大，需按实际用到的字符裁剪（pyftsubset 等）再嵌——分第二步做。
+- 备选（更轻、不保证）：用 jsDelivr 的 `@fontsource` 镜像（jsDelivr 已在白名单）。
+- 落地顺序：预览 + 拉丁字体 → 中文裁剪。需注意白名单与"无外部请求"校验随之收紧。
 
 ### M2 待处理事项（来自 M1）
 - raw-grid 原版用系统字体栈，与提示词"只用 Google Fonts/Fontshare"冲突；coral、cartesian、retro-windows 依赖 jsdelivr 的 chart.js，与"无 CDN"冲突 → 提示词需按模板加例外
