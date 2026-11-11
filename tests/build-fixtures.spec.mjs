@@ -71,7 +71,10 @@ test.describe('fixture builds (--sources / --out)', () => {
         expect(names, `${slug} zip`).toContain(`${slug}/${f}`);
       }
     }
-    expect(fs.existsSync(path.join(ROOT, 'site', 't', 'coral')), 'fixture build leaked into repo site/').toBe(false);
+    // The --out dir holds exactly these two templates, nothing else.
+    expect(fs.readdirSync(path.join(out, 't')).sort()).toEqual(['coral', 'neo-grid-bold']);
+    expect(fs.readdirSync(path.join(out, 'zip')).sort()).toEqual(['coral.zip', 'neo-grid-bold.zip']);
+    expect(fs.readdirSync(path.join(out, 'zh', 't')).sort()).toEqual(['coral', 'neo-grid-bold']);
   });
 
   test('zips are reproducible with fixed 1980-01-01 timestamps', async () => {

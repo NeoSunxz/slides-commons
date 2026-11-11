@@ -1,0 +1,29 @@
+{
+  "slug": "bad-host",
+  "name": "bad-host",
+  "tagline": "Validation fixture.",
+  "mood": [
+    "plain"
+  ],
+  "occasion": [
+    "testing"
+  ],
+  "tone": [
+    "neutral"
+  ],
+  "formality": "medium",
+  "density": "low",
+  "palette": {
+    "bg": "#FFFFFF",
+    "ink": "#111111"
+  },
+  "typography": {
+    "display": "Inter",
+    "body": "Inter"
+  },
+  "scheme": "light",
+  "best_for": "Tests.",
+  "avoid_for": "Everything else.",
+  "slide_count": 1,
+  "navigation": "none"
+}

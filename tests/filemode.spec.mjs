@@ -12,11 +12,14 @@ test.beforeAll(() => {
   expect(fs.existsSync(path.join(SITE, 't', SLUG, 'index.html')), 'site/ must be built (build project)').toBe(true);
 });
 
-function expectClean(log, what) {
+function expectClean(log, what, { ignoreAbortedThumbs = false } = {}) {
+  // Lazy gallery thumbnails still in flight when the user clicks a card are cancelled by the
+  // navigation itself (ERR_ABORTED); that is not a failure.
+  const failed = ignoreAbortedThumbs ? log.failed.filter((f) => !(/\/assets\/screenshots\/thumbs\//.test(f) && /ERR_ABORTED/.test(f))) : log.failed;
   expect.soft(log.consoleErrors.filter((e) => /Not allowed to load local resource/i.test(e)), `${what}: "Not allowed to load local resource"`).toEqual([]);
   expect.soft(log.consoleErrors, `${what}: console errors`).toEqual([]);
   expect.soft(log.pageErrors, `${what}: page errors`).toEqual([]);
-  expect.soft(log.failed, `${what}: failed requests`).toEqual([]);
+  expect.soft(failed, `${what}: failed requests`).toEqual([]);
   expect.soft(log.badStatus, `${what}: HTTP >= 400`).toEqual([]);
 }
 
@@ -51,7 +54,8 @@ test('detail page works from file://: paging, one visible slide, Space Grotesk',
 test('gallery card from file:// lands on t/<slug>/index.html', async ({ page, context }) => {
   const log = monitorContext(context);
   await page.goto(fileUrl('index.html'));
-  const card = page.locator('a.card').first();
+  const card = page.locator(`a.card[href$="t/${SLUG}/index.html"]`);
+  await expect(card).toHaveCount(1);
   await expect(card).toHaveAttribute('href', `t/${SLUG}/index.html`);
   await card.click();
   await expect(page).toHaveURL(new RegExp(`/site/t/${SLUG}/index\\.html$`));
@@ -65,7 +69,7 @@ test('gallery card from file:// lands on t/<slug>/index.html', async ({ page, co
   expect(dirLinks, 'relative links still ending in "/" under file://').toEqual([]);
   await previewFrame(page);
   await settled(log, expect);
-  expectClean(log, 'file:// gallery → detail');
+  expectClean(log, 'file:// gallery → detail', { ignoreAbortedThumbs: true });
 });
 
 test('"Open in new tab" from file:// opens a working deck', async ({ page, context }) => {

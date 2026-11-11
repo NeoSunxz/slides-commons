@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "vfix",
+      "name": "Validation Fixtures",
+      "author": "Fixture Author",
+      "license": "MIT",
+      "repo": "https://example.com/fixtures/validate",
+      "branch": "main",
+      "path": "tests/fixtures/validate-src",
+      "include": [
+        "empty-license"
+      ]
+    }
+  ]
+}

@@ -185,3 +185,33 @@ export function deckFacts(target) {
 export function hostOf(u) {
   try { return new URL(u).hostname; } catch { return ''; }
 }
+
+// ---------------------------------------------------------------------------
+// Upstream-derived facts (nothing hardcoded per template).
+// ---------------------------------------------------------------------------
+export const UPSTREAM_TEMPLATES = path.join(ROOT, 'upstream', 'templates');
+export const UPSTREAM_SKILL = path.join(ROOT, 'upstream', 'skill');
+const TDIR = path.join(UPSTREAM_TEMPLATES, 'templates');
+
+export const ALL_SLUGS = fs.readdirSync(TDIR, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && fs.existsSync(path.join(TDIR, d.name, 'template.json')))
+  .map((d) => d.name).sort();
+
+export const upstreamDir = (slug) => path.join(TDIR, slug);
+export const upstreamMeta = (slug) => JSON.parse(fs.readFileSync(path.join(TDIR, slug, 'template.json'), 'utf8'));
+export const upstreamHtml = (slug) => fs.readFileSync(path.join(TDIR, slug, 'template.html'), 'utf8');
+export const hasDeckStageJs = (slug) => fs.existsSync(path.join(TDIR, slug, 'deck-stage.js'));
+export const DECK_STAGE_SLUGS = ALL_SLUGS.filter(hasDeckStageJs);
+export const CDN_SLUGS = ALL_SLUGS.filter((s) => /cdn\.jsdelivr\.net/.test(upstreamHtml(s)));
+export const NO_WEBFONT_SLUGS = ALL_SLUGS.filter((s) => !/fonts\.googleapis\.com|api\.fontshare\.com/.test(upstreamHtml(s)));
+export const skillDesign = (slug) => path.join(UPSTREAM_SKILL, 'bold-template-pack', 'templates', slug, 'design.md');
+
+/** A sample of slugs for the more expensive checks: every 5th + three named ones. */
+export const SAMPLE_SLUGS = [...new Set([
+  ...ALL_SLUGS.filter((_, i) => i % 5 === 0),
+  ...['neo-grid-bold', 'raw-grid', 'coral'].filter((s) => ALL_SLUGS.includes(s)),
+])];
+
+export function readSiteZip(outDir, slug) {
+  return readZip(fs.readFileSync(path.join(outDir, 'zip', `${slug}.zip`)));
+}

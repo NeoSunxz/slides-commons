@@ -17,7 +17,7 @@ import path from 'node:path';
 import { test as base, expect } from '@playwright/test';
 
 const CACHE = path.join(os.tmpdir(), 'slides-commons-test-fontcache');
-const FONT_HOSTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
+const FONT_HOSTS = /^https:\/\/(fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net)\//;
 
 function keyFor(url, ua) {
   return crypto.createHash('sha256').update(`${url}\n${ua}`).digest('hex');
