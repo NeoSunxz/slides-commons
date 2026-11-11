@@ -89,6 +89,24 @@ main.wrap { padding-top: 28px; padding-bottom: 56px; }
 .card-body p { margin: 0; font-size: 0.92rem; }
 .card-body .by { margin-top: 0.5rem; color: var(--muted); font-size: 0.85rem; }
 
+/* --- gallery filters ------------------------------------------------------- */
+.filters { margin-bottom: 20px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; }
+.filters[hidden], .grid > li[hidden], #fnone[hidden], .controls [hidden] { display: none; }
+.fsearch { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fsearch label, .flabel { color: var(--muted); font-size: 0.85rem; min-width: 5.5em; }
+.fsearch input { flex: 1 1 240px; max-width: 420px; font: inherit; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.fgroup { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 0.85rem; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); cursor: pointer; line-height: 1.5; }
+button.chip:hover { border-color: var(--muted); }
+button.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip .n { color: var(--muted); font-size: 0.75rem; }
+button.chip[aria-pressed="true"] .n { color: inherit; opacity: 0.7; }
+.fgroup details.more { display: contents; }
+.fgroup details.more summary { display: inline-block; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; }
+.fstatus { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.linklike { font: inherit; background: none; border: 0; padding: 0 0 0 8px; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.scheme-chip { cursor: default; padding: 0 8px; font-size: 0.75rem; margin-right: 4px; }
+
 /* --- detail ---------------------------------------------------------------- */
 .crumb { margin: 0 0 12px; font-size: 0.9rem; }
 .crumb a { color: var(--muted); text-decoration: none; }

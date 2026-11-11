@@ -57,7 +57,9 @@ function glanceEn(ctx) {
     const t = ctx.typography.map((x) => `${x.role} ${x.family}`).join('; ');
     L.push(`- **Typography:** ${t}${ctx.typographyStyle ? ` — ${ctx.typographyStyle}` : ''}.`);
   }
-  if (ctx.fontLinks.length) {
+  if (ctx.systemFontsOnly) {
+    L.push('- **Font loading:** none. The original uses the system font stack; system fonts are the design, so add no web fonts.');
+  } else if (ctx.fontLinks.length) {
     L.push('- **Font loading** (the original link; for decks with CJK text see “Fonts” in section 4):');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
   }
@@ -88,6 +90,20 @@ export function promptEn(ctx) {
   const cjkLink = ctx.cjkFontLinks.length
     ? ` For this template that link is: ${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}.`
     : '';
+
+  const fontsEn = ctx.systemFontsOnly
+    ? `- **Fonts:** this template's design is its system font stack (see ${code('design.md')}). Use exactly that stack and do not add web fonts, font links or font files: the rule that fonts come from Google Fonts or Fontshare does not apply to this template. For CJK text, rely on the system CJK fonts the stack falls back to.`
+    : `- **Fonts:** load them only from Google Fonts or Fontshare, with the exact families and weights from ${code('design.md')}, with one ${code('<link>')} per font service (a single Google Fonts link, not several).
+  - Deck without CJK text: use the original link from section 2.
+  - Deck with Chinese, Japanese or Korean text: use the combined link from the CJK section of ${code('design.md')} instead of the original one.${cjkLink} If ${code('design.md')} gives no combined link, add the CJK family it recommends, at the weights it specifies, to the original link as one more ${code('family=')} parameter.
+  - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there.`;
+  const netEn = `- **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed user-supplied images as data URIs, downscaled to the size they are shown at.${ctx.cdnScripts.length ? `\n- **Charts:** the original ${code('template.html')} loads a script from a CDN (${ctx.cdnScripts.map(code).join(', ')}). Do not copy that. Charts are welcome, but draw them with inline SVG (the default) or canvas code written in the file. Inline a pinned copy of the chart library only if the user explicitly asks for it.` : ''}`;
+
+  const fontCheckEn = ctx.systemFontsOnly
+    ? '- the type renders in the stack from `design.md`, and no web fonts or font requests are present;'
+    : `- the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: it returns true even when a face failed to load. Instead wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare the rendered text width against a fallback font. If a font request fails with a network error, retry or reload before concluding anything; change the import only if the URL itself is wrong;`;
+  const netCheckEn = ctx.systemFontsOnly ? 'no network requests at all' : 'no network requests beyond the font hosts';
 
   return `# Build a slide deck with the ${name} design system
 
@@ -137,12 +153,8 @@ ${baseCss}
 - **Fixed stage:** the markup is ${code('.deck-viewport > .deck-stage > section.slide')}, one ${code('section')} per slide. Author every slide at exactly 1920×1080 px using the fixed px sizes from ${code('design.md')}. One inline script scales ${code('.deck-stage')} with ${code('transform: translate(x, y) scale(s)')}, where ${code('s = min(innerWidth / 1920, innerHeight / 1080)')} and ${code('x')}, ${code('y')} center it; recompute on resize. Phones get letterboxing, never a reflowed layout: no media queries, ${code('vw')}/${code('vh')} units or ${code('clamp()')} inside slides. Treat any viewport-relative values in ${code('design.md')} as proportions of 1920×1080.
 ${switching}
 ${deckStageEn}- **Navigation:** → / Space / PageDown for next, ← / PageUp for previous, Home / End for first / last, swipe on touch screens, and optionally mouse-wheel paging (debounced, so one wheel gesture moves one slide). Ignore key presses while an input or contenteditable element has focus.
-- **Fonts:** load them only from Google Fonts or Fontshare, with the exact families and weights from ${code('design.md')}, with one ${code('<link>')} per font service (a single Google Fonts link, not several).
-  - Deck without CJK text: use the original link from section 2.
-  - Deck with Chinese, Japanese or Korean text: use the combined link from the CJK section of ${code('design.md')} instead of the original one.${cjkLink} If ${code('design.md')} gives no combined link, add the CJK family it recommends, at the weights it specifies, to the original link as one more ${code('family=')} parameter.
-  - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
-  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there.
-- **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed user-supplied images as data URIs, downscaled to the size they are shown at.
+${fontsEn}
+${netEn}
 - **Details:** respect ${code('prefers-reduced-motion')}; set ${code('<html lang>')} to the deck language and ${code('<title>')} to the deck title; mark code sections with ${code('/* === SECTION === */')} comments.
 
 ## 5. Hard constraints
@@ -172,8 +184,8 @@ ${deckStageEn}- **Navigation:** → / Space / PageDown for next, ← / PageUp fo
    - every highlight and emphasis is legible against its panel (no accent on accent);
    - in CJK text, no line ends with a single character or a lone punctuation mark; if one does, adjust the width or the wording;
    - the stage stays 16:9 and letterboxed on the phone;
-   - the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: it returns true even when a face failed to load. Instead wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare the rendered text width against a fallback font. If a font request fails with a network error, retry or reload before concluding anything; change the import only if the URL itself is wrong;
-   - no console errors, and no network requests beyond the font hosts.
+   ${fontCheckEn}
+   - no console errors, and ${netCheckEn}.
 3. Fix and re-check until clean. If you cannot render in a browser, say so plainly and review the code by hand; don't claim the check passed.
 4. Finally, reread the deck as the audience would and fix any statement the deck itself contradicts (for example a slide claiming "only one X per page" while using X three times).
 5. Open the deck in the user's default browser:
@@ -221,7 +233,9 @@ function glanceZh(ctx) {
     const t = ctx.typography.map((x) => `${x.role} ${x.family}`).join('；');
     L.push(`- **字体**：${t}${ctx.typographyStyle ? `（原文：${ctx.typographyStyle}）` : ''}。`);
   }
-  if (ctx.fontLinks.length) {
+  if (ctx.systemFontsOnly) {
+    L.push('- **字体加载**：无。原模板使用系统字体栈；系统字体就是设计本身，不要添加网页字体。');
+  } else if (ctx.fontLinks.length) {
     L.push('- **字体加载**（原模板的链接；幻灯片含 CJK 文字时见第 4 节“字体”）：');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
   }
@@ -252,6 +266,20 @@ export function promptZh(ctx) {
   const cjkLink = ctx.cjkFontLinks.length
     ? `本模板的这条链接是：${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}。`
     : '';
+
+  const fontsZh = ctx.systemFontsOnly
+    ? `- **字体**：本模板的设计就是系统字体栈（见 ${code('design.md')}）。严格使用该字体栈，不要添加网页字体、字体链接或字体文件：“字体只从 Google Fonts 或 Fontshare 加载”这条规则不适用于本模板。CJK 文字依靠该字体栈回退到的系统 CJK 字体。`
+    : `- **字体**：只从 Google Fonts 或 Fontshare 加载，字体族和字重与 ${code('design.md')} 完全一致，每个字体服务只用一个 ${code('<link>')}（Google Fonts 只用一条链接，不要多条）。
+  - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
+  - 幻灯片含中文、日文或韩文：改用 ${code('design.md')} CJK 一节给出的合并链接，代替原模板的链接。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就把它推荐的 CJK 字体按规定字重作为一个新的 ${code('family=')} 参数加到原链接上。
+  - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。`;
+  const netZh = `- **不发起其他网络请求**：不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。${ctx.cdnScripts.length ? `\n- **图表**：原版 ${code('template.html')} 从 CDN 加载了脚本（${ctx.cdnScripts.map(code).join('、')}）。不要照搬。图表可以做，但要用内联 SVG（默认）或写在文件里的 canvas 代码绘制。只有用户明确要求时，才内联一份固定版本的图表库。` : ''}`;
+
+  const fontCheckZh = ctx.systemFontsOnly
+    ? '- 文字按 `design.md` 的字体栈渲染，页面中没有网页字体或字体请求；'
+    : `- 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：即使字体加载失败它也会返回 true。应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；只有 URL 本身有误时才修改引入方式；`;
+  const netCheckZh = ctx.systemFontsOnly ? '完全没有网络请求' : '除字体服务外没有其他网络请求';
 
   return `# 用 ${name} 设计系统制作幻灯片
 
@@ -301,12 +329,8 @@ ${baseCss}
 - **固定画布**：结构为 ${code('.deck-viewport > .deck-stage > section.slide')}，每页一个 ${code('section')}。每页都按精确的 1920×1080 px 制作，使用 ${code('design.md')} 中的固定 px 尺寸。用一段内联脚本对 ${code('.deck-stage')} 设置 ${code('transform: translate(x, y) scale(s)')}，其中 ${code('s = min(innerWidth / 1920, innerHeight / 1080)')}，${code('x')}、${code('y')} 使其居中；窗口尺寸变化时重新计算。手机上加黑边（letterbox），绝不重排版式：幻灯片内部不用媒体查询、${code('vw')}/${code('vh')} 单位或 ${code('clamp()')}。${code('design.md')} 中任何相对视口的数值都按 1920×1080 的比例换算。
 ${switching}
 ${deckStageZh}- **翻页**：→ / 空格 / PageDown 下一页，← / PageUp 上一页，Home / End 首页 / 末页，触屏支持滑动；可选支持鼠标滚轮翻页（做防抖，一次滚动只翻一页）。输入框或 contenteditable 元素获得焦点时忽略按键。
-- **字体**：只从 Google Fonts 或 Fontshare 加载，字体族和字重与 ${code('design.md')} 完全一致，每个字体服务只用一个 ${code('<link>')}（Google Fonts 只用一条链接，不要多条）。
-  - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
-  - 幻灯片含中文、日文或韩文：改用 ${code('design.md')} CJK 一节给出的合并链接，代替原模板的链接。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就把它推荐的 CJK 字体按规定字重作为一个新的 ${code('family=')} 参数加到原链接上。
-  - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
-  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。
-- **不发起其他网络请求**：不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。
+${fontsZh}
+${netZh}
 - **细节**：支持 ${code('prefers-reduced-motion')}；${code('<html lang>')} 设为幻灯片语言，${code('<title>')} 设为幻灯片标题；代码各部分用 ${code('/* === SECTION === */')} 注释标出。
 
 ## 5. 硬性约束
@@ -336,8 +360,8 @@ ${deckStageZh}- **翻页**：→ / 空格 / PageDown 下一页，← / PageUp �
    - 每处高亮和强调在所在面板上都清晰可读（没有强调色叠强调色）；
    - CJK 文字中没有以单个字或孤立标点结尾的行；如果有，调整宽度或措辞；
    - 手机上画布保持 16:9 并加黑边；
-   - 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：即使字体加载失败它也会返回 true。应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；只有 URL 本身有误时才修改引入方式；
-   - 控制台无报错，除字体服务外没有其他网络请求。
+   ${fontCheckZh}
+   - 控制台无报错，${netCheckZh}。
 3. 修正后重新检查，直到全部通过。如果无法在浏览器中渲染，要明确说明，并人工审查代码；不要声称检查已通过。
 4. 最后，以观众的视角通读整份幻灯片，修正幻灯片自身互相矛盾的表述（例如某页声称“每页只有一个 X”，实际却用了三次 X）。
 5. 在用户的默认浏览器中打开幻灯片：

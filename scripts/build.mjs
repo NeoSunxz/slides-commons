@@ -23,8 +23,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
+import { thumbnail } from './png-thumb.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, detailPage, creditsPage, setSources, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
@@ -383,9 +385,12 @@ function loadSources() {
   });
 }
 
-function loadTemplates(sources, schema) {
+// `problems` (optional array): per-template problems are collected there instead of
+// stopping at the first one, so the validate script can report everything at once.
+function loadTemplates(sources, schema, problems = null) {
   const all = [];
   const bySlug = new Map();
+  const report = (msg) => { if (problems) problems.push(msg); else fail(msg); };
   for (const src of sources) {
     const tdir = path.join(src.dir, ...src.layout.templatesDir.split('/'));
     if (!exists(tdir)) fail(`source ${src.id}: templates dir ${rel(tdir)} not found`);
@@ -400,7 +405,11 @@ function loadTemplates(sources, schema) {
     for (const dirName of slugs) {
       const dir = path.join(tdir, dirName);
       const metaPath = path.join(dir, src.layout.metaFile);
-      const meta = readJson(metaPath);
+      let meta;
+      try { meta = readJson(metaPath); } catch (e) {
+        if (e instanceof BuildError && problems) { problems.push(e.message); continue; }
+        throw e;
+      }
       const record = {
         ...meta,
         source: src.id,
@@ -408,11 +417,12 @@ function loadTemplates(sources, schema) {
         authors: meta.authors ?? [{ name: src.author, ...(src.authorUrl ? { url: src.authorUrl } : {}) }],
       };
       const errors = validate(record, schema, schema);
-      if (errors.length) fail(`${rel(metaPath)} failed schema validation:\n  - ${errors.join('\n  - ')}`);
-      if (record.slug !== dirName) fail(`${rel(metaPath)}: slug "${record.slug}" does not match its directory "${dirName}"`);
+      if (errors.length) { report(`${rel(metaPath)} failed schema validation:\n  - ${errors.join('\n  - ')}`); continue; }
+      if (record.slug !== dirName) { report(`${rel(metaPath)}: slug "${record.slug}" does not match its directory "${dirName}"`); continue; }
       if (bySlug.has(record.slug)) {
         const other = bySlug.get(record.slug);
-        fail(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)})`);
+        report(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)})`);
+        continue;
       }
       const t = { ...record, dir, src };
       bySlug.set(t.slug, t);
@@ -425,6 +435,28 @@ function loadTemplates(sources, schema) {
 // ---------------------------------------------------------------------------
 // Per-template data for pages, prompt and zip
 // ---------------------------------------------------------------------------
+
+// Small (<= 640 px wide) copy of a screenshot for gallery cards and the detail page.
+// Cached by content hash under node_modules/.cache so only the first build pays for it.
+const THUMB_WIDTH = 640;
+const THUMB_CACHE = path.join(ROOT, 'node_modules', '.cache', 'slides-commons', 'thumbs');
+function smallScreenshot(s) {
+  if (!/\.png$/i.test(s.file)) return null;
+  const buf = fs.readFileSync(s.path);
+  const key = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 20) + `-${THUMB_WIDTH}.png`;
+  const cached = path.join(THUMB_CACHE, key);
+  let data = null;
+  try { data = fs.readFileSync(cached); } catch { /* not cached yet */ }
+  const size = data ? pngSizeOf(data) : null;
+  if (data && size) return { data, ...size };
+  const t = thumbnail(buf, THUMB_WIDTH);
+  if (!t) return null;
+  try { fs.mkdirSync(THUMB_CACHE, { recursive: true }); fs.writeFileSync(cached, t.data); } catch { /* cache is optional */ }
+  return t;
+}
+function pngSizeOf(buf) {
+  return buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47 ? { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) } : null;
+}
 
 function screenshotsFor(src, slug) {
   const dir = path.join(src.dir, ...src.layout.screenshotsDir.split('/'));
@@ -573,6 +605,9 @@ function buildContext(t) {
     cjkFontLinks: fontLinks(cjkSection(designMd)),
     signatureMoves: preview.moves.map((m) => resolveTokens(m, colorMap)),
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
+    // Detected from the template itself, never from slugs:
+    systemFontsOnly: fontLinks(html).length === 0 && !/@font-face/i.test(html),
+    cdnScripts: [...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["'](https?:\/\/[^"']+)["']/gi)].map((m) => m[1]),
     assets,
     hasViewportBase: Boolean(viewportBasePath),
     licenses,
@@ -589,6 +624,93 @@ function buildContext(t) {
   } : null;
 
   return { ctx, designPath, designFrom, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
+}
+
+// ---------------------------------------------------------------------------
+// Checks shared by the build and scripts/validate.mjs
+// ---------------------------------------------------------------------------
+
+// Hosts a template may load things from. (M4 adds api.fontshare.com.)
+const HOST_WHITELIST = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
+
+// Hosts of external subresources found by a static scan of src / srcset / <link href> /
+// @import / url(). Comments, xmlns attributes, plain <a href> links and data: URIs are
+// not requests and are ignored.
+function externalHosts(text) {
+  const html = text.replace(/<!--[\s\S]*?-->/g, '');
+  const urls = [];
+  const attr = /\b(src|srcset|poster|data|href|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+  for (const m of html.matchAll(/<(script|img|iframe|source|video|audio|embed|object|image|use|link|input)\b[^>]*>/gi)) {
+    const tag = m[1].toLowerCase();
+    for (const a of m[0].matchAll(attr)) {
+      const name = a[1].toLowerCase();
+      if ((name === 'href' || name === 'xlink:href') && !['link', 'image', 'use'].includes(tag)) continue;
+      const v = a[2] ?? a[3];
+      if (name === 'srcset') urls.push(...v.split(',').map((x) => x.trim().split(/\s+/)[0]));
+      else urls.push(v);
+    }
+  }
+  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1])
+    .concat([...html.matchAll(/\bstyle\s*=\s*"([^"]*)"/gi)].map((m) => m[1]))
+    .join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const m of css.matchAll(/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)/gi)) urls.push(m[1]);
+  for (const m of css.matchAll(/url\(\s*["']?([^"')]+)/gi)) urls.push(m[1]);
+  const hosts = new Set();
+  for (const raw of urls) {
+    const u = raw.trim();
+    if (!/^(?:https?:)?\/\//i.test(u)) continue;
+    try { hosts.add(new URL(u.startsWith('//') ? 'https:' + u : u).host.toLowerCase()); } catch { hosts.add(u); }
+  }
+  return [...hosts];
+}
+
+// Collect every problem with the loaded templates (does not stop at the first one).
+function checkTemplates(templates, problems, { strictScreenshots = true } = {}) {
+  for (const t of templates) {
+    const at = `${t.slug}:`;
+    if (typeof t.license !== 'string' || !t.license) problems.push(`${at} no license (set it in the source or the template)`);
+    if (!t.authors?.length || t.authors.some((a) => !a.name)) problems.push(`${at} no author to credit`);
+
+    // Attribution and back-link target.
+    const L = t.src.layout;
+    const expected = urlJoin(t.src.repo, 'tree', t.src.branch, L.templatesDir, t.slug);
+    if (!/^https:\/\/.+\/tree\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
+
+    if (!screenshotsFor(t.src, t.slug).length) {
+      const msg = `${at} no screenshot in ${rel(path.join(t.src.dir, ...L.screenshotsDir.split('/')))} named ${t.slug}-<n>.png`;
+      if (strictScreenshots) problems.push(msg); else warn(msg);
+    }
+
+    let info;
+    try { info = buildContext(t); } catch (e) {
+      if (e instanceof BuildError) { problems.push(e.message); continue; }
+      throw e;
+    }
+    if (!info.ctx.description) problems.push(`${at} ${rel(info.designPath)} has no front matter "description"`);
+
+    // Static host scan of the template and its sibling stylesheets.
+    const texts = [[L.htmlFile, info.html]];
+    for (const a of info.assets) {
+      if (/\.css$/i.test(a)) texts.push([a, read(path.join(t.dir, ...a.split('/')))]);
+    }
+    for (const [name, text] of texts) {
+      const bad = externalHosts(text).filter((h) => !HOST_WHITELIST.includes(h));
+      if (bad.length) problems.push(`${at} ${name} loads from non-whitelisted host(s): ${bad.join(', ')}`);
+    }
+  }
+}
+
+// Load sources and templates and run all checks. Returns what the build needs.
+// The build only warns about a missing screenshot (the page still works without a
+// thumbnail); scripts/validate.mjs treats it as an error.
+function loadAndCheck({ strictScreenshots = true } = {}) {
+  const schema = readJson(path.join(SRC, 'schema', 'template.schema.json'));
+  const sources = loadSources();
+  const problems = [];
+  const { templates, bySlug } = loadTemplates(sources, schema, problems);
+  checkTemplates(templates, problems, { strictScreenshots });
+  if (!templates.length && !problems.length) problems.push('no templates found');
+  return { sources, templates, bySlug, problems };
 }
 
 // ---------------------------------------------------------------------------
@@ -702,10 +824,8 @@ function preparePreview(html, bridge, dir, slug) {
 
 function main() {
   const started = Date.now();
-  const schema = readJson(path.join(SRC, 'schema', 'template.schema.json'));
-  const sources = loadSources();
-  const { templates, bySlug } = loadTemplates(sources, schema);
-  if (!templates.length) fail('no templates found');
+  const { sources, templates, bySlug, problems } = loadAndCheck({ strictScreenshots: false });
+  if (problems.length) fail(`${problems.length} problem(s) found:\n- ${problems.join('\n- ').replace(/\n  - /g, '\n    - ')}`);
 
   const bridge = read(path.join(SRC, 'preview-bridge.js'));
   const zipTime = zipTimestamp();
@@ -717,6 +837,7 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'styles.css'), path.join(SITE, 'assets', 'site.css'));
   fs.copyFileSync(path.join(SRC, 'detail.js'), path.join(SITE, 'assets', 'detail.js'));
   fs.copyFileSync(path.join(SRC, 'site.js'), path.join(SITE, 'assets', 'site.js'));
+  fs.copyFileSync(path.join(SRC, 'gallery.js'), path.join(SITE, 'assets', 'gallery.js'));
 
   setSources(sources.filter((s) => templates.some((t) => t.source === s.id)));
 
@@ -727,11 +848,19 @@ function main() {
 
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);
-    if (!shots.length) warn(`${t.slug}: no screenshots found`);
     for (const s of shots) {
       const dest = path.join(SITE, 'assets', 'screenshots', s.file);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(s.path, dest);
+      const small = smallScreenshot(s);
+      if (small) {
+        const sd = path.join(SITE, 'assets', 'screenshots', 'thumbs', s.file);
+        fs.mkdirSync(path.dirname(sd), { recursive: true });
+        fs.writeFileSync(sd, small.data);
+        s.small = { file: `thumbs/${s.file}`, width: small.width, height: small.height };
+      } else {
+        s.small = { file: s.file, width: s.width, height: s.height };
+      }
     }
 
     // Preview copy: template dir minus meta/design files, bridge injected into the HTML copy.
@@ -836,12 +965,17 @@ function main() {
     (warnings.length ? ` (${warnings.length} warning(s))` : ''));
 }
 
-try {
-  main();
-} catch (e) {
-  if (e instanceof BuildError) {
-    console.error(`build failed: ${e.message}`);
-    process.exit(1);
+export { loadAndCheck, BuildError, rel, SOURCES_FILE };
+
+// Run only when executed directly (scripts/validate.mjs imports this file).
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (e) {
+    if (e instanceof BuildError) {
+      console.error(`build failed: ${e.message}`);
+      process.exit(1);
+    }
+    throw e;
   }
-  throw e;
 }

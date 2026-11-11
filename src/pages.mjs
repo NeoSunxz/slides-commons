@@ -40,6 +40,11 @@ const STRINGS = {
     intro: 'Preview a template, download its asset pack, and hand the prompt to your coding agent to build your own deck.',
     steps: ['<strong>Preview</strong> a template and page through it.', '<strong>Download</strong> the asset pack and unzip it.', '<strong>Paste the prompt</strong> into your coding agent in that folder.'],
     indexTitle: `${SITE_NAME}: HTML slide templates for coding agents`,
+    filters: {
+      label: 'Filter templates', search: 'Search', searchPlaceholder: 'Name, mood, tone, use…', source: 'Source', scheme: 'Scheme', mood: 'Mood',
+      moreMoods: 'More moods', clear: 'Clear filters', count: '{n} of {total} templates', none: 'No template matches these filters.',
+    },
+    schemeNames: { light: 'Light', dark: 'Dark', mixed: 'Mixed' },
     by: (who) => `by ${who}`,
     byFrom: (who, from) => `by ${who} · from ${from}`,
     allTemplates: '← All templates',
@@ -90,6 +95,11 @@ const STRINGS = {
     intro: '在线预览模板，下载素材包，把提示词交给你的 coding agent，生成你自己的幻灯片。',
     steps: ['<strong>预览</strong>模板并翻页查看。', '<strong>下载</strong>素材包并解压。', '在该文件夹中把<strong>提示词</strong>粘贴给你的 coding agent。'],
     indexTitle: `${SITE_NAME}：给 coding agent 用的 HTML 幻灯片模板`,
+    filters: {
+      label: '筛选模板', search: '搜索', searchPlaceholder: '名称、情绪、语气、用途……', source: '来源', scheme: '配色方案', mood: '情绪',
+      moreMoods: '更多情绪', clear: '清除筛选', count: '共 {total} 个模板，显示 {n} 个', none: '没有符合筛选条件的模板。',
+    },
+    schemeNames: { light: '浅色', dark: '深色', mixed: '混合' },
     by: (who) => `作者：${who}`,
     byFrom: (who, from) => `作者：${who} · 来源：${from}`,
     allTemplates: '← 全部模板',
@@ -221,21 +231,42 @@ function footer(lang, home) {
 
 export function indexPage({ templates, lang }) {
   const S = STRINGS[lang];
+  const F = S.filters;
   const page = 'index.html';
   const root = rootFor(pagePath(lang, page));
+
   const cards = templates.map((t) => {
-    const img = t.thumb
-      ? `<img src="${root}assets/screenshots/${esc(t.thumb.file)}" width="${t.thumb.width}" height="${t.thumb.height}" loading="lazy" alt="">`
+    const small = t.thumb?.small;
+    const img = small
+      ? `<img src="${root}assets/screenshots/${esc(small.file)}" width="${small.width}" height="${small.height}" loading="lazy" decoding="async" alt="">`
       : '<div class="noimg"></div>';
-    return `<li><a class="card" href="t/${esc(t.slug)}/">
+    const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
+    return `<li data-source="${esc(t.source)}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
     ${img}
     <div class="card-body">
-      <h2>${esc(t.name)}</h2>
+      <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
       <p lang="en">${esc(t.tagline)}</p>
-      <p class="by">${esc(S.by(t.authors.map((a) => a.name).join(', ')))}</p>
+      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}</p>
     </div>
   </a></li>`;
   }).join('\n');
+
+  // Filter groups are built from the data, so new sources / schemes / moods appear on their own.
+  const count = (fn) => { const m = new Map(); for (const t of templates) for (const v of fn(t)) m.set(v, (m.get(v) ?? 0) + 1); return m; };
+  const chip = (group, value, label, n) =>
+    `<button type="button" class="chip" data-group="${group}" data-value="${esc(value)}" aria-pressed="false"${group === 'mood' ? ' lang="en"' : ''}>${esc(label)} <span class="n">${n}</span></button>`;
+
+  const sources = footerSources.filter((s) => templates.some((t) => t.source === s.id));
+  const sourceGroup = sources.length > 1
+    ? `<div class="fgroup" role="group" aria-label="${F.source}"><span class="flabel">${F.source}</span>${sources.map((s) => chip('source', s.id, s.name, templates.filter((t) => t.source === s.id).length)).join('')}</div>`
+    : '';
+  const schemes = count((t) => [t.scheme]);
+  const schemeGroup = `<div class="fgroup" role="group" aria-label="${F.scheme}"><span class="flabel">${F.scheme}</span>${['light', 'dark', 'mixed'].filter((v) => schemes.has(v)).map((v) => chip('scheme', v, S.schemeNames[v], schemes.get(v))).join('')}</div>`;
+  const moods = [...count((t) => t.mood.map((m) => m.toLowerCase()))].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const common = moods.filter(([, n]) => n >= 2);
+  const rare = moods.filter(([, n]) => n < 2).sort((a, b) => a[0].localeCompare(b[0]));
+  const moodGroup = `<div class="fgroup" role="group" aria-label="${F.mood}"><span class="flabel">${F.mood}</span>${common.map(([v, n]) => chip('mood', v, v, n)).join('')}${rare.length ? `<details class="more"><summary>${F.moreMoods} (${rare.length})</summary>${rare.map(([v, n]) => chip('mood', v, v, n)).join('')}</details>` : ''}</div>`;
+
   const body = `<section class="intro">
   <h1>${esc(S.tagline)}</h1>
   <p class="lead">${esc(S.intro)}</p>
@@ -243,10 +274,18 @@ export function indexPage({ templates, lang }) {
     ${S.steps.map((s) => `<li>${s}</li>`).join('\n    ')}
   </ol>
 </section>
-<ul class="grid">
+<section class="filters" id="filters" aria-label="${F.label}" hidden>
+  <div class="fsearch"><label for="q">${F.search}</label><input id="q" type="search" placeholder="${esc(F.searchPlaceholder)}" autocomplete="off"></div>
+  ${sourceGroup}
+  ${schemeGroup}
+  ${moodGroup}
+  <p class="fstatus"><span id="fcount" role="status" aria-live="polite" data-template="${esc(F.count)}" data-total="${templates.length}"></span> <button type="button" id="fclear" class="linklike" hidden>${F.clear}</button></p>
+</section>
+<ul class="grid" id="grid">
 ${cards}
-</ul>`;
-  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, redirectToPreferred: lang === 'en' });
+</ul>
+<p id="fnone" class="muted" hidden>${F.none}</p>`;
+  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/gallery.js'], redirectToPreferred: lang === 'en' });
 }
 
 export function detailPage(t, lang) {
@@ -261,14 +300,14 @@ export function detailPage(t, lang) {
   const typo = Object.entries(t.typography).filter(([k]) => k !== 'style')
     .map(([k, v]) => `<li><span class="k">${esc(S.typoRoles[k] ?? k)}</span> ${esc(v)}</li>`).join('');
   const tags = (arr) => arr.map((x) => `<span class="tag"${en}>${esc(x)}</span>`).join(' ');
-  const shots = t.screenshots.map((s) => `<a href="${root}assets/screenshots/${esc(s.file)}"><img src="${root}assets/screenshots/${esc(s.file)}" width="${s.width}" height="${s.height}" loading="lazy" alt="${esc(S.shotAlt(t.name, s.n))}"></a>`).join('');
+  const shots = t.screenshots.map((s) => `<a href="${root}assets/screenshots/${esc(s.file)}"><img src="${root}assets/screenshots/${esc((s.small ?? s).file)}" width="${(s.small ?? s).width}" height="${(s.small ?? s).height}" loading="lazy" decoding="async" alt="${esc(S.shotAlt(t.name, s.n))}"></a>`).join('');
   const previewHref = `${root}preview/${esc(t.slug)}/${esc(t.htmlFile)}`;
   const promptId = lang === 'zh' ? 'prompt-zh' : 'prompt-en';
   const promptText = lang === 'zh' ? t.promptZh : t.promptEn;
 
   const body = `<p class="crumb"><a href="${home}index.html">${S.allTemplates}</a></p>
 <section class="hero">
-  <h1>${esc(t.name)}</h1>
+  <h1${en}>${esc(t.name)}</h1>
   <p class="tagline"${en}>${esc(t.tagline)}</p>
   <p class="by">${S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
@@ -349,7 +388,7 @@ export function creditsPage({ sources, templates, lang }) {
   const page = 'credits.html';
   const blocks = sources.map((s) => {
     const list = templates.filter((t) => t.source === s.id)
-      .map((t) => `<li><a href="t/${esc(t.slug)}/">${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${esc(t.license)}</li>`).join('\n');
+      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${esc(t.license)}</li>`).join('\n');
     return `<section class="credit">
   <h2>${esc(s.name)}</h2>
   <p>${S.creditsSource(s)}</p>

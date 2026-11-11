@@ -30,8 +30,7 @@
         "designOverride": "bold-template-pack/templates/{slug}/design.md",
         "previewCard": "bold-template-pack/templates/{slug}/preview.md",
         "viewportBase": "viewport-base.css"
-      },
-      "include": ["neo-grid-bold"]
+      }
     }
   ]
 }

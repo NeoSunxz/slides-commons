@@ -26,6 +26,7 @@
       if (!m || m.type !== 'slides-commons:state') return;
       if (typeof m.index !== 'number' || typeof m.total !== 'number') return;
       counter.textContent = (m.index + 1) + ' / ' + m.total;
+      if (m.via) counter.setAttribute('data-via', m.via);
       // Slide count comes from the running deck, not from template.json metadata.
       var total = document.getElementById('slide-total');
       if (total) total.textContent = String(m.total);
@@ -42,8 +43,9 @@
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
       var t = e.target;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-      if (e.key === 'ArrowRight') { nav('next'); e.preventDefault(); }
-      else if (e.key === 'ArrowLeft') { nav('prev'); e.preventDefault(); }
+      // Same limits as the buttons: some decks wrap around at the ends, the page does not.
+      if (e.key === 'ArrowRight') { if (!next.disabled) nav('next'); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { if (!prev.disabled) nav('prev'); e.preventDefault(); }
     });
   }
 
