@@ -176,6 +176,19 @@ zip（以 `<slug>/` 为根）：
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
 - 提示词改动后用"全新 agent + 空目录 + 只给 zip 和提示词"做模拟验收，最能暴露问题
 
+### 计划：提示词自动下载素材包（M3 部署 Pages 后开发）
+
+目标：用户只复制提示词，agent 自己下载并解压素材包，无需手动下载。网页"下载素材包"按钮保留（离线/受限网络用）。
+
+前提：zip 需要公网地址，依赖 M3 的 GitHub Pages 部署。
+
+设计：
+- 站点地址配置项 `siteUrl`（配置文件 + 环境变量 `SC_SITE_URL` 覆盖），预期默认 `https://neosunxz.github.io/slides-commons/`（自定义域名则改此项，待维护者确认）。
+- 构建时把 `<siteUrl>zip/<slug>.zip` 写入提示词（EN/ZH 两份）。未配置 `siteUrl`（如本地预览）时，提示词不含下载步骤，保持现状。
+- 提示词 §0 改为：先看当前目录是否已有 `<slug>/` 文件夹或 zip → 没有则下载，按顺序尝试，命令缺失或失败就换下一个：`curl -fLO <url>` → `wget <url>` → PowerShell `Invoke-WebRequest -Uri <url> -OutFile <file>`；下载后沿用现有解压回退链；全部失败再请用户手动下载。
+- 校验：zip 内 PROMPT.md 与网页提示词仍逐字节一致（同一份 siteUrl 生成）；测试加：配置了 siteUrl 时提示词含该网址与下载命令链，未配置时不含。
+- 验收：模拟验收时只给提示词、不放 zip，让全新 agent 自行下载完成（需 Pages 已上线）。
+
 ### M2 待处理事项（来自 M1）
 - raw-grid 原版用系统字体栈，与提示词"只用 Google Fonts/Fontshare"冲突；coral、cartesian、retro-windows 依赖 jsdelivr 的 chart.js，与"无 CDN"冲突 → 提示词需按模板加例外
 - schema `additionalProperties: false`：上游新增字段会让构建失败（有意为之，可作为上游变化的告警）
