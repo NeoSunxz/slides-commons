@@ -50,7 +50,7 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 主会话（Opus）只做编排：拆任务、派给子 agent、审结果，不直接写业务代码。
 
 子 agent（`.claude/agents/`）：
-- `site-builder`：实现构建脚本和页面，只改 `scripts/` 和 `src/`
+- `site-builder`：实现构建脚本和页面，只改 `scripts/`、`src/` 和 `.github/workflows/`（M3 起；维护者 2026-11-12 同意）
 - `site-tester`：构建并用 Playwright 验证，只写 `tests/`，只报告问题不修复
 - `release-manager`：提交、更新 CHANGELOG、准备发版，禁止 push 和改写历史
 - （M6 时新增）`template-designer`：只允许写 `collections/neosun/`
@@ -176,7 +176,10 @@ zip（以 `<slug>/` 为根）：
   - 上游小错误：monochrome 演示文案写 11/18，实际 16 页，站点显示 16。
 - 2026-11-12：M2 反馈迭代：预览 iframe 固定 1920×1080 后整体缩放（与截图一致）；预览内滚轮拦截、一次手势翻一页、页码随任何来源同步；详情页 1440px 两栏 + 右侧 sticky 面板；中文译文接入（见上表）；页码初始化改为页面反复 ping 直到收到首个状态。`npm test` 337 通过 1 跳过（约 3 分钟）。
   - 待补：给 i18n 加 `SC_I18N_DIR` 之类的注入点，使「缺译文回退 / 译文过期告警 / zh.json 结构错误」可测（目前该测试 skip）。
-- 下一步：等维护者确认后发版（dev → main PR）；然后 M3（CI + Pages，含提示词自动下载素材包、自托管字体计划）。
+- 2026-11-12：M2 经维护者实测通过。M3 开发：`.github/workflows/ci.yml`（pull_request→dev/main，validate + test，只读权限，Action 全部固定到提交哈希）与 `pages.yml`（push main → 构建并部署，构建时 `SC_SITE_URL=https://<owner>.github.io/<repo>/`，产物自检）。提示词自动下载素材包已实现：`SC_SITE_URL` / `--site-url`（未设置时产物与之前逐字节一致）；`SC_I18N_DIR` / `--i18n-dir` 使翻译缺失/过期/结构错误可测。`npm test` 371 通过 0 跳过（约 3.3 分钟）。
+  - 工作流尚未在 GitHub 上实际运行过。Pages 检查里 zip 数量 34 是写死的，增减模板/来源时同步修改。
+  - 维护者一次性设置：默认分支 dev；Pages source = GitHub Actions；main 分支保护（需 PR + 必过检查 `validate + test`，禁强推）。
+- 下一步：合并 M1–M3 的发版 PR（dev → main，因为 Pages 工作流需先存在于 main）；上线后做一次「只给提示词、不放 zip」的自动下载模拟验收；再做自托管字体与 M4。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`

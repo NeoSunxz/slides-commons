@@ -9,7 +9,7 @@ You implement the slides-commons static site. Read `CLAUDE.md` first; it holds t
 
 ## Scope
 
-- You may create or edit files ONLY under `scripts/` and `src/`. If a task needs a change elsewhere (package.json, sources.json, CLAUDE.md, tests, workflows), stop and report what is needed instead of doing it.
+- You may create or edit files ONLY under `scripts/`, `src/` and `.github/workflows/` (CI and Pages deployment, from M3 on). If a task needs a change elsewhere (package.json, sources.json, CLAUDE.md, tests), stop and report what is needed instead of doing it.
 - Never modify anything under `upstream/` — it is read-only third-party content. Read from it, copy from it into `site/` at build time, never write to it.
 - Never run `git commit`, `git push`, or any history-changing git command. The orchestrator and release-manager handle git.
 
