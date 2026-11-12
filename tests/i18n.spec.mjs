@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { test, expect } from './font-cache.mjs';
-import { SITE, SLUG, EXTERNAL_WHITELIST, countUpstreamSlides, monitor, artifactPath, settled, fontLoaded, hostOf, previewFrame } from './helpers.mjs';
+import { SITE, SLUG, zhNameTokens, zhEnglishRuns, EXTERNAL_WHITELIST, countUpstreamSlides, monitor, artifactPath, settled, fontLoaded, hostOf, previewFrame } from './helpers.mjs';
 
 const N = countUpstreamSlides();
 const UPSTREAM_DIR = `https://github.com/zarazhangrui/beautiful-html-templates/tree/main/templates/${SLUG}`;
@@ -81,13 +81,7 @@ function collectText(page) {
 
 const CJK = /[　-〿㐀-鿿豈-﫿＀-￯]/;
 // Proper nouns and identifiers allowed untranslated on zh pages.
-const ZH_ALLOW = [
-  /(https?:\/\/)?github\.com\/\S*/g, /Beautiful HTML Templates/g, /Frontend Slides/g, /\bHTML\b/g,
-  /Neo-Grid Bold/g, /Zara Zhang/g, /beautiful-html-templates/g, /frontend-slides/g, /slides-commons/g,
-  /Space Grotesk/g, /JetBrains Mono/g, /\bMIT\b/g, /\bGitHub\b/g,
-  /Claude Code/g, /\bCodex\b/g, /\bCursor\b/g, /coding agent/g, /\bEsc\b/g,
-  /\b[\w-]+\.(md|css|js|html|zip)\b/g, /\.zip\b/g, /#[0-9A-Fa-f]{3,8}\b/g,
-];
+
 
 test('en pages: no CJK outside the 中文 switcher', async ({ page }) => {
   const bad = [];
@@ -100,26 +94,32 @@ test('en pages: no CJK outside the 中文 switcher', async ({ page }) => {
   expect(bad).toEqual([]);
 });
 
-test('zh pages: chrome is Chinese; English only under lang="en" or allowlisted names', async ({ page }) => {
+test('zh pages: chrome is Chinese; no run of 3+ English words outside lang="en"', async ({ page }) => {
   const bad = [];
+  const extra = zhNameTokens();
   for (const [name, httpPath] of PAGES.zh) {
     await page.goto(httpPath);
     for (const t of await collectText(page)) {
       if (t.lang.startsWith('en') || t.inCode) continue;
-      let rest = t.text;
-      for (const re of ZH_ALLOW) rest = rest.replace(re, ' ');
-      if (/[A-Za-z]{2,}/.test(rest)) bad.push(`${name} <${t.tag}> .${t.where}: ${t.text.slice(0, 80)}  [left: ${rest.replace(/\s+/g, ' ').trim().slice(0, 40)}]`);
+      const runs = zhEnglishRuns(t.text, extra);
+      if (runs.length) bad.push(`${name} <${t.tag}> .${t.where}: ${t.text.slice(0, 80)}  [English: ${runs.join(' | ').slice(0, 60)}]`);
     }
   }
   expect(bad).toEqual([]);
 });
 
-test('zh pages: data blocks from upstream are marked lang="en" and introduced by p.source-note', async ({ page }) => {
+test('zh detail: upstream data is shown in Chinese (no lang="en" blocks except the template name), with a translation note', async ({ page }) => {
   await page.goto(`zh/t/${SLUG}/`);
-  await expect(page.locator('p.source-note')).toHaveCount(1);
-  await expect(page.locator('p.source-note')).toHaveText(/[一-鿿]/);
-  await expect(page.locator('.hero .tagline')).toHaveAttribute('lang', 'en');
-  expect(await page.locator('section.about [lang="en"]').count()).toBeGreaterThan(3);
+  const note = page.locator('p.source-note');
+  await expect(note).toHaveCount(1);
+  await expect(note).toHaveText(/以下介绍由本站翻译，以英文原文为准。/);
+  await expect(note.locator(`a[href="https://github.com/zarazhangrui/beautiful-html-templates/tree/main/templates/${SLUG}"]`)).toHaveCount(1);
+  const marked = await page.locator('main [lang="en"]').evaluateAll((els) => els.map((e) => `${e.tagName.toLowerCase()}: ${e.textContent.trim().slice(0, 40)}`));
+  expect(marked, 'English-marked elements in main').toEqual(['h1: Neo-Grid Bold']);
+  for (const sel of ['.hero .tagline', 'section.about > p:not(.source-note)', 'dl.meta dd', 'section.about .muted']) {
+    const texts = await page.locator(`main ${sel}`).allTextContents();
+    for (const t of texts) if (/[A-Za-z]{4,}/.test(t) && !CJK.test(t)) expect.soft(CJK.test(t), `${sel} is English-only: ${t.slice(0, 50)}`).toBe(true);
+  }
 });
 
 test('both trees: lang switch markup and hreflang alternates point at the counterpart page', async ({ page }) => {

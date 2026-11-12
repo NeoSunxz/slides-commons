@@ -215,3 +215,42 @@ export const SAMPLE_SLUGS = [...new Set([
 export function readSiteZip(outDir, slug) {
   return readZip(fs.readFileSync(path.join(outDir, 'zip', `${slug}.zip`)));
 }
+
+// ---------------------------------------------------------------------------
+// Chinese-page text rules
+// ---------------------------------------------------------------------------
+export const ZH_ALLOW = [
+  /(https?:\/\/)?github\.com\/\S*/g, /Beautiful HTML Templates/g, /Frontend Slides/g, /\bHTML\b/g,
+  /Neo-Grid Bold/g, /Zara Zhang/g, /beautiful-html-templates/g, /frontend-slides/g, /slides-commons/g,
+  /Space Grotesk/g, /JetBrains Mono/g, /\bMIT\b/g, /\bGitHub\b/g,
+  /Claude Code/g, /\bCodex\b/g, /\bCursor\b/g, /coding agent/g, /\bEsc\b/g,
+  /\b[\w-]+\.(md|css|js|html|zip)\b/g, /\.zip\b/g, /#[0-9A-Fa-f]{3,8}\b/g,
+];
+// Latin tokens that legitimately appear inside Chinese sentences: product / font names (from the
+// template's own data), acronyms and the allowlist above. Anything left must not form a run of
+// 3 or more English words.
+export function zhEnglishRuns(text, extraTokens = []) {
+  let rest = text;
+  for (const re of ZH_ALLOW) rest = rest.replace(re, ' ');
+  for (const tok of extraTokens.filter(Boolean).sort((a, b) => b.length - a.length)) {
+    rest = rest.split(tok).join(' ');
+  }
+  return rest.match(/(?:\b[A-Za-z][A-Za-z'-]*\b[\s,]+){2,}\b[A-Za-z][A-Za-z'-]*\b/g) ?? [];
+}
+
+
+/** zh.json (the Chinese translations of upstream data). */
+export const ZH_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'i18n', 'zh.json'), 'utf8'));
+export const ZH_SOURCES = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'i18n', 'zh.sources.json'), 'utf8'));
+
+/** Names that may stay Latin inside Chinese sentences: template names, font names, palette keys, tag keys. */
+export function zhNameTokens(slugs = ALL_SLUGS) {
+  const out = new Set(Object.keys(ZH_JSON.terms));
+  for (const slug of slugs) {
+    const m = upstreamMeta(slug);
+    out.add(m.name);
+    Object.entries(m.typography).filter(([k]) => k !== 'style').forEach(([, v]) => out.add(v));
+    Object.keys(m.palette).filter((k) => k !== 'description').forEach((k) => out.add(k));
+  }
+  return [...out];
+}
