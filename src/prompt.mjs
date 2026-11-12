@@ -13,6 +13,7 @@
 //   paletteNote,               // template.json palette.description (may be '')
 //   typography: [{role, family}], typographyStyle,
 //   fontLinks: [url],          // stylesheet URLs (Google Fonts / Fontshare) found in template.html
+//   zh: { description, palette_description, typography_style } | null,  // Chinese translations (zh prompt only)
 //   cjkFontLinks: [url],       // the same, found in design.md's CJK section (may be empty)
 //   signatureMoves: [string],  // preview card "Preview Ingredients", tokens resolved
 //   stageBg: {name, value}|null,
@@ -224,14 +225,19 @@ function filesZh(ctx) {
 
 function glanceZh(ctx) {
   const L = [];
-  if (ctx.description) L.push(`- **风格特征**（原文）：${ctx.description}`);
-  L.push(`- **情绪 / 语气**：${ctx.mood.join(', ')} / ${ctx.tone.join(', ')}。配色方案：${ctx.scheme}。`);
+  if (ctx.zh?.description) L.push(`- **风格特征**：${ctx.zh.description}`);
+  else if (ctx.description) L.push(`- **风格特征**（原文）：${ctx.description}`);
+  const zhTags = (zhArr, arr) => (zhArr && zhArr.every(Boolean) ? zhArr.join('、') : arr.join(', '));
+  const zhScheme = { light: '浅色', dark: '深色', mixed: '混合' }[ctx.scheme] ?? ctx.scheme;
+  L.push(`- **情绪 / 语气**：${zhTags(ctx.zh?.mood, ctx.mood)} / ${zhTags(ctx.zh?.tone, ctx.tone)}。配色方案：${zhScheme}。`);
   L.push('- **配色**（只允许使用这些颜色，取值必须完全一致）：');
   for (const c of ctx.colors) L.push(`  - ${code(c.name)} ${c.value}`);
-  if (ctx.paletteNote) L.push(`  - 用法（原文）：${ctx.paletteNote}.`);
+  if (ctx.zh?.palette_description) L.push(`  - 用法：${ctx.zh.palette_description}。`);
+  else if (ctx.paletteNote) L.push(`  - 用法（原文）：${ctx.paletteNote}.`);
   if (ctx.typography.length) {
     const t = ctx.typography.map((x) => `${x.role} ${x.family}`).join('；');
-    L.push(`- **字体**：${t}${ctx.typographyStyle ? `（原文：${ctx.typographyStyle}）` : ''}。`);
+    const style = ctx.zh?.typography_style ? `（${ctx.zh.typography_style}）` : ctx.typographyStyle ? `（原文：${ctx.typographyStyle}）` : '';
+    L.push(`- **字体**：${t}${style}。`);
   }
   if (ctx.systemFontsOnly) {
     L.push('- **字体加载**：无。原模板使用系统字体栈；系统字体就是设计本身，不要添加网页字体。');

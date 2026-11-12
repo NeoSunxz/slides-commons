@@ -20,11 +20,19 @@
     prev.addEventListener('click', function () { nav('prev'); });
     next.addEventListener('click', function () { nav('next'); });
 
+    // The preview may finish loading before this script runs, or its first report may be
+    // sent before we listen, so ask for the position until the first answer arrives.
+    var gotState = false;
+    function ping() {
+      try { frame.contentWindow.postMessage({ type: 'slides-commons:ping' }, '*'); } catch (e) { /* not ready */ }
+    }
+
     window.addEventListener('message', function (e) {
       if (e.source !== frame.contentWindow) return;
       var m = e.data;
       if (!m || m.type !== 'slides-commons:state') return;
       if (typeof m.index !== 'number' || typeof m.total !== 'number') return;
+      gotState = true;
       counter.textContent = (m.index + 1) + ' / ' + m.total;
       if (m.via) counter.setAttribute('data-via', m.via);
       // Slide count comes from the running deck, not from template.json metadata.
@@ -34,9 +42,13 @@
       next.disabled = m.index >= m.total - 1;
     });
 
-    frame.addEventListener('load', function () {
-      frame.contentWindow.postMessage({ type: 'slides-commons:ping' }, '*');
-    });
+    frame.addEventListener('load', ping);
+    ping(); // right after the listener is attached
+    var pings = 0;
+    var pinger = setInterval(function () {
+      if (gotState || ++pings > 40) { clearInterval(pinger); return; } // ~10 s
+      ping();
+    }, 250);
 
     // Arrow keys on the page itself (when focus is not in a form field / the frame).
     document.addEventListener('keydown', function (e) {
@@ -47,6 +59,29 @@
       if (e.key === 'ArrowRight') { if (!next.disabled) nav('next'); e.preventDefault(); }
       else if (e.key === 'ArrowLeft') { if (!prev.disabled) nav('prev'); e.preventDefault(); }
     });
+  }
+
+  // --- Scale the preview -----------------------------------------------------
+  // The page inside the iframe always lays out at 1920x1080 (like the screenshots) and is
+  // scaled to the frame, so viewport-fluid templates look the same at any frame size, in
+  // fullscreen and on phones. Without JS the iframe simply fills the frame.
+  var box = document.getElementById('preview-wrap');
+  function fit() {
+    if (!box || !frame) return;
+    var w = box.clientWidth, h = box.clientHeight;
+    if (!w || !h) return;
+    var k = Math.min(w / 1920, h / 1080);
+    box.style.setProperty('--s', String(k));
+    box.style.setProperty('--x', Math.max(0, (w - 1920 * k) / 2) + 'px');
+    box.style.setProperty('--y', Math.max(0, (h - 1080 * k) / 2) + 'px');
+  }
+  if (box && frame) {
+    box.classList.add('scaled');
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(box);
+    window.addEventListener('resize', fit);
+    document.addEventListener('fullscreenchange', fit);
+    document.addEventListener('webkitfullscreenchange', fit);
   }
 
   // --- Fullscreen ------------------------------------------------------------

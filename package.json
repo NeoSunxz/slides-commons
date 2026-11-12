@@ -12,7 +12,8 @@
     "build": "node scripts/build.mjs",
     "serve": "node scripts/serve.mjs",
     "test": "playwright test -c tests",
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "i18n:sync": "node scripts/i18n-sync.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0"

@@ -27,6 +27,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
+import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, detailPage, creditsPage, setSources, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
@@ -666,6 +667,7 @@ function externalHosts(text) {
 
 // Collect every problem with the loaded templates (does not stop at the first one).
 function checkTemplates(templates, problems, { strictScreenshots = true } = {}) {
+  const items = []; // { t, description } for the i18n check
   for (const t of templates) {
     const at = `${t.slug}:`;
     if (typeof t.license !== 'string' || !t.license) problems.push(`${at} no license (set it in the source or the template)`);
@@ -686,6 +688,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
       if (e instanceof BuildError) { problems.push(e.message); continue; }
       throw e;
     }
+    items.push({ t, description: info.ctx.description });
     if (!info.ctx.description) problems.push(`${at} ${rel(info.designPath)} has no front matter "description"`);
 
     // Static host scan of the template and its sibling stylesheets.
@@ -698,6 +701,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
       if (bad.length) problems.push(`${at} ${name} loads from non-whitelisted host(s): ${bad.join(', ')}`);
     }
   }
+  return items;
 }
 
 // Load sources and templates and run all checks. Returns what the build needs.
@@ -708,9 +712,13 @@ function loadAndCheck({ strictScreenshots = true } = {}) {
   const sources = loadSources();
   const problems = [];
   const { templates, bySlug } = loadTemplates(sources, schema, problems);
-  checkTemplates(templates, problems, { strictScreenshots });
+  const items = checkTemplates(templates, problems, { strictScreenshots });
   if (!templates.length && !problems.length) problems.push('no templates found');
-  return { sources, templates, bySlug, problems };
+  // Chinese translations: structural problems are errors, missing / stale ones warnings.
+  const { zh, sources: zhSources } = loadZh(problems);
+  const strictSlugs = SOURCES_FILE === path.join(ROOT, 'sources.json') && !sources.some((s) => s.include);
+  checkZh({ zh, sources: zhSources }, items, problems, warn, { strictSlugs });
+  return { sources, templates, bySlug, problems, zh };
 }
 
 // ---------------------------------------------------------------------------
@@ -817,6 +825,10 @@ function preparePreview(html, bridge, dir, slug) {
     const head = out.toLowerCase().indexOf('</head>');
     out = head >= 0 ? out.slice(0, head) + fix + out.slice(head) : fix + out;
   }
+  // No scroll chaining out of the frame (touch / trackpad must not scroll the outer page).
+  const chain = '\n<style>/* slides-commons preview fix */ html, body, * { overscroll-behavior: none; }</style>\n';
+  const headEnd = out.toLowerCase().indexOf('</head>');
+  out = headEnd >= 0 ? out.slice(0, headEnd) + chain + out.slice(headEnd) : chain + out;
   const tag = `\n<script>/* slides-commons preview bridge (added by the site build; not part of the original template) */\n${bridge}</script>\n`;
   const idx = out.toLowerCase().lastIndexOf('</body>');
   return idx >= 0 ? out.slice(0, idx) + tag + out.slice(idx) : out + tag;
@@ -824,7 +836,7 @@ function preparePreview(html, bridge, dir, slug) {
 
 function main() {
   const started = Date.now();
-  const { sources, templates, bySlug, problems } = loadAndCheck({ strictScreenshots: false });
+  const { sources, templates, bySlug, problems, zh: zhData } = loadAndCheck({ strictScreenshots: false });
   if (problems.length) fail(`${problems.length} problem(s) found:\n- ${problems.join('\n- ').replace(/\n  - /g, '\n    - ')}`);
 
   const bridge = read(path.join(SRC, 'preview-bridge.js'));
@@ -845,6 +857,8 @@ function main() {
   for (const t of templates) {
     const info = buildContext(t);
     const { ctx } = info;
+    const tz = resolveZh(t, ctx.description, zhData);
+    ctx.zh = tz; // Chinese data for PROMPT.zh.md (null values fall back to English)
 
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);
@@ -938,6 +952,7 @@ function main() {
       ...t,
       htmlFile: t.src.layout.htmlFile,
       description: ctx.description,
+      zh: tz,
       paletteColors: info.paletteColors,
       screenshots: shots,
       thumb: shots[0] ?? null,
@@ -956,7 +971,7 @@ function main() {
   }
 
   for (const lang of LANGS) {
-    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, zhTerm: (m) => zhTerm(zhData, m) }));
     writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources, templates: pageData, lang }));
   }
 
@@ -965,7 +980,7 @@ function main() {
     (warnings.length ? ` (${warnings.length} warning(s))` : ''));
 }
 
-export { loadAndCheck, BuildError, rel, SOURCES_FILE };
+export { loadAndCheck, buildContext, BuildError, rel, SOURCES_FILE };
 
 // Run only when executed directly (scripts/validate.mjs imports this file).
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -6,9 +6,10 @@
 // sites live under /<repo>/) and from file://.
 //
 // Every UI string comes from STRINGS[lang]; a page uses exactly one language.
-// Template data that only exists in English upstream (tagline, design description,
-// best_for / avoid_for, mood / tone tags, palette usage) is shown unchanged and is
-// labelled as source content on the Chinese pages. It is never machine-translated.
+// Upstream template data (tagline, design description, best_for / avoid_for, mood / tone
+// tags, palette usage, typography style) is shown in Chinese on the zh pages when
+// src/i18n/zh.json has a translation (t.zh, resolved by the build). A missing one falls
+// back to the English text, marked lang="en". Names, font names and hex codes stay as is.
 
 export const SITE_NAME = 'slides-commons';
 export const LANGS = ['en', 'zh'];
@@ -62,7 +63,7 @@ const STRINGS = {
     copyHelp: 'The prompt asks about purpose, length, content and density before it builds anything. The same text ships as <code>PROMPT.md</code> in the pack.',
     showPrompt: 'Show prompt',
     design: 'Design',
-    sourceNote: '',
+    sourceNote: () => '',
     meta: { mood: 'Mood', tone: 'Tone', scheme: 'Scheme', formality: 'Formality', density: 'Density', slides: 'Slides in demo', bestFor: 'Good for', avoidFor: 'Avoid for' },
     slidesTitle: 'Counted from the live preview',
     values: {},
@@ -76,6 +77,7 @@ const STRINGS = {
     attrDerived: (d) => `Adapted from ${link(d.url, d.name)} by ${authorList(d.authors)} (${esc(d.license)}).`,
     attrCompanion: (c) => `The design notes (<code>design.md</code>, fixed-stage edition) and <code>viewport-base.css</code> in the pack come from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}).`,
     attrNotOfficial: `${SITE_NAME} only previews and repackages these openly licensed files; the download includes the original license files. This is not the author's official site.`,
+    attrTranslation: '',
     footerBy: (s, links) => `Templates by ${authorLink(s)} (${esc(s.license)}): ${links}`,
     footerIndependent: `${SITE_NAME} is an independent community gallery, not affiliated with the original authors.`,
     footerCredits: 'Credits &amp; licenses',
@@ -83,6 +85,7 @@ const STRINGS = {
     creditsDescription: 'Template authors, sources and licenses.',
     creditsHeading: 'Credits',
     creditsIntro: `${SITE_NAME} is an independent community gallery. Every template belongs to its author and is used under its open license. Nothing here is an official project of the original authors.`,
+    creditsTranslation: '',
     creditsSource: (s) => `${link(s.repo, bare(s.repo))} by ${authorLink(s)} (${esc(s.license)}). Its license ships in every pack as <code>LICENSE-templates</code>.`,
     creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its fixed-stage <code>design.md</code> edition and <code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
     creditsOriginal: 'original',
@@ -117,7 +120,7 @@ const STRINGS = {
     copyHelp: '提示词会先询问用途、页数、内容和信息密度，再开始制作。素材包中的 <code>PROMPT.zh.md</code> 是同一份内容。',
     showPrompt: '查看提示词',
     design: '设计',
-    sourceNote: '以下模板信息来自原仓库，保留英文原文。',
+    sourceNote: (t) => `以下介绍由本站翻译，以${link(t.sourceDirUrl, '英文原文')}为准。`,
     meta: { mood: '情绪', tone: '语气', scheme: '配色方案', formality: '正式程度', density: '信息密度', slides: '演示页数', bestFor: '适用场景', avoidFor: '不适用场景' },
     slidesTitle: '根据实时预览统计',
     values: {
@@ -134,6 +137,7 @@ const STRINGS = {
     attrDerived: (d) => `改编自 ${authorList(d.authors)} 的 ${link(d.url, d.name)}（${esc(d.license)}）。`,
     attrCompanion: (c) => `素材包中的设计说明（<code>design.md</code>，固定画布版）和 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}）。`,
     attrNotOfficial: `${SITE_NAME} 仅预览并重新打包上述开源文件，下载的素材包内附原许可证文件。本站不是原作者的官方站点。`,
+    attrTranslation: `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 MIT 许可）；译文由本项目提供，以英文原文为准。`,
     footerBy: (s, links) => `模板来自 ${authorLink(s)}（${esc(s.license)}）：${links}`,
     footerIndependent: `${SITE_NAME} 是独立的社区画廊，与原作者无关联。`,
     footerCredits: '致谢与许可证',
@@ -141,6 +145,7 @@ const STRINGS = {
     creditsDescription: '模板作者、来源与许可证。',
     creditsHeading: '致谢',
     creditsIntro: `${SITE_NAME} 是独立的社区画廊。所有模板版权归原作者所有，按其开源许可证使用；本站内容均不是原作者的官方项目。`,
+    creditsTranslation: `本站中文页面上的模板介绍（简介、设计说明、适用场景、情绪与语气标签等）由 ${SITE_NAME} 翻译自上游的英文文本；上游文本为 MIT 许可，译文由本项目提供，以英文原文为准。模板名称、字体名称和色值保持原样。`,
     creditsSource: (s) => `${link(s.repo, bare(s.repo))}，作者 ${authorLink(s)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>LICENSE-templates</code>。`,
     creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其固定画布版 <code>design.md</code> 和 <code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
     creditsOriginal: '原始文件',
@@ -229,23 +234,28 @@ function footer(lang, home) {
 // Pages
 // ---------------------------------------------------------------------------
 
-export function indexPage({ templates, lang }) {
+export function indexPage({ templates, lang, zhTerm = () => null }) {
   const S = STRINGS[lang];
   const F = S.filters;
   const page = 'index.html';
   const root = rootFor(pagePath(lang, page));
 
+  const en = lang === 'en' ? '' : ' lang="en"';
   const cards = templates.map((t) => {
     const small = t.thumb?.small;
     const img = small
       ? `<img src="${root}assets/screenshots/${esc(small.file)}" width="${small.width}" height="${small.height}" loading="lazy" decoding="async" alt="">`
       : '<div class="noimg"></div>';
-    const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
+    const z = lang === 'zh' ? t.zh : null;
+    // On the zh page search matches the Chinese and the English text; the en page stays English.
+    const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug,
+      ...(z ? [z.tagline, z.best_for, ...z.mood, ...z.tone] : [])].filter(Boolean).join(' ').toLowerCase();
+    const taglineZh = z?.tagline;
     return `<li data-source="${esc(t.source)}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
     ${img}
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
-      <p lang="en">${esc(t.tagline)}</p>
+      <p${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
       <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}</p>
     </div>
   </a></li>`;
@@ -253,8 +263,12 @@ export function indexPage({ templates, lang }) {
 
   // Filter groups are built from the data, so new sources / schemes / moods appear on their own.
   const count = (fn) => { const m = new Map(); for (const t of templates) for (const v of fn(t)) m.set(v, (m.get(v) ?? 0) + 1); return m; };
-  const chip = (group, value, label, n) =>
-    `<button type="button" class="chip" data-group="${group}" data-value="${esc(value)}" aria-pressed="false"${group === 'mood' ? ' lang="en"' : ''}>${esc(label)} <span class="n">${n}</span></button>`;
+  const moodLabel = (v) => (lang === 'zh' ? zhTerm(v) : null);
+  const chip = (group, value, label, n) => {
+    const zhLabel = group === 'mood' ? moodLabel(value) : null;
+    const attr = group === 'mood' && !zhLabel && lang === 'zh' ? ' lang="en"' : '';
+    return `<button type="button" class="chip" data-group="${group}" data-value="${esc(value)}" aria-pressed="false"${attr}>${esc(zhLabel || label)} <span class="n">${n}</span></button>`;
+  };
 
   const sources = footerSources.filter((s) => templates.some((t) => t.source === s.id));
   const sourceGroup = sources.length > 1
@@ -295,11 +309,20 @@ export function detailPage(t, lang) {
   const home = root + LANG_DIR[lang];
   const en = lang === 'en' ? '' : ' lang="en"'; // mark English source content on zh pages
   const val = (v) => esc(S.values[v] ?? v);
+  // Chinese text when the zh page has a translation, else the English text marked lang="en".
+  const z = lang === 'zh' ? t.zh : null;
+  const tr = (field, english) => (z?.[field] ? { v: z[field], a: '' } : { v: english, a: en });
+  const tagline = tr('tagline', t.tagline);
+  const description = tr('description', t.description || t.tagline);
+  const bestFor = tr('best_for', t.best_for);
+  const avoidFor = tr('avoid_for', t.avoid_for);
+  const paletteNote = tr('palette_description', t.palette.description ?? '');
+  const typoStyle = tr('typography_style', t.typography.style ?? '');
 
   const swatches = t.paletteColors.map((c) => `<li><span class="sw" style="background:${esc(c.value)}"></span><code>${esc(c.name)}</code> <code>${esc(c.value)}</code></li>`).join('');
   const typo = Object.entries(t.typography).filter(([k]) => k !== 'style')
     .map(([k, v]) => `<li><span class="k">${esc(S.typoRoles[k] ?? k)}</span> ${esc(v)}</li>`).join('');
-  const tags = (arr) => arr.map((x) => `<span class="tag"${en}>${esc(x)}</span>`).join(' ');
+  const tags = (arr, zarr) => arr.map((x, i) => (zarr?.[i] ? `<span class="tag">${esc(zarr[i])}</span>` : `<span class="tag"${en}>${esc(x)}</span>`)).join(' ');
   const shots = t.screenshots.map((s) => `<a href="${root}assets/screenshots/${esc(s.file)}"><img src="${root}assets/screenshots/${esc((s.small ?? s).file)}" width="${(s.small ?? s).width}" height="${(s.small ?? s).height}" loading="lazy" decoding="async" alt="${esc(S.shotAlt(t.name, s.n))}"></a>`).join('');
   const previewHref = `${root}preview/${esc(t.slug)}/${esc(t.htmlFile)}`;
   const promptId = lang === 'zh' ? 'prompt-zh' : 'prompt-en';
@@ -308,7 +331,7 @@ export function detailPage(t, lang) {
   const body = `<p class="crumb"><a href="${home}index.html">${S.allTemplates}</a></p>
 <section class="hero">
   <h1${en}>${esc(t.name)}</h1>
-  <p class="tagline"${en}>${esc(t.tagline)}</p>
+  <p class="tagline"${tagline.a}>${esc(tagline.v)}</p>
   <p class="by">${S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
 
@@ -347,28 +370,28 @@ export function detailPage(t, lang) {
       <pre id="${promptId}" class="prompt">${esc(promptText)}</pre>
     </details>
   </aside>
-</div>
 
+  <div class="details">
 <section class="about">
   <h2>${S.design}</h2>
-  ${S.sourceNote ? `<p class="source-note">${S.sourceNote}</p>` : ''}
-  <p${en}>${esc(t.description || t.tagline)}</p>
+  ${S.sourceNote(t) ? `<p class="source-note">${S.sourceNote(t)}</p>` : ''}
+  <p${description.a}>${esc(description.v)}</p>
   <dl class="meta">
-    <dt>${S.meta.mood}</dt><dd>${tags(t.mood)}</dd>
-    <dt>${S.meta.tone}</dt><dd>${tags(t.tone)}</dd>
+    <dt>${S.meta.mood}</dt><dd>${tags(t.mood, z?.mood)}</dd>
+    <dt>${S.meta.tone}</dt><dd>${tags(t.tone, z?.tone)}</dd>
     <dt>${S.meta.scheme}</dt><dd>${val(t.scheme)}</dd>
     <dt>${S.meta.formality}</dt><dd>${val(t.formality)}</dd>
     <dt>${S.meta.density}</dt><dd>${val(t.density)}</dd>
     <dt>${S.meta.slides}</dt><dd id="slide-total" title="${S.slidesTitle}">–</dd>
-    <dt>${S.meta.bestFor}</dt><dd${en}>${esc(t.best_for)}</dd>
-    <dt>${S.meta.avoidFor}</dt><dd${en}>${esc(t.avoid_for)}</dd>
+    <dt>${S.meta.bestFor}</dt><dd${bestFor.a}>${esc(bestFor.v)}</dd>
+    <dt>${S.meta.avoidFor}</dt><dd${avoidFor.a}>${esc(avoidFor.v)}</dd>
   </dl>
   <h3>${S.palette}</h3>
-  ${t.palette.description ? `<p class="muted"${en}>${esc(t.palette.description)}</p>` : ''}
+  ${paletteNote.v ? `<p class="muted"${paletteNote.a}>${esc(paletteNote.v)}</p>` : ''}
   <ul class="swatches">${swatches}</ul>
   <h3>${S.typography}</h3>
   <ul class="typo">${typo}</ul>
-  ${t.typography.style ? `<p class="muted"${en}>${esc(t.typography.style)}</p>` : ''}
+  ${typoStyle.v ? `<p class="muted"${typoStyle.a}>${esc(typoStyle.v)}</p>` : ''}
   ${shots ? `<h3>${S.screenshots}</h3><div class="shots">${shots}</div>` : ''}
 </section>
 
@@ -378,9 +401,12 @@ export function detailPage(t, lang) {
   ${t.derived ? `<p>${S.attrDerived(t.derived)}</p>` : ''}
   ${t.companionInfo ? `<p>${S.attrCompanion(t.companionInfo)}</p>` : ''}
   <p>${S.attrNotOfficial}</p>
-</section>`;
+  ${S.attrTranslation ? `<p>${S.attrTranslation}</p>` : ''}
+</section>
+  </div>
+</div>`;
 
-  return layout({ lang, page, title: `${t.name} · ${SITE_NAME}`, description: t.tagline, body, scripts: ['assets/detail.js'] });
+  return layout({ lang, page, title: `${t.name} · ${SITE_NAME}`, description: tagline.v, body, scripts: ['assets/detail.js'] });
 }
 
 export function creditsPage({ sources, templates, lang }) {
@@ -400,6 +426,7 @@ ${list}
   }).join('\n');
   const body = `<h1>${S.creditsHeading}</h1>
 <p>${S.creditsIntro}</p>
+${S.creditsTranslation ? `<p>${S.creditsTranslation}</p>` : ''}
 ${blocks}`;
   return layout({ lang, page, title: S.creditsTitle, description: S.creditsDescription, body });
 }

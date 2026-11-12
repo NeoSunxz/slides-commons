@@ -9,6 +9,28 @@
   'use strict';
   if (window.parent === window) return;
 
+  // Element.scrollIntoView() also scrolls the page that embeds the frame (Chrome walks up
+  // through the frame element), which made the detail page jump when a deck pages with it
+  // (scroll-snap decks). Scroll only inside the frame instead.
+  try {
+    Element.prototype.scrollIntoView = function (opts) {
+      var behavior = opts && typeof opts === 'object' && opts.behavior ? opts.behavior : 'auto';
+      var r = this.getBoundingClientRect();
+      var c = this.parentElement;
+      while (c && c !== document.body && c !== document.documentElement) {
+        var cs = getComputedStyle(c);
+        if (/(auto|scroll)/.test(cs.overflowY + cs.overflowX) && (c.scrollHeight > c.clientHeight || c.scrollWidth > c.clientWidth)) break;
+        c = c.parentElement;
+      }
+      if (c && c !== document.body && c !== document.documentElement) {
+        var cr = c.getBoundingClientRect();
+        c.scrollTo({ top: c.scrollTop + r.top - cr.top, left: c.scrollLeft + r.left - cr.left, behavior: behavior });
+      } else {
+        window.scrollTo({ top: window.scrollY + r.top, left: window.scrollX + r.left, behavior: behavior });
+      }
+    };
+  } catch (e) { /* keep the native one */ }
+
   var KEYS = {
     next: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
     prev: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 }
@@ -44,8 +66,16 @@
   var activity = 0;      // any change at all: used to wait for the deck to be idle
   var motionAt = 0;      // a transition / animation / scroll started: async proof of a move
   var mo = null;
-  function touch() { activity = performance.now(); }
-  function motion() { activity = motionAt = performance.now(); }
+  function touch() { activity = performance.now(); schedulePost(); }
+  function motion() { activity = motionAt = performance.now(); schedulePost(); }
+  // Report the position whatever moved the deck (wheel, swipe, the template's own dots or
+  // buttons, keys with focus in the frame): any change to a slide, a transition end or a
+  // scroll schedules a (debounced, de-duplicated) report.
+  var postTimer = 0;
+  function schedulePost() {
+    if (postTimer) return;
+    postTimer = setTimeout(function () { postTimer = 0; post(); }, 60);
+  }
   try {
     mo = new MutationObserver(touch);
     mo.observe(document, { subtree: true, attributes: true, characterData: true, attributeFilter: ['class', 'style', 'data-deck-active'] });
@@ -53,6 +83,10 @@
   ['transitionrun', 'transitionstart', 'animationstart', 'scroll'].forEach(function (n) {
     document.addEventListener(n, motion, true);
   });
+  ['transitionend', 'animationend', 'touchend', 'click'].forEach(function (n) {
+    document.addEventListener(n, schedulePost, true);
+  });
+  setInterval(post, 500); // cheap safety net; post() sends nothing unless the position changed
   // Mutations queued synchronously by the key handler (class / style changes). Called right
   // before and right after a key is sent, so only the handler's own effects are counted.
   function drain() {
@@ -213,9 +247,39 @@
     clearTimeout(scrollTimer);
     scrollTimer = setTimeout(function () { post(); }, 120);
   }, true);
+  // Mouse wheel over the preview must page the deck, never scroll the outer page. One
+  // slide per gesture: >= 42 px accumulated, then a 620 ms lock that is extended while
+  // trackpad inertia keeps firing. Templates' own wheel handlers are stopped (ours runs
+  // first, in the capture phase), so exactly one of the two acts, and the move goes
+  // through the same serialised navigate() as the buttons.
+  var wAcc = 0, wLast = 0, wLockUntil = 0;
+  window.addEventListener('wheel', function (e) {
+    if (e.ctrlKey) return; // pinch zoom
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var now = performance.now();
+    if (now < wLockUntil) {
+      if (now - wLast < 120) wLockUntil = Math.max(wLockUntil, now + 250);
+      wLast = now;
+      return;
+    }
+    if (now - wLast > 200) wAcc = 0;
+    wLast = now;
+    var scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+    var d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * scale;
+    wAcc += d;
+    if (Math.abs(wAcc) >= 42) {
+      var dir = wAcc > 0 ? 'next' : 'prev';
+      wAcc = 0;
+      wLockUntil = now + 620;
+      navigate(dir);
+    }
+  }, { passive: false, capture: true });
+
   // Report as early as possible (the deck may have initialised before this script ran).
   post();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { post(); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { last = ''; post(); });
+  window.addEventListener('load', function () { last = ''; post(); });
   if (document.readyState === 'complete') postSoon();
   else window.addEventListener('load', postSoon);
 })();
