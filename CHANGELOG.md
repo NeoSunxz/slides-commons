@@ -7,16 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-M1 (single template `neo-grid-bold`) is built and tested; it awaits the maintainer's hands-on acceptance before release.
+## [0.1.0] - 2026-11-12
+
+First public release (milestones M1 to M3): a static gallery of 34 HTML slide templates, each with a live preview, a copy-ready prompt and a downloadable pack for your own coding agent.
 
 ### Added
 
-- `sources.json` declaring upstream sources; M1 includes only `neo-grid-bold` from beautiful-html-templates, with frontend-slides as companion.
-- `scripts/build.mjs`: validates template metadata against `src/schema/template.schema.json`, injects `source` / `license` / `authors`, and generates `site/` (gallery card and detail page).
-- Detail page with a sandboxed preview iframe, Prev/Next and arrow-key paging (1/12) via a postMessage bridge in a build-time preview copy, plus a fix so `<deck-stage>` inherits the template font.
-- Copy-prompt buttons (English and Chinese), byte-identical to `PROMPT.md` / `PROMPT.zh.md` in the zip.
-- Downloadable template pack: `template.html`, `deck-stage.js`, fixed-stage `design.md`, `viewport-base.css`, `LICENSE-templates`, `LICENSE-skill`, `PROMPT.md`, `PROMPT.zh.md`, `README.md`. Zips are reproducible (fixed 1980-01-01 timestamps, or `SOURCE_DATE_EPOCH`).
-- `--sources` / `--out` options (and `SC_SOURCES` / `SC_OUT`), with a guard that refuses to clear an output directory lacking the `.slides-commons-build` marker.
+- Gallery of all 34 templates from beautiful-html-templates, with search and filters, and attribution linking back to the upstream author and repository.
+- English site at the root and Chinese site under `zh/`, with a language switch. Pages never mix languages. Template data has Chinese translations on the Chinese site.
+- Detail page with a scaled preview next to a "Use this template" panel, Prev/Next and arrow-key paging, mouse-wheel capture, fullscreen, and open in new tab. Paging works for deck-stage, class-based and geometry-based decks through a postMessage bridge in a build-time preview copy; upstream files stay untouched. Previews also work when opened from `file://`.
+- Copy-prompt buttons in English and Chinese, byte-identical to `PROMPT.md` / `PROMPT.zh.md` in the pack. Prompt rules were refined through simulated end-user runs (fresh agent, empty directory, only the zip and prompt), covering unzip fallbacks, headless environments, CJK fonts and line breaks, density, accent contrast and cross-platform open commands. Maintainer acceptance of M1 and M2 is complete.
+- Per-template prompt exceptions for templates that need system fonts or a chart library CDN.
+- Downloadable pack per template: `template.html`, `deck-stage.js` (when used), skill-edition `design.md`, `viewport-base.css`, `LICENSE-templates`, `LICENSE-skill`, `PROMPT.md`, `PROMPT.zh.md` and `README.md`. Zips are reproducible (fixed 1980-01-01 timestamps, or `SOURCE_DATE_EPOCH`).
+- Optional `SC_SITE_URL` setting so prompts can auto-download the pack from the deployed site.
+- `npm run validate`: metadata schema checks, slug de-duplication and attribution checks.
+- Build options `--sources` / `--out` (and `SC_SOURCES` / `SC_OUT`), with a guard that refuses to clear an output directory lacking the `.slides-commons-build` marker.
 - `scripts/serve.mjs` static server, bound to `127.0.0.1:4173` by default.
-- Playwright test suite (39 tests) covering the site, the zip, stage overflow and fixture builds.
-- `LICENSE` (MIT) and `CREDITS.md` attributing upstream authors.
+- GitHub Actions: CI on pull requests (`validate + test`) and a GitHub Pages deployment workflow, with all actions pinned to commit SHAs.
+- Playwright test suite covering all 34 templates, gallery, packs, prompts, language trees, scaling, wheel, file:// mode, fixture builds and workflow checks.
+- `LICENSE` (MIT), `CREDITS.md` and devcontainer for Codespaces.
+
+### Changed
+
+- Detail page keeps the original two-column layout (preview left, panel right).
+- Chinese pages keep "coding agent" in English.
+
+### Fixed
+
+- `<deck-stage>` previews now inherit the template font.
+- Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
+- Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
+
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0
