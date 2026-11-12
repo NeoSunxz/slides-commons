@@ -13,7 +13,7 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 
 | 项 | 决定 |
 |---|---|
-| 网站语言 | 英文默认 + 中文，用语言切换（英文在根目录，中文在 `zh/`），**同一页面不混用中英文**。上游模板数据（tagline、描述等）不机翻，原样显示。提示词按页面语言复制，zip 内同时带 PROMPT.md 与 PROMPT.zh.md |
+| 网站语言 | 英文默认 + 中文，用语言切换（英文在根目录，中文在 `zh/`），**同一页面不混用中英文**。上游模板数据的中文译文是固定、可审阅的数据文件 `src/i18n/zh.json`（非运行时机翻），中文页显示译文并注明「以下介绍由本站翻译，以英文原文为准」；缺译文回退英文并警告；`src/i18n/zh.sources.json` 记录英文原文哈希，上游改动后提示译文过期（`npm run i18n:sync` 在确认译文已对应后更新基线）；`design.md` 保持英文。提示词按页面语言复制，zip 内同时带 PROMPT.md 与 PROMPT.zh.md |
 | 详情页布局 | 预览保持原尺寸（左预览 + 右侧"Use this template"面板），不要占满全宽；保留"新标签页打开"和"全屏"按钮 |
 | 开发平台 | 在 Linux 上开发；所有脚本、命令、产物必须跨平台可用（Linux / macOS / Windows PowerShell）。构建脚本用 Node（`.mjs`），不写 bash-only 或 PowerShell-only 脚本，路径一律用 `path` 模块拼接 |
 | 访客环境 | zip 和提示词必须在三大平台都能用：提示词里"打开浏览器"不写死 `open`（macOS），按平台给出 `open` / `xdg-open` / `start` |
@@ -174,6 +174,8 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-11：M2 开发与验证完成：34 模板全部构建；画廊（搜索、配色/情绪筛选，状态在 URL hash，来源筛选数据驱动、仅一个来源时隐藏）；缩略图自写 PNG 缩小（32MB→4.5MB，缓存在 `node_modules/.cache/slides-commons/thumbs`，冷构建约 21 秒，CI 需缓存）；预览桥接适配三类翻页机制（deck-stage 10 / class 22 / geometry 2：8-bit-orbit、daisy-days），页数取自实际渲染；提示词按数据生成例外（系统字体 raw-grid、禁用 CDN 图表 coral/cartesian/retro-windows、无 deck-stage 的模板不提该文件）；`npm run validate`（构建同样调用）；`npm test` 268/268，约 2.5 分钟。
   - 桥接教训：「按键被接受」只能以页码真的变化为准，别把动画/transition 当证据，否则带按键锁的模板（broadside/grove/monochrome/signal/studio，约 1 秒锁）会丢第二次点击。
   - 上游小错误：monochrome 演示文案写 11/18，实际 16 页，站点显示 16。
+- 2026-11-12：M2 反馈迭代：预览 iframe 固定 1920×1080 后整体缩放（与截图一致）；预览内滚轮拦截、一次手势翻一页、页码随任何来源同步；详情页 1440px 两栏 + 右侧 sticky 面板；中文译文接入（见上表）；页码初始化改为页面反复 ping 直到收到首个状态。`npm test` 337 通过 1 跳过（约 3 分钟）。
+  - 待补：给 i18n 加 `SC_I18N_DIR` 之类的注入点，使「缺译文回退 / 译文过期告警 / zh.json 结构错误」可测（目前该测试 skip）。
 - 下一步：等维护者确认后发版（dev → main PR）；然后 M3（CI + Pages，含提示词自动下载素材包、自托管字体计划）。
 
 ### 编排经验
