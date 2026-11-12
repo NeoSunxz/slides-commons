@@ -8,13 +8,33 @@
 // a person has confirmed that zh.json matches the current English text. The build and
 // validate then warn when a source hash differs ("stale") or a translation is missing;
 // only structural problems are errors.
+//
+// Location: by default both files live in src/i18n/. To use another directory (tests,
+// trying out a translation) pass `--i18n-dir <dir>` or set `SC_I18N_DIR=<dir>` (the flag
+// wins). It is honoured by scripts/build.mjs, scripts/validate.mjs and
+// scripts/i18n-sync.mjs (which then writes zh.sources.json into that directory). A relative
+// path resolves from the repo root, not the current directory; absolute paths are used as is.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'i18n');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+function i18nDirOption() {
+  const argv = process.argv.slice(2);
+  for (let k = 0; k < argv.length; k++) {
+    if (argv[k] === '--i18n-dir') return argv[k + 1];
+    if (argv[k].startsWith('--i18n-dir=')) return argv[k].slice('--i18n-dir='.length);
+  }
+  return process.env.SC_I18N_DIR || undefined;
+}
+const optDir = i18nDirOption();
+export const I18N_DIR = optDir ? path.resolve(ROOT, optDir) : path.join(ROOT, 'src', 'i18n');
+const DIR = I18N_DIR;
+// For messages: repo-relative with '/' (e.g. src/i18n/zh.json), or absolute outside the repo.
+const show = (f) => { const r = path.relative(ROOT, f); return r && !r.startsWith('..') && !path.isAbsolute(r) ? r.split(path.sep).join('/') : f; };
 export const ZH_FILE = path.join(DIR, 'zh.json');
 export const ZH_SOURCES_FILE = path.join(DIR, 'zh.sources.json');
 export const FIELDS = ['tagline', 'description', 'best_for', 'avoid_for', 'occasion', 'palette_description', 'typography_style'];
@@ -44,10 +64,12 @@ function readJsonFile(file, problems, what) {
 
 /** Load zh.json and zh.sources.json. Structural problems are pushed to `problems`. */
 export function loadZh(problems) {
-  const zh = readJsonFile(ZH_FILE, problems, 'src/i18n/zh.json');
-  const sources = readJsonFile(ZH_SOURCES_FILE, problems, 'src/i18n/zh.sources.json');
+  // An explicitly chosen directory without zh.json is a mistake (typo), not "no translations".
+  if (optDir && !fs.existsSync(ZH_FILE)) problems.push(`${show(ZH_FILE)} not found (--i18n-dir / SC_I18N_DIR)`);
+  const zh = readJsonFile(ZH_FILE, problems, show(ZH_FILE));
+  const sources = readJsonFile(ZH_SOURCES_FILE, problems, show(ZH_SOURCES_FILE));
   if (zh && (typeof zh.terms !== 'object' || typeof zh.templates !== 'object')) {
-    problems.push('src/i18n/zh.json needs "terms" and "templates" objects');
+    problems.push(`${show(ZH_FILE)} needs "terms" and "templates" objects`);
     return { zh: null, sources };
   }
   return { zh, sources };
@@ -65,7 +87,7 @@ const termKey = (terms) => {
  */
 export function checkZh({ zh, sources }, items, problems, warn, { strictSlugs }) {
   if (!zh) {
-    warn('no Chinese translations loaded (src/i18n/zh.json); zh pages fall back to English');
+    warn(`no Chinese translations loaded (${show(ZH_FILE)}); zh pages fall back to English`);
     return;
   }
   const find = termKey(zh.terms);
@@ -74,7 +96,7 @@ export function checkZh({ zh, sources }, items, problems, warn, { strictSlugs })
   if (strictSlugs) {
     for (const slug of Object.keys(zh.templates)) if (!loaded.has(slug)) problems.push(`i18n: zh.json has translations for unknown template "${slug}"`);
   }
-  if (!sources) warn('src/i18n/zh.sources.json is missing: staleness cannot be checked (run node scripts/i18n-sync.mjs after confirming zh.json)');
+  if (!sources) warn(`${show(ZH_SOURCES_FILE)} is missing: staleness cannot be checked (run node scripts/i18n-sync.mjs after confirming zh.json)`);
   for (const { t, description } of items) {
     const tr = zh.templates[t.slug];
     // A translated template must have every tag in `terms` (error); an untranslated one

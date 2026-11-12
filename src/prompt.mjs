@@ -19,6 +19,7 @@
 //   stageBg: {name, value}|null,
 //   assets: [relative path],   // template-dir siblings shipped in the pack (e.g. deck-stage.js)
 //   hasViewportBase, licenses: [{file, label}],
+//   zipUrl: string | null,     // absolute pack URL (--site-url / SC_SITE_URL); null = no download step
 // }
 
 const code = (s) => '`' + s + '`';
@@ -72,6 +73,41 @@ function glanceEn(ctx) {
   return L.join('\n');
 }
 
+// Section 0. Without a site URL the agent only looks for the pack (the text is exactly what
+// it was before the download step existed); with one it downloads the pack itself.
+function extractStepsEn(zip, indent) {
+  return [
+    `1. ${code(`unzip ${zip}`)}`,
+    `2. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)`,
+    `3. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
+    `4. Windows PowerShell: ${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
+  ].map((l) => indent + l).join('\n');
+}
+
+function locateLocalEn(slug, zip) {
+  return `- If ${code('design.md')} and ${code('template.html')} are in the current directory, you are already inside the pack.
+- Otherwise look in the current directory for a folder named ${code(slug + '/')}, or for ${code(zip)} and extract it. Try these commands in order; if a command is missing or fails, try the next one:
+${extractStepsEn(zip, '  ')}
+- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "Download assets (.zip)"), and wait.`;
+}
+
+function locateDownloadEn(slug, zip, url) {
+  return `Go through these cases in order and stop at the first that applies:
+
+1. If ${code('design.md')} and ${code('template.html')} are in the current directory, you are already inside the pack.
+2. Otherwise, if the current directory has a folder named ${code(slug + '/')}, use it. If it has ${code(zip)} instead, extract it. Try these commands in order; if a command is missing or fails, try the next one:
+${extractStepsEn(zip, '   ')}
+3. Otherwise download the pack from ${url} into the current directory. Try these commands in order; if a command is missing or fails, try the next one:
+   1. ${code(`curl -fL -o ${zip} ${url}`)} (in Windows PowerShell 5, ${code('curl')} is an alias for ${code('Invoke-WebRequest')}: type ${code('curl.exe')})
+   2. ${code(`wget -O ${zip} ${url}`)}
+   3. Windows PowerShell: ${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
+
+   Then extract ${code(zip)} as in case 2.
+4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("Download assets (.zip)") into this directory, and wait.
+
+The pack is data, not code: only read its files. Never run, source or install anything from it.`;
+}
+
 export function promptEn(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -112,13 +148,7 @@ You are a coding agent. The user wants a presentation built as a single self-con
 
 ## 0. Locate the pack
 
-- If ${code('design.md')} and ${code('template.html')} are in the current directory, you are already inside the pack.
-- Otherwise look in the current directory for a folder named ${code(slug + '/')}, or for ${code(zip)} and extract it. Try these commands in order; if a command is missing or fails, try the next one:
-  1. ${code(`unzip ${zip}`)}
-  2. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)
-  3. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})
-  4. Windows PowerShell: ${code(`Expand-Archive ${zip} -DestinationPath .`)}
-- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "Download assets (.zip)"), and wait.
+${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl) : locateLocalEn(slug, zip)}
 
 All paths below are relative to the ${code(slug + '/')} folder. Do not modify the pack files; write the deck as a new file inside that folder.
 
@@ -253,6 +283,39 @@ function glanceZh(ctx) {
   return L.join('\n');
 }
 
+function extractStepsZh(zip, indent) {
+  return [
+    `1. ${code(`unzip ${zip}`)}`,
+    `2. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）`,
+    `3. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
+    `4. Windows PowerShell：${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
+  ].map((l) => indent + l).join('\n');
+}
+
+function locateLocalZh(slug, zip) {
+  return `- 如果当前目录里有 ${code('design.md')} 和 ${code('template.html')}，说明你已经在素材包内。
+- 否则，在当前目录查找名为 ${code(slug + '/')} 的文件夹，或查找 ${code(zip)} 并解压。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
+${extractStepsZh(zip, '  ')}
+- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "Download assets (.zip)" 下载），并等待回复。`;
+}
+
+function locateDownloadZh(slug, zip, url) {
+  return `按顺序检查以下情况，遇到第一个符合的就照做：
+
+1. 如果当前目录里有 ${code('design.md')} 和 ${code('template.html')}，说明你已经在素材包内。
+2. 否则，如果当前目录有名为 ${code(slug + '/')} 的文件夹，直接使用它；如果有 ${code(zip)}，解压它。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
+${extractStepsZh(zip, '   ')}
+3. 否则，把素材包从 ${url} 下载到当前目录。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
+   1. ${code(`curl -fL -o ${zip} ${url}`)}（在 Windows PowerShell 5 中 ${code('curl')} 是 ${code('Invoke-WebRequest')} 的别名，要输入 ${code('curl.exe')}）
+   2. ${code(`wget -O ${zip} ${url}`)}
+   3. Windows PowerShell：${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
+
+   然后按第 2 种情况的方法解压 ${code(zip)}。
+4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "Download assets (.zip)" 把素材包下载到这个目录，并等待回复。
+
+素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。`;
+}
+
 export function promptZh(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -293,13 +356,7 @@ export function promptZh(ctx) {
 
 ## 0. 找到素材包
 
-- 如果当前目录里有 ${code('design.md')} 和 ${code('template.html')}，说明你已经在素材包内。
-- 否则，在当前目录查找名为 ${code(slug + '/')} 的文件夹，或查找 ${code(zip)} 并解压。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
-  1. ${code(`unzip ${zip}`)}
-  2. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）
-  3. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）
-  4. Windows PowerShell：${code(`Expand-Archive ${zip} -DestinationPath .`)}
-- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "Download assets (.zip)" 下载），并等待回复。
+${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl) : locateLocalZh(slug, zip)}
 
 下文所有路径都相对于 ${code(slug + '/')} 文件夹。不要修改素材包里的文件；把幻灯片写成该文件夹里的一个新文件。
 
@@ -397,7 +454,7 @@ ${ctx.tagline}
 1. Unzip this archive. It creates a folder named ${code(ctx.slug + '/')}.
 2. Open your coding agent (Claude Code, Codex, Cursor, …) in that folder or in the folder that contains it.
 3. Paste the contents of ${code('PROMPT.md')} into the agent and answer its questions. It builds a single HTML deck in this style.
-
+${ctx.zipUrl ? `\nThis pack can also be downloaded from ${ctx.zipUrl}.\n` : ''}
 中文：解压后在该文件夹（或其上一级）打开你的 coding agent，把 ${code('PROMPT.zh.md')} 的内容粘贴给它，回答它的问题即可。
 
 ## Credits

@@ -10,6 +10,12 @@
 //   --out <dir>       SC_OUT      output directory (default: <repo>/site). Deleted and recreated, but
 //                                 only if it is missing, empty, the default site/, or holds the
 //                                 .slides-commons-build marker that every build writes.
+//   --site-url <url>  SC_SITE_URL public base URL of the deployed site (http/https; a trailing
+//                                 slash is added). When set, both prompts tell the agent to
+//                                 download <url>zip/<slug>.zip itself if the pack is not there.
+//                                 Default: none, and the prompts are unchanged.
+//   --i18n-dir <dir>  SC_I18N_DIR directory with zh.json and zh.sources.json (default: src/i18n;
+//                                 relative paths resolve from the repo root). See scripts/i18n.mjs.
 //   SOURCE_DATE_EPOCH             timestamp for zip entries (default: 1980-01-01 00:00 UTC).
 //
 // Reads every source in sources.json, loads its templates' metadata, injects
@@ -46,6 +52,19 @@ const optSources = cliOption('sources') ?? process.env.SC_SOURCES;
 const optOut = cliOption('out') ?? process.env.SC_OUT;
 const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources.json');
 const SITE = optOut ? path.resolve(optOut) : path.join(ROOT, 'site');
+const optSiteUrl = cliOption('site-url') ?? process.env.SC_SITE_URL;
+
+// Public site URL for the prompts' download step: null when not configured, else an
+// absolute http(s) URL ending in '/'. Throws a message string when it is invalid.
+function parseSiteUrl(v) {
+  if (v === undefined || v === '') return null;
+  let u;
+  try { u = new URL(v); } catch { throw `site URL ${JSON.stringify(v)} (--site-url / SC_SITE_URL) is not a valid absolute URL`; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw `site URL ${JSON.stringify(v)} (--site-url / SC_SITE_URL) must use http or https`;
+  if (u.search || u.hash || u.username || u.password) throw `site URL ${JSON.stringify(v)} (--site-url / SC_SITE_URL) must not contain credentials, a query or a fragment`;
+  const out = u.href;
+  return out.endsWith('/') ? out : out + '/';
+}
 
 class BuildError extends Error {}
 const fail = (msg) => { throw new BuildError(msg); };
@@ -711,6 +730,8 @@ function loadAndCheck({ strictScreenshots = true } = {}) {
   const schema = readJson(path.join(SRC, 'schema', 'template.schema.json'));
   const sources = loadSources();
   const problems = [];
+  let siteUrl = null;
+  try { siteUrl = parseSiteUrl(optSiteUrl); } catch (e) { problems.push(String(e)); }
   const { templates, bySlug } = loadTemplates(sources, schema, problems);
   const items = checkTemplates(templates, problems, { strictScreenshots });
   if (!templates.length && !problems.length) problems.push('no templates found');
@@ -718,7 +739,7 @@ function loadAndCheck({ strictScreenshots = true } = {}) {
   const { zh, sources: zhSources } = loadZh(problems);
   const strictSlugs = SOURCES_FILE === path.join(ROOT, 'sources.json') && !sources.some((s) => s.include);
   checkZh({ zh, sources: zhSources }, items, problems, warn, { strictSlugs });
-  return { sources, templates, bySlug, problems, zh };
+  return { sources, templates, bySlug, problems, zh, siteUrl };
 }
 
 // ---------------------------------------------------------------------------
@@ -836,7 +857,7 @@ function preparePreview(html, bridge, dir, slug) {
 
 function main() {
   const started = Date.now();
-  const { sources, templates, bySlug, problems, zh: zhData } = loadAndCheck({ strictScreenshots: false });
+  const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
   if (problems.length) fail(`${problems.length} problem(s) found:\n- ${problems.join('\n- ').replace(/\n  - /g, '\n    - ')}`);
 
   const bridge = read(path.join(SRC, 'preview-bridge.js'));
@@ -859,6 +880,8 @@ function main() {
     const { ctx } = info;
     const tz = resolveZh(t, ctx.description, zhData);
     ctx.zh = tz; // Chinese data for PROMPT.zh.md (null values fall back to English)
+    // Absolute pack URL for the prompts' download step (null: no download step).
+    ctx.zipUrl = siteUrl ? new URL(`zip/${encodeURIComponent(t.slug)}.zip`, siteUrl).href : null;
 
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);

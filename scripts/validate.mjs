@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Standalone validation: the same checks the build runs before it writes anything.
 //
-//   node scripts/validate.mjs [--sources <file>]
+//   node scripts/validate.mjs [--sources <file>] [--i18n-dir <dir>] [--site-url <url>]
+//   (env: SC_SOURCES, SC_I18N_DIR, SC_SITE_URL; see scripts/build.mjs)
 //
 // Checks: sources.json, template.json schema, unique slugs across sources, license and
 // author present, back-link to the original directory, at least one screenshot,

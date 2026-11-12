@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Record which English text the Chinese translations were made from.
 //
-//   node scripts/i18n-sync.mjs
+//   node scripts/i18n-sync.mjs [--i18n-dir <dir>]   (or SC_I18N_DIR; default src/i18n)
 //
-// Writes src/i18n/zh.sources.json: for every translated field of every loaded template, a
+// Writes zh.sources.json next to zh.json (src/i18n/ by default): for every translated field of every loaded template, a
 // short sha256 hash of the current English source string. Run it ONLY after a translator
 // or maintainer has confirmed that src/i18n/zh.json matches the current English text;
 // afterwards the build and validate warn about every field whose English source changes.
