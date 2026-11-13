@@ -1,0 +1,84 @@
+# CI: validate the catalogue and run the Playwright suite on every pull request.
+# Uses pull_request (never pull_request_target): fork PRs run with a read-only token
+# and no secrets. No secrets are used at all.
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# Read-only token: CI only reads the repo.
+permissions:
+  contents: read
+
+# A new push to the same PR / branch cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: validate + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # Templates and the skill are git submodules (upstream/); shallow is enough.
+      # persist-credentials: false keeps the token out of .git/config.
+      - name: Check out (with upstream submodules)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gallery thumbnails are cached by content hash under node_modules/.cache/slides-commons.
+      # Key: the upstream/templates commit (screenshots) + the thumbnailer source.
+      - name: Thumbnail cache key
+        id: thumbs
+        run: echo "upstream=$(git rev-parse HEAD:upstream/templates)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache thumbnails
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/slides-commons
+          key: thumbs-v1-${{ steps.thumbs.outputs.upstream }}-${{ hashFiles('scripts/png-thumb.mjs') }}
+          restore-keys: thumbs-v1-
+
+      # Playwright's browser download depends on the locked @playwright/test version.
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # --with-deps installs the system libraries too (those are not cached; apt is quick).
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate templates and translations
+        run: npm run validate
+
+      - name: Run tests (builds site/ and serves it)
+        run: npm test
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results
+          path: |
+            tests/test-results
+            playwright-report
+            tests/artifacts
+          retention-days: 7
+          if-no-files-found: ignore

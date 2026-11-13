@@ -1,0 +1,308 @@
+{
+  "8-bit-orbit": {
+    "tagline": "ac8818e47302",
+    "description": "848a533da579",
+    "best_for": "47e6de7fbe83",
+    "avoid_for": "351e9dfbc7d9",
+    "occasion": "f70c555cfd20",
+    "palette_description": "9954f9a8d30f",
+    "typography_style": "29a348ac5576"
+  },
+  "biennale-yellow": {
+    "tagline": "07dc23ab8d39",
+    "description": "db11c0906f0b",
+    "best_for": "2840de6f7318",
+    "avoid_for": "17723ec5f020",
+    "occasion": "7216d6a2014c",
+    "palette_description": "2531eb8837df",
+    "typography_style": "a8399aba9801"
+  },
+  "block-frame": {
+    "tagline": "47058956508d",
+    "description": "22920e3cfa9d",
+    "best_for": "12515393c42b",
+    "avoid_for": "8852650c1d60",
+    "occasion": "5eb71e21f6df",
+    "palette_description": "97bbe0420a2c",
+    "typography_style": "e2724e6bd054"
+  },
+  "blue-professional": {
+    "tagline": "7bef5d6e7241",
+    "description": "c1492868c40d",
+    "best_for": "5085c194b5fd",
+    "avoid_for": "6e7c6befc9a1",
+    "occasion": "f0a960ea926a",
+    "palette_description": "0f62c5740970",
+    "typography_style": "037c350b8cd9"
+  },
+  "bold-poster": {
+    "tagline": "c6254e4d3d13",
+    "description": "6c6d77faea52",
+    "best_for": "93d29231d6a6",
+    "avoid_for": "b7ab55a54e59",
+    "occasion": "7c7f68349c3f",
+    "palette_description": "8e37b557949d",
+    "typography_style": "d406ccd64448"
+  },
+  "broadside": {
+    "tagline": "0804a7613269",
+    "description": "ab378079c9fa",
+    "best_for": "898eb828b408",
+    "avoid_for": "1aca28a3fc18",
+    "occasion": "30d0d7996391",
+    "palette_description": "94a1d8c0dc64",
+    "typography_style": "91217c267af9"
+  },
+  "capsule": {
+    "tagline": "8904860feee4",
+    "description": "d0c10551f024",
+    "best_for": "218f775c3f4f",
+    "avoid_for": "d3c98858b738",
+    "occasion": "b13a483f6bd4",
+    "palette_description": "aa9545743ad9",
+    "typography_style": "3adca02f73b6"
+  },
+  "cartesian": {
+    "tagline": "ade68d647071",
+    "description": "f392ce2e8370",
+    "best_for": "1d9fe45a0835",
+    "avoid_for": "806a19e427f2",
+    "occasion": "cb23e6df124a",
+    "palette_description": "9375c693ac8a",
+    "typography_style": "2a4f21e24db5"
+  },
+  "cobalt-grid": {
+    "tagline": "c02f2acdb509",
+    "description": "65e5e21602bc",
+    "best_for": "a5a19962bc20",
+    "avoid_for": "e43e8b0fdf6a",
+    "occasion": "a6d1471597f3",
+    "palette_description": "d3bc7fec04c0",
+    "typography_style": "b83a2bd76ab9"
+  },
+  "coral": {
+    "tagline": "12348ba5b673",
+    "description": "482f73bf9ce8",
+    "best_for": "725ca37a323a",
+    "avoid_for": "b6d505adb758",
+    "occasion": "3bcbe2f8ee5a",
+    "palette_description": "fe69c6ae290d",
+    "typography_style": "cbd4a6059a71"
+  },
+  "creative-mode": {
+    "tagline": "b99a54aacaa1",
+    "description": "18a5778a57e0",
+    "best_for": "7a91aae49684",
+    "avoid_for": "0996a5b3d873",
+    "occasion": "03af6bff3975",
+    "palette_description": "5052b850f670",
+    "typography_style": "db80a976a953"
+  },
+  "daisy-days": {
+    "tagline": "d5aba75c6add",
+    "description": "f81e35cbab0b",
+    "best_for": "78803f212f20",
+    "avoid_for": "fe1051efc820",
+    "occasion": "0eba8388c583",
+    "palette_description": "42730b90a435",
+    "typography_style": "d0362238c6b6"
+  },
+  "editorial-forest": {
+    "tagline": "dfaf478b063f",
+    "description": "d46148ed082d",
+    "best_for": "36e6ce767948",
+    "avoid_for": "0cf14a59db8e",
+    "occasion": "84b9a693f450",
+    "palette_description": "793e8021c79c",
+    "typography_style": "961c29e4fa03"
+  },
+  "editorial-tri-tone": {
+    "tagline": "58c74344a2f4",
+    "description": "173456b0af33",
+    "best_for": "59e19b80dbf7",
+    "avoid_for": "075d0bfcb0ae",
+    "occasion": "33e98f0af496",
+    "palette_description": "5b70fcdfbfa9",
+    "typography_style": "e63e1946b1bd"
+  },
+  "emerald-editorial": {
+    "tagline": "16decd6bd193",
+    "description": "3ee260f25037",
+    "best_for": "103caf9b2df9",
+    "avoid_for": "dd62c6f4b358",
+    "occasion": "3a455ea80c02",
+    "palette_description": "95877c7b3e8c",
+    "typography_style": "597157979ebb"
+  },
+  "grove": {
+    "tagline": "42ba92d3bb07",
+    "description": "112f87be24c3",
+    "best_for": "30a3e7003dfa",
+    "avoid_for": "61a09731b3c5",
+    "occasion": "1a7ba45e890c",
+    "palette_description": "f0fbb2470af1",
+    "typography_style": "82504b8fa445"
+  },
+  "long-table": {
+    "tagline": "6f8f216151e7",
+    "description": "91c200d1a40b",
+    "best_for": "9b4a40a61e6b",
+    "avoid_for": "b0e112328959",
+    "occasion": "7321209e695b",
+    "palette_description": "842652d7f3ec",
+    "typography_style": "efc4f99b1138"
+  },
+  "mat": {
+    "tagline": "75e3b7d33945",
+    "description": "06e2df747a1f",
+    "best_for": "5be666187c85",
+    "avoid_for": "777b1810d4f7",
+    "occasion": "6bf09abacbe1",
+    "palette_description": "99879518c5bc",
+    "typography_style": "84d3e9cdb13c"
+  },
+  "monochrome": {
+    "tagline": "f8f0275aa1c1",
+    "description": "26f8092e2c81",
+    "best_for": "bb86fa835f98",
+    "avoid_for": "abc0ca0db578",
+    "occasion": "3e36bcca2f09",
+    "palette_description": "c700db7b0d95",
+    "typography_style": "16a2d4369728"
+  },
+  "neo-grid-bold": {
+    "tagline": "bb8a7fa12c00",
+    "description": "a50643c0f138",
+    "best_for": "4133c8c96946",
+    "avoid_for": "6c7e1a0cbc22",
+    "occasion": "cb3b7c75faf8",
+    "palette_description": "814ef1b40b30",
+    "typography_style": "4d1e72317bc1"
+  },
+  "peoples-platform": {
+    "tagline": "18d45ccfdfe4",
+    "description": "2bd26c881e7f",
+    "best_for": "641e84743136",
+    "avoid_for": "59d22551ff70",
+    "occasion": "14da6c6b1cf2",
+    "palette_description": "309ef2378e79",
+    "typography_style": "bc832b660358"
+  },
+  "pin-and-paper": {
+    "tagline": "9d1d44eb564a",
+    "description": "c52bf77c527c",
+    "best_for": "66936d899e6e",
+    "avoid_for": "54e9763802bd",
+    "occasion": "2b8f75fc0650",
+    "palette_description": "04ef1960dcb8",
+    "typography_style": "bcc51f57e55d"
+  },
+  "pink-script": {
+    "tagline": "b6d06fd5c2df",
+    "description": "6836a11e7a8a",
+    "best_for": "5846850567b3",
+    "avoid_for": "9f33a3d6f78d",
+    "occasion": "282a004bbe56",
+    "palette_description": "f8ad3d14d784",
+    "typography_style": "7374fe632bfa"
+  },
+  "playful": {
+    "tagline": "60285945dd6b",
+    "description": "66f04426ee96",
+    "best_for": "f125c59e4c3b",
+    "avoid_for": "61cd38c1afad",
+    "occasion": "90e8a60590ee",
+    "palette_description": "4bc8a0b12a1f",
+    "typography_style": "33242cd76547"
+  },
+  "raw-grid": {
+    "tagline": "1142e5ab1949",
+    "description": "430f6d6c1bb4",
+    "best_for": "c9d643a16d9d",
+    "avoid_for": "fc55a5d66864",
+    "occasion": "e39cbf06e28e",
+    "palette_description": "d4ca01d0be61",
+    "typography_style": "dcd9f9b130f4"
+  },
+  "retro-windows": {
+    "tagline": "a55821fad441",
+    "description": "18494a5ccb50",
+    "best_for": "6b445a520b20",
+    "avoid_for": "083aed0166b5",
+    "occasion": "2569163071c2",
+    "palette_description": "6979ce6f14df",
+    "typography_style": "659ce0246960"
+  },
+  "retro-zine": {
+    "tagline": "4248bbc8b35b",
+    "description": "39606d83cda0",
+    "best_for": "2344f0f1ef97",
+    "avoid_for": "e8891600f97e",
+    "occasion": "358c2eb308cc",
+    "palette_description": "548e35772c32",
+    "typography_style": "fe7c96ff922d"
+  },
+  "sakura-chroma": {
+    "tagline": "d9ed5af0e199",
+    "description": "21f9521c6ca9",
+    "best_for": "918b27d9f67d",
+    "avoid_for": "325555c9171f",
+    "occasion": "005b89fc162a",
+    "palette_description": "8effc8ba6fee",
+    "typography_style": "a640f38a5f44"
+  },
+  "scatterbrain": {
+    "tagline": "db98eeb9afb7",
+    "description": "9c2af721ce94",
+    "best_for": "f90b5ec52c24",
+    "avoid_for": "c7d8196dd4ee",
+    "occasion": "dfb0a551ebac",
+    "palette_description": "e9c1600f0f9f",
+    "typography_style": "0a17068b375f"
+  },
+  "signal": {
+    "tagline": "f4290ae9c87c",
+    "description": "74a999ba34e0",
+    "best_for": "30ca2a55ca5b",
+    "avoid_for": "566e85333bc4",
+    "occasion": "1d3019efef7e",
+    "palette_description": "9a746511ff07",
+    "typography_style": "dc36071d48dc"
+  },
+  "soft-editorial": {
+    "tagline": "b5c58ad68a6d",
+    "description": "d2473ab2d663",
+    "best_for": "241fd9946402",
+    "avoid_for": "ab5c0f6cc170",
+    "occasion": "a3932c7db752",
+    "palette_description": "c83b3205aa5f",
+    "typography_style": "3208acbd0661"
+  },
+  "stencil-tablet": {
+    "tagline": "cbdcca702713",
+    "description": "6154e25cd4a5",
+    "best_for": "5018c3f9b931",
+    "avoid_for": "60ff8e022a0c",
+    "occasion": "02fcb5530421",
+    "palette_description": "e604330ce23f",
+    "typography_style": "6c22f45dadc6"
+  },
+  "studio": {
+    "tagline": "b1a3b79f3fb1",
+    "description": "0b57cdc59b7a",
+    "best_for": "8fa395504f24",
+    "avoid_for": "51736f29a10e",
+    "occasion": "20c24f45e7ea",
+    "palette_description": "67c99aba0d1e",
+    "typography_style": "58ac6ec39e63"
+  },
+  "vellum": {
+    "tagline": "50b13c15bfba",
+    "description": "2dc6c2000637",
+    "best_for": "50793ecef62d",
+    "avoid_for": "dea1573029bb",
+    "occasion": "ed015216f322",
+    "palette_description": "3c25b676090f",
+    "typography_style": "31427a81cd50"
+  }
+}

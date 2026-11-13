@@ -1,0 +1,17 @@
+{
+  "slug": "fixture-ok",
+  "name": "Fixture OK",
+  "tagline": "A tiny valid template used only by the test suite.",
+  "mood": ["plain"],
+  "occasion": ["testing"],
+  "tone": ["neutral"],
+  "formality": "medium",
+  "density": "low",
+  "palette": { "bg": "#FFFFFF", "ink": "#111111", "description": "white and near-black" },
+  "typography": { "display": "Inter", "body": "Inter" },
+  "scheme": "light",
+  "best_for": "Build tests.",
+  "avoid_for": "Anything real.",
+  "slide_count": 2,
+  "navigation": "none"
+}

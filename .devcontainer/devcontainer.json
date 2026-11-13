@@ -1,0 +1,14 @@
+{
+  "name": "slides-commons",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "git submodule update --init --depth 1 && npm ci && npx playwright install --with-deps chromium",
+  "forwardPorts": [4173],
+  "portsAttributes": {
+    "4173": { "label": "site (npm run serve)", "onAutoForward": "notify" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-playwright.playwright"]
+    }
+  }
+}
