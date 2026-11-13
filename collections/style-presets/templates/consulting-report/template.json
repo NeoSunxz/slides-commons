@@ -1,0 +1,50 @@
+{
+  "slug": "consulting-report",
+  "name": "Consulting Report",
+  "tagline": "Strategy-firm style deliverable on pure white: full-sentence action titles, a section tracker, source lines and dense, orderly CSS charts. Original slides-commons design.",
+  "mood": [
+    "analytical",
+    "rigorous",
+    "authoritative",
+    "restrained"
+  ],
+  "occasion": [
+    "strategy review",
+    "steering committee",
+    "consulting deliverable",
+    "business case",
+    "market analysis",
+    "investment memo"
+  ],
+  "tone": [
+    "formal",
+    "evidence-led",
+    "precise",
+    "conclusion-first"
+  ],
+  "formality": "high",
+  "density": "high",
+  "palette": {
+    "paper": "#FFFFFF",
+    "navy": "#0B2545",
+    "navy-60": "#4F6A8F",
+    "navy-30": "#A3B3C9",
+    "navy-12": "#E1E7EF",
+    "accent": "#087F79",
+    "accent-tint": "#E3F1EF",
+    "ink": "#1B2433",
+    "muted": "#5A6474",
+    "rule": "#D3DAE3",
+    "description": "pure white canvas, deep navy for titles and the focus series, a ladder of navy tints for every other series, and one restrained teal accent reserved for the so-what (the highlighted bar, row, option or callout)"
+  },
+  "typography": {
+    "display": "Source Serif 4",
+    "body": "IBM Plex Sans",
+    "style": "semibold transitional serif for full-sentence action titles and section numerals; a neutral grotesque with tabular figures for body, tables, chart labels, trackers and source lines"
+  },
+  "scheme": "light",
+  "best_for": "Decks that must prove a recommendation with evidence: strategy and steering-committee reviews, business cases, market and cost diagnostics, options assessments and implementation plans. Built for many numbers per slide: column, stacked, waterfall and 2x2 charts, data tables, Harvey-ball option grids and Gantt roadmaps.",
+  "avoid_for": "Inspirational keynotes, product launches, brand storytelling and anything that needs imagery or emotion. Sparse slides with one big word look empty in this system.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

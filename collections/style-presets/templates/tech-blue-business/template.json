@@ -1,0 +1,49 @@
+{
+  "slug": "tech-blue-business",
+  "name": "Tech Blue Business",
+  "tagline": "White corporate canvas with tech-blue accents, a sparing blue gradient band and consistent line icons drawn in inline SVG. Original slides-commons design.",
+  "mood": [
+    "professional",
+    "trustworthy",
+    "modern",
+    "structured"
+  ],
+  "occasion": [
+    "company introduction",
+    "solution proposal",
+    "client pitch",
+    "bid presentation",
+    "project kick-off",
+    "partner briefing"
+  ],
+  "tone": [
+    "corporate",
+    "technical",
+    "clean",
+    "confident"
+  ],
+  "formality": "high",
+  "density": "medium-high",
+  "palette": {
+    "paper": "#ffffff",
+    "ink": "#0e1b2e",
+    "blue": "#1e5eff",
+    "blue-deep": "#0a2a80",
+    "blue-soft": "#e8efff",
+    "line": "#dce3ee",
+    "surface": "#f4f7fc",
+    "gradient": "linear-gradient(120deg, #0a2a80 0%, #1e5eff 55%, #22b5f0 100%)",
+    "description": "white canvas, navy ink, one tech-blue family with a pale tint for icon tiles; the navy-to-cyan gradient appears only as the cover/closing band and one highlight per slide"
+  },
+  "typography": {
+    "display": "Plus Jakarta Sans",
+    "body": "Plus Jakarta Sans",
+    "mono": "IBM Plex Mono",
+    "style": "modern geometric sans in 400-800 for headlines and body, IBM Plex Mono for uppercase labels, codes, dates and section numbers; tabular figures for metrics and tables"
+  },
+  "scheme": "light",
+  "best_for": "Company introductions, solution proposals and B2B pitches in technology, logistics, manufacturing and services: agenda, company overview, capability icon grid, layered architecture diagram, delivery process, case study with metrics, Gantt roadmap, service tier matrix, client logo wall, contact slide. Works well for Chinese corporate decks.",
+  "avoid_for": "Emotional storytelling, creative or lifestyle brands, academic talks and anything that should feel handmade or editorial. The look is deliberately corporate.",
+  "slide_count": 12,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

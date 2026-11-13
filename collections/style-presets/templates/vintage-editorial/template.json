@@ -1,0 +1,44 @@
+{
+  "slug": "vintage-editorial",
+  "name": "Vintage Editorial",
+  "tagline": "A cream magazine page with a Fraunces masthead, witty copy, circle-line-dot geometry and bold bordered call-to-action boxes. Adapted from the Vintage Editorial preset in frontend-slides.",
+  "mood": [
+    "witty",
+    "confident",
+    "literary",
+    "warm"
+  ],
+  "occasion": [
+    "annual letter",
+    "newsletter review",
+    "editorial pitch",
+    "keynote talk",
+    "brand story",
+    "community update"
+  ],
+  "tone": [
+    "editorial",
+    "conversational",
+    "refined",
+    "personality-driven"
+  ],
+  "formality": "medium",
+  "density": "medium",
+  "palette": {
+    "bg-cream": "#f5f3ee",
+    "text-primary": "#1a1a1a",
+    "text-secondary": "#555555",
+    "accent-warm": "#e8d4c0",
+    "description": "warm cream paper with near-black type, mid-grey secondary text and one warm sand accent used for highlighter strokes, filled circles and the recommended table column"
+  },
+  "typography": {
+    "display": "Fraunces",
+    "body": "Work Sans",
+    "style": "a soft, high-contrast display serif at 900/700 with italic 400 for deks, numerals and asides, paired with a quiet grotesque for body and wide-tracked uppercase labels"
+  },
+  "scheme": "light",
+  "best_for": "Decks with a voice: annual letters, newsletter and publication reviews, editorial or brand-story pitches, keynote talks and community updates. Strong for big statements, witty lists, before/after columns, three-number summaries and a clear call to action.",
+  "avoid_for": "Hard-data dashboards, highly technical deep dives and very corporate or regulatory settings. The serif display and conversational copy expect personality.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

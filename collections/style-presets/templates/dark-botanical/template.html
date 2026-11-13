@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<!--
+  Dark Botanical — slides-commons style-preset template.
+  A slides-commons derivative of the "Dark Botanical" preset in frontend-slides'
+  STYLE_PRESETS.md (MIT, (c) 2025 Zara Zhang). Not an official frontend-slides file.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Botanical — Maison Orrin Collectors' Evening</title>
+
+<!-- Fonts: Cormorant (display 400/600 + italics) + IBM Plex Sans (body 300/400) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   The six preset colors come first; the rest are derived from them.
+   =========================================== */
+:root {
+    /* Preset colors (Dark Botanical) */
+    --bg-primary: #0f0f0f;
+    --text-primary: #e8e4df;
+    --text-secondary: #9a9590;
+    --accent-warm: #d4a574;
+    --accent-pink: #e8b4b8;
+    --accent-gold: #c9b896;
+
+    /* Derived tokens (transparencies of the preset colors, no new hues) */
+    --text-faint: rgba(232, 228, 223, 0.42);  /* chrome, axis labels */
+    --rule: rgba(232, 228, 223, 0.14);        /* hairlines */
+    --gold-line: rgba(201, 184, 150, 0.7);    /* thin vertical accent lines */
+    --gold-tint: rgba(201, 184, 150, 0.07);   /* highlighted table column */
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #070707;
+    --slide-bg: var(--bg-primary);
+
+    /* Typography (authored at 1920x1080) */
+    --font-display: 'Cormorant', 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Layout (authored at 1920x1080) */
+    --pad-x: 136px;
+    --content-top: 176px;
+    --content-bottom: 152px;
+
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur: 0.9s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   =========================================== */
+.slide {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+}
+.d { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+.d em, .d i, em.d { font-style: italic; }
+em { font-style: italic; }
+.pink { color: var(--accent-pink); }
+.gold { color: var(--accent-gold); }
+.warm { color: var(--accent-warm); }
+
+/* ===========================================
+   ABSTRACT SOFT SHAPES: blurred, overlapping gradient circles
+   gathered in one or two corners. CSS only, never illustrations.
+   =========================================== */
+.orbs { position: absolute; width: 860px; height: 860px; pointer-events: none; z-index: 0; }
+.orbs.tr { top: -300px; right: -240px; }
+.orbs.tl { top: -300px; left: -260px; }
+.orbs.br { bottom: -300px; right: -240px; }
+.orbs.bl { bottom: -320px; left: -280px; }
+.orb { position: absolute; border-radius: 50%; filter: blur(28px); mix-blend-mode: screen; }
+.orb.a { width: 520px; height: 520px; left: 120px; top: 140px; background: radial-gradient(circle at 40% 40%, rgba(212, 165, 116, 0.62), rgba(212, 165, 116, 0.18) 55%, rgba(212, 165, 116, 0) 72%); }
+.orb.b { width: 420px; height: 420px; left: 340px; top: 320px; background: radial-gradient(circle at 50% 50%, rgba(232, 180, 184, 0.58), rgba(232, 180, 184, 0.16) 55%, rgba(232, 180, 184, 0) 72%); }
+.orb.c { width: 300px; height: 300px; left: 160px; top: 420px; background: radial-gradient(circle at 50% 50%, rgba(201, 184, 150, 0.55), rgba(201, 184, 150, 0.14) 55%, rgba(201, 184, 150, 0) 72%); }
+.orbs.sm { transform: scale(0.7); }
+/* .far pushes a cluster further off its corner so only the glow edge shows (use when text sits near that corner) */
+.orbs.tr.far { top: -440px; right: -420px; }
+.orbs.bl.far { bottom: -440px; left: -420px; }
+.orbs.tl.far { top: -440px; left: -420px; }
+.orbs.br.far { bottom: -440px; right: -420px; }
+
+/* Thin vertical accent line */
+.vline { display: block; width: 1px; background: linear-gradient(to bottom, rgba(201, 184, 150, 0), var(--gold-line) 30%, var(--gold-line) 70%, rgba(201, 184, 150, 0)); }
+
+/* ===========================================
+   CHROME: house name top-left, chapter top-right,
+   occasion bottom-left, page number bottom-right.
+   =========================================== */
+.top, .foot {
+    position: absolute;
+    z-index: 3;
+    left: var(--pad-x);
+    right: var(--pad-x);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.top { top: 64px; }
+.foot { bottom: 60px; }
+.house { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 32px; letter-spacing: 0.01em; color: var(--text-primary); }
+.label, .chapter, .foot {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.foot { color: var(--text-faint); }
+.chapter b { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 26px; letter-spacing: 0; text-transform: none; color: var(--accent-gold); margin-right: 12px; }
+.pagenum { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.pagenum span { color: var(--text-faint); }
+
+/* ===========================================
+   CONTENT AREA
+   .content is the safe area between the chrome lines.
+   .center stacks content on the vertical axis of the slide.
+   =========================================== */
+.content { position: absolute; z-index: 1; top: var(--content-top); bottom: var(--content-bottom); left: var(--pad-x); right: var(--pad-x); display: flex; flex-direction: column; }
+.center { align-items: center; justify-content: center; text-align: center; }
+
+/* ===========================================
+   TYPE SCALE
+   =========================================== */
+.t-hero    { font-size: 184px; line-height: 0.96; font-style: italic; }
+.t-display { font-size: 128px; line-height: 1.0; }
+.t-stmt    { font-size: 84px;  line-height: 1.14; }
+.t-title   { font-size: 76px;  line-height: 1.04; }
+.t-sub     { font-size: 52px;  line-height: 1.1; }
+.h3        { font-family: var(--font-display); font-weight: 600; font-size: 42px; line-height: 1.1; letter-spacing: 0; }
+.lede      { font-size: 30px;  line-height: 1.6; font-weight: 300; color: var(--text-secondary); }
+.body      { font-size: 25px;  line-height: 1.65; font-weight: 300; color: var(--text-secondary); }
+.small     { font-size: 21px;  line-height: 1.6; font-weight: 400; color: var(--text-secondary); }
+.label + .d, .vline + .d { margin-top: 32px; }
+.d + .body, .d + .lede { margin-top: 32px; }
+.lining { font-variant-numeric: lining-nums tabular-nums; }
+
+/* ===========================================
+   SLIDE 1 — COVER (centred)
+   =========================================== */
+.s-cover .vline { height: 140px; margin-top: 36px; }
+.s-cover .t-hero { margin-top: 28px; }
+.s-cover .lede { margin-top: 36px; max-width: 900px; }
+.s-cover .date { margin-top: 56px; }
+
+/* ===========================================
+   SLIDE 2 — AGENDA
+   =========================================== */
+.s-agenda .content { flex-direction: row; gap: 96px; }
+.s-agenda .intro { width: 520px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.s-agenda .vline { height: auto; }
+.programme { list-style: none; flex: 1; display: grid; grid-template-rows: repeat(5, 1fr); }
+.programme li { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; border-bottom: 1px solid var(--rule); }
+.programme li:first-child { border-top: 1px solid var(--rule); }
+.programme .n { font-family: var(--font-display); font-style: italic; font-size: 44px; color: var(--accent-gold); }
+.programme .small { margin-top: 4px; }
+.programme .label { color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+/* ===========================================
+   SLIDE 3 — SECTION DIVIDER (centred)
+   =========================================== */
+.numeral { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 300px; line-height: 0.8; color: var(--accent-gold); }
+.s-divider .label { margin-top: 48px; }
+.s-divider .t-display { margin-top: 20px; }
+.s-divider .body { max-width: 820px; }
+
+/* ===========================================
+   SLIDE 4 — STATEMENT (centred)
+   =========================================== */
+.s-statement .t-stmt { max-width: 1440px; }
+.s-statement .vline { height: 96px; }
+.s-statement .vline:last-of-type { margin-top: 48px; }
+.s-statement .small { margin-top: 28px; color: var(--text-faint); }
+
+/* ===========================================
+   SLIDE 5 — LIST (four notes in columns split by thin lines)
+   =========================================== */
+.s-list .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 96px; }
+.s-list .head .body { max-width: 640px; text-align: right; }
+.notes { list-style: none; flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 72px; }
+.notes li { position: relative; padding: 8px 48px 0; display: flex; flex-direction: column; }
+.notes li + li::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, rgba(201, 184, 150, 0), var(--gold-line) 25%, var(--gold-line) 75%, rgba(201, 184, 150, 0)); }
+.notes li:first-child { padding-left: 0; }
+.notes li:last-child { padding-right: 0; }
+.notes .n { font-family: var(--font-display); font-style: italic; font-size: 40px; color: var(--accent-gold); }
+.notes .dot { width: 14px; height: 14px; border-radius: 50%; margin-top: auto; }
+.notes .h3 { margin-top: 24px; }
+.notes .small { margin-top: 14px; }
+.notes .label { margin-top: 24px; font-size: 16px; color: var(--text-faint); }
+
+/* ===========================================
+   SLIDE 6 — TWO COLUMNS (then / now)
+   =========================================== */
+.s-two .content { flex-direction: row; align-items: stretch; }
+.s-two .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
+.s-two .col:first-child { padding-right: 96px; }
+.s-two .col:last-child { padding-left: 96px; }
+.s-two .vline { flex: none; }
+.s-two .t-sub { margin-top: 20px; }
+.lines { list-style: none; margin-top: 44px; }
+.lines li { font-size: 26px; line-height: 1.5; font-weight: 300; color: var(--text-secondary); padding: 22px 0; border-top: 1px solid var(--rule); }
+.lines li:last-child { border-bottom: 1px solid var(--rule); }
+.s-two .col:last-child .lines li { color: var(--text-primary); }
+
+/* ===========================================
+   SLIDE 7 — BIG NUMBER + STATS
+   =========================================== */
+.s-stats .content { flex-direction: row; align-items: stretch; gap: 0; }
+.s-stats .hero { flex: 1.25; display: flex; flex-direction: column; justify-content: flex-end; padding-right: 112px; }
+.stat-xl { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 260px; line-height: 0.82; color: var(--accent-gold); font-variant-numeric: lining-nums; }
+.s-stats .hero .lede { margin-top: 28px; max-width: 760px; }
+.s-stats .rows { flex: 1; display: grid; grid-template-rows: repeat(3, 1fr); padding-left: 96px; }
+.s-stats .row { display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid var(--rule); }
+.s-stats .row:first-child { border-top: 1px solid var(--rule); }
+.s-stats .row .num { font-family: var(--font-display); font-weight: 400; font-size: 96px; line-height: 0.95; font-variant-numeric: lining-nums; }
+.s-stats .row .small { margin-top: 10px; }
+
+/* ===========================================
+   SLIDE 8 — LOLLIPOP CHART (pure CSS)
+   =========================================== */
+.s-chart .content { flex-direction: row; gap: 112px; }
+.s-chart .intro { width: 520px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.chart { flex: 1; display: grid; grid-template-columns: 72px 1fr; grid-template-rows: 1fr 56px; min-width: 0; padding-top: 48px; }
+.y-axis { position: relative; }
+.y-axis span { position: absolute; right: 20px; transform: translateY(50%); font-size: 18px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.plot { position: relative; border-bottom: 1px solid var(--text-secondary); }
+.plot .grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--rule); }
+.stems { position: absolute; inset: 0 12px; display: flex; align-items: flex-end; }
+.stem { flex: 1; position: relative; height: var(--h); display: flex; justify-content: center; transform-origin: bottom; }
+.stem::before { content: ""; width: 2px; height: 100%; background: rgba(154, 149, 144, 0.5); }
+.stem::after { content: ""; position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--text-secondary); }
+.stem.hi::before { background: var(--accent-gold); }
+.stem.hi::after { width: 28px; height: 28px; top: -14px; margin-left: -14px; background: var(--accent-gold); box-shadow: 0 0 0 10px rgba(201, 184, 150, 0.15); }
+.stem b { position: absolute; bottom: 100%; padding-bottom: 28px; font-family: var(--font-display); font-weight: 600; font-size: 26px; color: var(--text-secondary); font-variant-numeric: lining-nums; white-space: nowrap; }
+.stem.hi b { font-style: italic; font-weight: 400; font-size: 48px; color: var(--accent-gold); padding-bottom: 36px; }
+.x-axis { grid-column: 2; display: flex; padding: 18px 12px 0; }
+.x-axis span { flex: 1; text-align: center; font-size: 17px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
+.x-axis span.on { color: var(--accent-gold); }
+
+/* ===========================================
+   SLIDE 9 — COMPARISON TABLE
+   =========================================== */
+.s-compare .head { display: flex; justify-content: space-between; align-items: flex-end; }
+.s-compare .table-wrap { flex: 1; margin-top: 56px; }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; padding: 0 36px; border-bottom: 1px solid var(--rule); }
+thead th { height: 84px; font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: 36px; color: var(--text-primary); border-bottom: 1px solid var(--text-secondary); }
+thead th:first-child { font-family: var(--font-body); font-style: normal; font-size: 18px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); }
+thead th.us { color: var(--accent-gold); border-top: 2px solid var(--accent-gold); background: var(--gold-tint); }
+tbody th { font-family: var(--font-body); font-weight: 400; font-size: 18px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
+tbody td { font-size: 25px; font-weight: 300; color: var(--text-secondary); }
+tbody td.us { background: var(--gold-tint); color: var(--text-primary); font-weight: 400; }
+th:first-child { width: 25%; padding-left: 0; }
+
+/* ===========================================
+   SLIDE 10 — QUOTE (centred)
+   =========================================== */
+.qmark { font-family: var(--font-display); font-style: italic; font-size: 240px; line-height: 0.5; height: 96px; color: var(--accent-pink); }
+.s-quote blockquote { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 76px; line-height: 1.16; max-width: 1400px; margin-top: 40px; }
+.s-quote .vline { height: 80px; margin-top: 48px; }
+.s-quote .name { font-family: var(--font-display); font-weight: 600; font-size: 34px; margin-top: 28px; }
+.s-quote .small { margin-top: 6px; }
+
+/* ===========================================
+   SLIDE 11 — CLOSING (centred)
+   =========================================== */
+.s-close .t-hero { font-size: 168px; }
+.dates { list-style: none; display: flex; margin-top: 72px; }
+.dates li { padding: 0 64px; display: flex; flex-direction: column; align-items: center; position: relative; }
+.dates li + li::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, rgba(201, 184, 150, 0), var(--gold-line) 30%, var(--gold-line) 70%, rgba(201, 184, 150, 0)); }
+.dates .when { font-family: var(--font-display); font-style: italic; font-size: 44px; color: var(--accent-gold); font-variant-numeric: lining-nums; }
+.dates .small { margin-top: 8px; }
+.s-close .contact { margin-top: 64px; }
+
+/* ===========================================
+   ANIMATIONS
+   Slow, soft fades. Triggered by .visible on the active slide.
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity var(--dur) var(--ease-out-expo), transform var(--dur) var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 110ms + 150ms);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+
+/* Soft shapes drift in */
+.orbs { opacity: 0; transition: opacity 1.6s ease; }
+.slide.visible .orbs { opacity: 1; }
+.orb { transition: transform 2.4s var(--ease-out-expo); transform: translate(30px, -20px) scale(0.92); }
+.slide.visible .orb { transform: none; }
+
+/* Thin lines draw from the top */
+.vline.draw { transform: scaleY(0); transform-origin: top; transition: transform 1.1s var(--ease-out-expo) 0.2s; }
+.slide.visible .vline.draw { transform: scaleY(1); }
+
+/* Stems rise from the axis */
+.grow { transform: scaleY(0); transition: transform 1s var(--ease-out-expo); transition-delay: calc(var(--i, 0) * 50ms + 200ms); }
+.slide.visible .grow { transform: scaleY(1); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide s-cover active visible" data-label="Cover">
+        <div class="orbs tr" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="orbs bl sm" aria-hidden="true"><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="content center">
+            <p class="label reveal">Collectors' evening · Autumn 2027</p>
+            <span class="vline draw" aria-hidden="true"></span>
+            <h1 class="d t-hero reveal" style="--i:1">The Quiet<br>Garden</h1>
+            <p class="lede reveal" style="--i:2">A new collection, and a year inside the atelier.</p>
+            <p class="label date reveal" style="--i:3">Thursday 7 October 2027 · Rue des Tanneurs</p>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>i</b>Welcome</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 2. AGENDA =========================================== -->
+    <section class="slide s-agenda" data-label="Agenda">
+        <div class="orbs bl sm" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i></div>
+        <div class="content">
+            <div class="intro">
+                <p class="label reveal">Seven until nine</p>
+                <h2 class="d t-display reveal" style="--i:1">This<br><em>evening</em></h2>
+                <p class="body reveal" style="--i:2">Five short chapters, then the garden room is open for tasting.</p>
+            </div>
+            <span class="vline draw" aria-hidden="true"></span>
+            <ol class="programme">
+                <li class="reveal" style="--i:1"><span class="n">i</span><div><h3 class="h3">Welcome</h3><p class="small">A year in the atelier, briefly</p></div><span class="label">7.00 pm</span></li>
+                <li class="reveal" style="--i:2"><span class="n">ii</span><div><h3 class="h3">The collection</h3><p class="small">Four new scents for the autumn</p></div><span class="label">7.10 pm</span></li>
+                <li class="reveal" style="--i:3"><span class="n">iii</span><div><h3 class="h3">The making</h3><p class="small">How a bottle is poured by hand</p></div><span class="label">7.35 pm</span></li>
+                <li class="reveal" style="--i:4"><span class="n">iv</span><div><h3 class="h3">Our collectors</h3><p class="small">The year in numbers, and in words</p></div><span class="label">7.50 pm</span></li>
+                <li class="reveal" style="--i:5"><span class="n">v</span><div><h3 class="h3">The garden room</h3><p class="small">Tasting, and first orders</p></div><span class="label">8.05 pm</span></li>
+            </ol>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>i</b>Welcome</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 3. SECTION DIVIDER ================================== -->
+    <section class="slide s-divider" data-label="Chapter ii">
+        <div class="orbs tl" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="orbs br sm" aria-hidden="true"><i class="orb c"></i><i class="orb b"></i></div>
+        <div class="content center">
+            <div class="numeral reveal" aria-hidden="true">II</div>
+            <p class="label reveal" style="--i:1">Chapter two</p>
+            <h2 class="d t-display reveal" style="--i:2">The <em>collection</em></h2>
+            <p class="body reveal" style="--i:3">Four scents built around one hour: the garden just after the light goes.</p>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>ii</b>The collection</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 4. STATEMENT ======================================== -->
+    <section class="slide s-statement" data-label="Statement">
+        <div class="orbs br" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="content center">
+            <span class="vline draw" aria-hidden="true"></span>
+            <h2 class="d t-stmt reveal" style="--i:1">We stopped bottling what a garden <em class="pink">smells&nbsp;like</em>, and started bottling how it <em class="gold">feels&nbsp;at&nbsp;dusk</em>.</h2>
+            <span class="vline draw" aria-hidden="true"></span>
+            <p class="small reveal" style="--i:2">Élise Orrin, perfumer — from the autumn collection notes</p>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>ii</b>The collection</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 5. LIST ============================================= -->
+    <section class="slide s-list" data-label="Four scents">
+        <div class="orbs tr far" aria-hidden="true"><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="content">
+            <div class="head">
+                <div>
+                    <p class="label reveal">The autumn collection</p>
+                    <h2 class="d t-title reveal" style="--i:1">Four scents, <em>one hour</em></h2>
+                </div>
+                <p class="body reveal" style="--i:2">Each is built on a single garden note and poured in batches of two hundred.</p>
+            </div>
+            <ol class="notes">
+                <li class="reveal" style="--i:2"><span class="n">i</span><span class="dot" style="background:var(--accent-gold)"></span><h3 class="h3">Fig Leaf</h3><p class="small">Green, milky and a little bitter, like a branch snapped in late August.</p><p class="label">Heart · fig, cedar</p></li>
+                <li class="reveal" style="--i:3"><span class="n">ii</span><span class="dot" style="background:var(--accent-pink)"></span><h3 class="h3">Wet Stone</h3><p class="small">The garden wall after rain: mineral, cool, and almost not there.</p><p class="label">Heart · ambrette, iris</p></li>
+                <li class="reveal" style="--i:4"><span class="n">iii</span><span class="dot" style="background:var(--accent-warm)"></span><h3 class="h3">Orris Butter</h3><p class="small">Powdery and warm, the slowest of the four to open on skin.</p><p class="label">Heart · orris, musk</p></li>
+                <li class="reveal" style="--i:5"><span class="n">iv</span><span class="dot" style="background:var(--text-primary)"></span><h3 class="h3">Smoked Tea</h3><p class="small">A lapsang note from the potting shed, softened with honey.</p><p class="label">Heart · tea, benzoin</p></li>
+            </ol>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>ii</b>The collection</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 6. TWO COLUMNS ====================================== -->
+    <section class="slide s-two" data-label="Then and now">
+        <div class="orbs tl sm" aria-hidden="true"><i class="orb a"></i><i class="orb c"></i></div>
+        <div class="content">
+            <div class="col">
+                <p class="label reveal">Then · 2024</p>
+                <h2 class="d t-sub reveal" style="--i:1">A kitchen table and <em>one</em> scent</h2>
+                <ul class="lines reveal" style="--i:2">
+                    <li>One perfumer, one assistant</li>
+                    <li>Forty bottles a month, sold by letter</li>
+                    <li>Raw materials bought by the gram</li>
+                </ul>
+            </div>
+            <span class="vline draw" aria-hidden="true"></span>
+            <div class="col">
+                <p class="label reveal" style="--i:2">Now · 2027</p>
+                <h2 class="d t-sub reveal" style="--i:3">An atelier and <em class="gold">eleven</em> scents</h2>
+                <ul class="lines reveal" style="--i:4">
+                    <li>Six makers on Rue des Tanneurs</li>
+                    <li>Every bottle still poured and signed by hand</li>
+                    <li>Our own orris, grown outside Grasse</li>
+                </ul>
+            </div>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>iii</b>The making</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 7. BIG NUMBER + STATS =============================== -->
+    <section class="slide s-stats" data-label="The year in numbers">
+        <div class="orbs bl" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="content">
+            <div class="hero">
+                <p class="label reveal">The year in numbers</p>
+                <div class="stat-xl reveal" style="--i:1;margin-top:40px">1,840</div>
+                <p class="lede reveal" style="--i:2">bottles poured and signed by hand since last October.</p>
+            </div>
+            <span class="vline draw" aria-hidden="true"></span>
+            <div class="rows">
+                <div class="row reveal" style="--i:3"><span class="num">312</span><p class="small">collectors on the register</p></div>
+                <div class="row reveal" style="--i:4"><span class="num">41</span><p class="small">countries we now ship to</p></div>
+                <div class="row reveal" style="--i:5"><span class="num"><em>96%</em></span><p class="small">of collectors ordered again</p></div>
+            </div>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>iv</b>Our collectors</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 8. LOLLIPOP CHART =================================== -->
+    <section class="slide s-chart" data-label="Orders by month">
+        <div class="orbs tl far" aria-hidden="true"><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="content">
+            <div class="intro">
+                <p class="label reveal">Orders by month</p>
+                <h2 class="d t-title reveal" style="--i:1">Autumn is <em>our season</em></h2>
+                <p class="body reveal" style="--i:2">Last October's release brought in more orders than the whole spring.</p>
+            </div>
+            <div class="chart" role="img" aria-label="Lollipop chart of orders by month, November 2026 to October 2027. Monthly orders range from 62 to 148; October 2027 peaks at 312.">
+                <div class="y-axis"><span style="bottom:0%">0</span><span style="bottom:25%">100</span><span style="bottom:50%">200</span><span style="bottom:75%">300</span><span style="bottom:100%">400</span></div>
+                <div class="plot">
+                    <div class="grid-line" style="bottom:25%"></div><div class="grid-line" style="bottom:50%"></div><div class="grid-line" style="bottom:75%"></div><div class="grid-line" style="bottom:100%"></div>
+                    <!-- Stem height = orders / 400 (the top of the y-axis) -->
+                    <div class="stems">
+                        <div class="stem grow" style="--h:37%;--i:0"><b>148</b></div>
+                        <div class="stem grow" style="--h:33.5%;--i:1"><b>134</b></div>
+                        <div class="stem grow" style="--h:17%;--i:2"><b>68</b></div>
+                        <div class="stem grow" style="--h:15.5%;--i:3"><b>62</b></div>
+                        <div class="stem grow" style="--h:19%;--i:4"><b>76</b></div>
+                        <div class="stem grow" style="--h:21.5%;--i:5"><b>86</b></div>
+                        <div class="stem grow" style="--h:23%;--i:6"><b>92</b></div>
+                        <div class="stem grow" style="--h:20%;--i:7"><b>80</b></div>
+                        <div class="stem grow" style="--h:18%;--i:8"><b>72</b></div>
+                        <div class="stem grow" style="--h:24.5%;--i:9"><b>98</b></div>
+                        <div class="stem grow" style="--h:31%;--i:10"><b>124</b></div>
+                        <div class="stem grow hi" style="--h:78%;--i:11"><b>312</b></div>
+                    </div>
+                </div>
+                <div class="x-axis"><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span class="on">Oct</span></div>
+            </div>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>iv</b>Our collectors</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 9. COMPARISON TABLE ================================= -->
+    <section class="slide s-compare" data-label="Three strengths">
+        <div class="orbs br sm" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i></div>
+        <div class="content">
+            <div class="head">
+                <div>
+                    <p class="label reveal">Each scent comes in three strengths</p>
+                    <h2 class="d t-title reveal" style="--i:1">Choosing a <em>strength</em></h2>
+                </div>
+                <p class="small reveal" style="--i:2">Prices for the autumn collection, 50 ml unless noted</p>
+            </div>
+            <div class="table-wrap reveal" style="--i:3">
+                <table>
+                    <thead><tr><th>&nbsp;</th><th>Eau de Parfum</th><th class="us">Extrait</th><th>Atelier Oil</th></tr></thead>
+                    <tbody>
+                        <tr><th>Concentration</th><td>18% aromatic oils</td><td class="us">30% aromatic oils</td><td>Pure, in jojoba</td></tr>
+                        <tr><th>On the skin</th><td>Six to eight hours</td><td class="us">A full day, closer to the skin</td><td>Close; reapply at dusk</td></tr>
+                        <tr><th>Bottle</th><td>Clear glass, spray</td><td class="us">Smoked glass, spray</td><td>Amber roll-on, 10 ml</td></tr>
+                        <tr><th>Price</th><td>€165</td><td class="us">€240</td><td>€120</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>iv</b>Our collectors</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 10. QUOTE =========================================== -->
+    <section class="slide s-quote" data-label="Collector quote">
+        <div class="orbs tl" aria-hidden="true"><i class="orb b"></i><i class="orb a"></i><i class="orb c"></i></div>
+        <div class="content center">
+            <div class="qmark reveal" aria-hidden="true">“</div>
+            <blockquote class="reveal" style="--i:1">I wear Wet Stone on the days I need to be quiet. People lean in to ask what it is.</blockquote>
+            <span class="vline draw" aria-hidden="true"></span>
+            <p class="name reveal" style="--i:3">Hana Takeda</p>
+            <p class="small reveal" style="--i:4">Collector since the first season, Kyoto</p>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>iv</b>Our collectors</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- ============== 11. CLOSING ========================================= -->
+    <section class="slide s-close" data-label="Closing">
+        <div class="orbs tr" aria-hidden="true"><i class="orb a"></i><i class="orb b"></i><i class="orb c"></i></div>
+        <div class="orbs bl sm" aria-hidden="true"><i class="orb c"></i><i class="orb b"></i></div>
+        <div class="content center">
+            <p class="label reveal">The garden room is open</p>
+            <h2 class="d t-hero reveal" style="--i:1;margin-top:32px">With gratitude</h2>
+            <ol class="dates">
+                <li class="reveal" style="--i:2"><span class="when">Tonight</span><p class="small">Tasting and first orders</p></li>
+                <li class="reveal" style="--i:3"><span class="when">14 October</span><p class="small">Collectors' allocation closes</p></li>
+                <li class="reveal" style="--i:4"><span class="when">1 November</span><p class="small">Public release</p></li>
+            </ol>
+            <p class="label contact reveal" style="--i:5">atelier@maison-orrin.example</p>
+        </div>
+        <header class="top"><span class="house">Maison Orrin</span><span class="chapter"><b>v</b>The garden room</span></header>
+        <footer class="foot"><span>For our collectors</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

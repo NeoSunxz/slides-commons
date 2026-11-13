@@ -1,0 +1,45 @@
+{
+  "slug": "electric-studio",
+  "name": "Electric Studio",
+  "tagline": "Flat white and electric-blue panels split every slide, with a black accent bar on the seam and brand marks in the corners. Adapted from the Electric Studio preset in frontend-slides.",
+  "mood": [
+    "bold",
+    "clean",
+    "professional",
+    "confident"
+  ],
+  "occasion": [
+    "client proposal",
+    "agency pitch",
+    "strategy review",
+    "design review",
+    "board update",
+    "case study"
+  ],
+  "tone": [
+    "crisp",
+    "high-contrast",
+    "minimal",
+    "assured"
+  ],
+  "formality": "medium-high",
+  "density": "medium",
+  "palette": {
+    "bg-dark": "#0a0a0a",
+    "bg-white": "#ffffff",
+    "accent-blue": "#4361ee",
+    "text-dark": "#0a0a0a",
+    "text-light": "#ffffff",
+    "description": "two flat color fields per slide — white with electric blue, or white / blue with near-black — split top/bottom or left/right; near-black type on white, white type on blue and black"
+  },
+  "typography": {
+    "display": "Manrope",
+    "body": "Manrope",
+    "style": "one geometric sans family: extra-bold (800) display with very tight tracking for headlines, numerals and hero quotes; regular and medium for body; bold wide-tracked uppercase labels"
+  },
+  "scheme": "mixed",
+  "best_for": "Client proposals, agency and studio pitches, strategy and design reviews, board updates and case studies where the deck should feel sharp, confident and expensive without decoration. Strong for one big quote, one big number, or one clear before/after per slide.",
+  "avoid_for": "Playful, warm or handmade topics, and dense reading documents. The flat two-panel split and extra-bold type leave little room for long paragraphs or many small items.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

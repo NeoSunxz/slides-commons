@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<!--
+  Tech Blue Business — slides-commons template.
+  Original design by slides-commons (MIT).
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+  Demo content: "Northbridge Systems" proposing to "Harbor Logistics Group".
+  Both companies, every client name and every figure are fictional.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Blue Business — Northbridge Systems Solution Proposal (demo deck)</title>
+
+<!-- Fonts: Plus Jakarta Sans (display + body 400–800) + IBM Plex Mono (labels, codes 400/500) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   White canvas, navy ink, one blue family. The gradient is reserved
+   for the cover / closing band, the title tick and ONE highlight per slide.
+   =========================================== */
+:root {
+    --paper: #ffffff;
+    --ink: #0e1b2e;          /* headlines, primary text */
+    --ink-muted: #4c5b70;    /* body copy */
+    --ink-faint: #8693a6;    /* chrome, captions, axis labels */
+    --line: #dce3ee;         /* hairlines, box strokes */
+    --surface: #f4f7fc;      /* quiet panels */
+    --blue: #1e5eff;         /* primary tech blue */
+    --blue-deep: #0a2a80;    /* navy: numbers, table heads */
+    --blue-soft: #e8efff;    /* icon tiles, highlighted column */
+    --cyan: #22b5f0;         /* gradient end only, never on its own */
+    --gradient: linear-gradient(120deg, #0a2a80 0%, #1e5eff 55%, #22b5f0 100%);
+
+    --stage-bg: #e6ebf3;
+    --slide-bg: var(--paper);
+
+    --font: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    --pad-x: 112px;
+    --head-top: 160px;
+    --frame-top: 330px;
+    --frame-bottom: 128px;
+    --gutter: 32px;
+    --radius: 16px;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* viewport-base.css from frontend-slides (MIT), included in full */
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   =========================================== */
+.slide {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-weight: 700; text-wrap: balance; }
+.num, .pagenum, .stat, .metric b, .tile b, table, .gantt, .bar-row { font-variant-numeric: tabular-nums; }
+.blue { color: var(--blue); }
+
+/* Line icons: drawn on a 24px grid, 1.5 stroke, round caps — see design.md */
+.ico { width: 48px; height: 48px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ico.sm { width: 28px; height: 28px; stroke-width: 1.75; }
+.ico-tile { width: 80px; height: 80px; border-radius: 20px; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; flex: none; }
+
+/* ===========================================
+   CHROME — logo + deck name top-left, section top-right,
+   hairline under it; footer with confidentiality + page number.
+   =========================================== */
+.top {
+    position: absolute; top: 48px; left: var(--pad-x); right: var(--pad-x);
+    height: 56px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+}
+.brand { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.brand svg { width: 34px; height: 34px; }
+.brand em { font-style: normal; font-weight: 500; color: var(--ink-faint); margin-left: 6px; padding-left: 20px; border-left: 1px solid var(--line); font-size: 20px; }
+.section, .label, .foot {
+    font-family: var(--mono); font-size: 18px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+}
+.section { color: var(--ink-faint); }
+.section b { color: var(--blue); font-weight: 500; margin-right: 10px; }
+.foot {
+    position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 48px;
+    display: flex; justify-content: space-between; color: var(--ink-faint);
+    letter-spacing: 0.06em;
+}
+.pagenum { color: var(--ink); }
+.pagenum span { color: var(--ink-faint); }
+
+/* ===========================================
+   HEAD — tick + label + title, top-left. Optional lead on the right.
+   =========================================== */
+.head { position: absolute; top: var(--head-top); left: var(--pad-x); right: var(--pad-x); display: flex; justify-content: space-between; align-items: flex-end; gap: 64px; }
+.label { color: var(--blue); display: flex; align-items: center; gap: 16px; }
+.label::before { content: ""; width: 32px; height: 4px; border-radius: 2px; background: var(--gradient); }
+.label.plain::before { display: none; }
+.label.plain { color: var(--ink-faint); }
+.head h2 { font-size: 60px; line-height: 1.15; letter-spacing: -0.025em; margin-top: 20px; }
+.head > div:first-child { flex: 1 1 auto; min-width: 0; }
+.head .lead { flex: 0 1 560px; font-size: 24px; line-height: 1.55; color: var(--ink-muted); padding-bottom: 8px; }
+
+/* ===========================================
+   FRAME — 12 columns, 1696 x 622 px, 32px gutters
+   =========================================== */
+.frame {
+    position: absolute; top: var(--frame-top); left: var(--pad-x); right: var(--pad-x); bottom: var(--frame-bottom);
+    display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(6, 1fr); gap: var(--gutter);
+}
+.cell { display: flex; flex-direction: column; min-width: 0; }
+
+/* Type */
+.lede  { font-size: 30px; line-height: 1.5; color: var(--ink-muted); }
+.body  { font-size: 24px; line-height: 1.55; color: var(--ink-muted); }
+.small { font-size: 20px; line-height: 1.5; color: var(--ink-muted); }
+.card {
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper);
+    padding: 36px 40px; display: flex; flex-direction: column; min-width: 0;
+}
+.panel { background: var(--surface); border-radius: var(--radius); padding: 40px 44px; display: flex; flex-direction: column; min-width: 0; }
+
+/* Motion */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); transition-delay: calc(var(--i, 0) * 70ms + 80ms); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+@media print { .reveal { opacity: 1 !important; transform: none !important; } }
+
+/* ===========================================
+   01 COVER
+   =========================================== */
+.band { position: absolute; top: 0; right: 0; bottom: 0; width: 780px; background: var(--gradient); clip-path: polygon(200px 0, 100% 0, 100% 100%, 0 100%); overflow: hidden; }
+.band svg { position: absolute; inset: 0; width: 780px; height: 1080px; max-width: none; max-height: none; }
+.s-cover .top, .s-close .top { right: auto; width: 1000px; }
+.s-cover .main { position: absolute; left: var(--pad-x); top: 250px; width: 1000px; }
+.s-cover h1 { font-size: 104px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 800; margin-top: 32px; }
+.s-cover h1 .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.s-cover .lede { margin-top: 36px; max-width: 900px; }
+.cover-meta { position: absolute; left: var(--pad-x); bottom: 136px; width: 1000px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; border-top: 1px solid var(--line); padding-top: 24px; }
+.cover-meta span { display: block; font-family: var(--mono); font-size: 18px; color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+.cover-meta b { display: block; font-size: 24px; font-weight: 600; margin-top: 8px; }
+.s-cover .foot, .s-close .foot { right: auto; width: 1000px; }
+
+/* ===========================================
+   02 AGENDA
+   =========================================== */
+.agenda { grid-column: 1 / span 12; grid-row: 1 / span 6; list-style: none; display: grid; grid-template-rows: repeat(5, 1fr); border-top: 1px solid var(--line); }
+.agenda li { display: grid; grid-template-columns: 120px 520px 1fr 80px; align-items: center; border-bottom: 1px solid var(--line); gap: 32px; }
+.agenda .n { font-family: var(--mono); font-size: 32px; font-weight: 500; color: var(--blue); }
+.agenda h3 { font-size: 34px; letter-spacing: -0.015em; }
+.agenda p { font-size: 22px; color: var(--ink-muted); line-height: 1.45; }
+.agenda .pg { font-family: var(--mono); font-size: 18px; color: var(--ink-faint); text-align: right; }
+.agenda li.on { background: var(--surface); border-radius: 12px; border-bottom-color: transparent; padding: 0 24px; margin: 0 -24px; grid-template-columns: 120px 520px 1fr 80px; }
+.agenda li.on h3 { color: var(--blue); }
+
+/* ===========================================
+   03 COMPANY OVERVIEW
+   =========================================== */
+.s-about .intro { grid-column: 1 / span 6; grid-row: 1 / span 6; justify-content: space-between; }
+.s-about .intro .lede { color: var(--ink); }
+.facts-list { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.facts-list div { display: grid; grid-template-columns: 220px 1fr; padding: 18px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.facts-list dt { font-family: var(--mono); font-size: 18px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.facts-list dd { font-size: 22px; color: var(--ink); font-weight: 500; }
+.tiles { grid-column: 7 / span 6; grid-row: 1 / span 6; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--gutter); }
+.tile { border: 1px solid var(--line); border-radius: var(--radius); padding: 32px 36px; display: flex; flex-direction: column; justify-content: space-between; }
+.tile .ico { color: var(--blue); }
+.tile b { display: block; font-size: 72px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; color: var(--blue-deep); }
+.tile b small { font-size: 36px; font-weight: 700; margin-left: 4px; }
+.tile p { margin-top: 10px; }
+.tile.hl { background: var(--blue); border-color: var(--blue); color: #fff; }
+.tile.hl .ico, .tile.hl b, .tile.hl p { color: #fff; }
+
+/* ===========================================
+   04 CAPABILITIES — 3 x 2 icon cards
+   =========================================== */
+.caps { grid-column: 1 / span 12; grid-row: 1 / span 6; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: var(--gutter); }
+.caps .card { gap: 0; }
+.caps h3 { font-size: 28px; letter-spacing: -0.01em; margin-top: 28px; }
+.caps p { margin-top: 10px; }
+.caps .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.caps .code { font-family: var(--mono); font-size: 18px; color: var(--ink-faint); }
+
+/* ===========================================
+   05 CHALLENGE — callout + three issues
+   =========================================== */
+.s-challenge .callout { grid-column: 1 / span 5; grid-row: 1 / span 6; justify-content: space-between; }
+.callout .big { font-size: 180px; line-height: 0.9; font-weight: 800; letter-spacing: -0.05em; background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: 8px; }
+.callout .lede { color: var(--ink); margin-top: 20px; }
+.callout .src { font-family: var(--mono); font-size: 18px; color: var(--ink-faint); letter-spacing: 0.04em; margin-top: 24px; }
+.issues { grid-column: 6 / span 7; grid-row: 1 / span 6; list-style: none; display: grid; grid-template-rows: repeat(3, 1fr); gap: 20px; }
+.issues li { display: grid; grid-template-columns: 80px 1fr 150px; gap: 32px; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 36px; }
+.issues h3 { font-size: 28px; letter-spacing: -0.01em; }
+.issues p { margin-top: 6px; }
+.issues .imetric { text-align: right; }
+.issues .imetric b { display: block; font-size: 44px; font-weight: 800; color: var(--blue-deep); letter-spacing: -0.03em; line-height: 1; }
+.issues .imetric span { display: block; font-family: var(--mono); font-size: 18px; color: var(--ink-faint); margin-top: 8px; }
+
+/* ===========================================
+   06 ARCHITECTURE — SVG layered diagram
+   =========================================== */
+.arch { grid-column: 1 / span 12; grid-row: 1 / span 6; }
+.arch svg { width: 1696px; height: 622px; display: block; }
+.arch text { font-family: var(--font); }
+.arch .t-layer { font-family: var(--mono); font-size: 18px; font-weight: 500; letter-spacing: 1.4px; fill: var(--ink-faint); }
+.arch .t-box { font-size: 23px; font-weight: 700; fill: var(--ink); }
+.arch .t-sub { font-size: 18px; font-weight: 400; fill: var(--ink-muted); }
+.arch .t-mono { font-family: var(--mono); font-size: 18px; fill: var(--blue); }
+.arch .box { fill: #fff; stroke: var(--line); stroke-width: 1.5; }
+.arch .ic { fill: none; stroke: var(--blue); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.arch .wire { stroke: var(--blue); stroke-width: 2; fill: none; }
+
+/* ===========================================
+   07 SOLUTION FLOW — five steps
+   =========================================== */
+.steps { grid-column: 1 / span 12; grid-row: 1 / span 5; list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gutter); position: relative; }
+.steps::before { content: ""; position: absolute; top: 52px; left: 52px; right: calc(20% - 32px + 52px - 32px); height: 2px; background: repeating-linear-gradient(90deg, var(--blue) 0 10px, transparent 10px 18px); }
+.steps li { position: relative; display: flex; flex-direction: column; }
+.step-dot { width: 104px; height: 104px; border-radius: 50%; background: #fff; border: 2px solid var(--blue); color: var(--blue); display: grid; place-items: center; position: relative; z-index: 1; }
+.steps li:first-child .step-dot { background: var(--gradient); border-color: transparent; color: #fff; }
+.steps .meta { font-family: var(--mono); font-size: 18px; color: var(--blue); margin-top: 32px; letter-spacing: 0.04em; }
+.steps h3 { font-size: 30px; letter-spacing: -0.015em; margin-top: 10px; }
+.steps p { margin-top: 10px; min-height: 90px; }
+.steps .out { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 10px; }
+.steps .out div { display: flex; gap: 12px; align-items: center; font-size: 20px; font-weight: 500; }
+.steps .out .ico { color: var(--blue); }
+
+.summary { grid-column: 1 / span 12; grid-row: 6; background: var(--surface); border-radius: var(--radius); display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; padding: 0 40px; }
+.summary div { display: flex; align-items: center; gap: 16px; font-size: 22px; font-weight: 600; }
+.summary .ico { color: var(--blue); width: 36px; height: 36px; }
+
+/* ===========================================
+   08 CASE STUDY
+   =========================================== */
+.s-case .story { grid-column: 1 / span 5; grid-row: 1 / span 6; justify-content: space-between; }
+.logotype { font-size: 30px; font-weight: 800; letter-spacing: 0.12em; color: var(--ink); }
+.logotype span { color: var(--blue); }
+.tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.tags span { font-family: var(--mono); font-size: 18px; color: var(--blue-deep); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+.story h4 { font-family: var(--mono); font-size: 18px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.story .blk p { margin-top: 8px; color: var(--ink); }
+.s-case .results { grid-column: 6 / span 7; grid-row: 1 / span 6; display: grid; grid-template-rows: auto 1fr; gap: var(--gutter); }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+.metric { border-top: 3px solid var(--line); padding-top: 22px; }
+.metric:first-child { border-image: var(--gradient) 1; }
+.metric b { display: block; font-size: 76px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--blue-deep); }
+.metric:first-child b { color: var(--blue); }
+.metric p { margin-top: 12px; }
+.compare { border: 1px solid var(--line); border-radius: var(--radius); padding: 36px 40px; display: flex; flex-direction: column; justify-content: space-between; }
+.compare h4 { font-size: 26px; font-weight: 700; }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 150px; gap: 20px; align-items: center; }
+.bar-row span { font-family: var(--mono); font-size: 18px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.bar-row i { display: block; height: 40px; border-radius: 6px; background: #c7d1e0; width: var(--w); transform-origin: left; }
+.bar-row.after i { background: var(--blue); }
+.bar-row b { font-size: 28px; font-weight: 700; text-align: right; }
+.bar-row.after b { color: var(--blue); }
+.slide.visible .bar-row i { animation: growx 0.9s var(--ease) both 0.3s; }
+@keyframes growx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ===========================================
+   09 ROADMAP — Gantt on a 24-week grid
+   =========================================== */
+.gantt { grid-column: 1 / span 12; grid-row: 1 / span 6; display: grid; grid-template-columns: 300px repeat(24, 1fr); grid-template-rows: 48px 72px repeat(5, 1fr); column-gap: 0; position: relative; }
+.gantt .mh { grid-row: 1; font-family: var(--mono); font-size: 18px; color: var(--ink-faint); border-left: 1px solid var(--line); padding-left: 12px; display: flex; align-items: center; letter-spacing: 0.06em; text-transform: uppercase; }
+.gantt .grid-col { grid-row: 2 / -1; border-left: 1px solid var(--line); }
+.gantt .rl { grid-column: 1; font-size: 22px; font-weight: 600; display: flex; flex-direction: column; justify-content: center; padding-right: 24px; border-top: 1px solid var(--line); }
+.gantt .rl small { font-weight: 400; font-size: 18px; color: var(--ink-faint); font-family: var(--mono); margin-top: 4px; }
+.gantt .rowline { grid-column: 2 / -1; border-top: 1px solid var(--line); }
+.gantt .bar { align-self: center; height: 44px; border-radius: 10px; background: var(--blue-soft); color: var(--blue-deep); font-size: 20px; font-weight: 600; display: flex; align-items: center; padding: 0 16px; white-space: nowrap; margin: 0 3px; }
+.gantt .bar.key { background: var(--gradient); color: #fff; }
+.gantt .bar.ongoing { background: transparent; border: 2px dashed #9db6ff; }
+.gantt .ms { grid-row: 2; align-self: center; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; white-space: nowrap; transform: translateX(-11px); }
+.gantt .ms i { width: 22px; height: 22px; background: var(--blue-deep); transform: rotate(45deg); border-radius: 3px; flex: none; }
+.gantt .ms.end i { background: var(--blue); }
+.gantt .ms.flip { flex-direction: row-reverse; transform: translateX(11px); justify-self: end; }
+
+/* ===========================================
+   10 SERVICE MATRIX — table
+   =========================================== */
+.matrix { grid-column: 1 / span 12; grid-row: 1 / span 6; width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; align-self: start; }
+.matrix th, .matrix td { padding: 0 28px; height: 62px; border-bottom: 1px solid var(--line); text-align: center; font-size: 22px; }
+.matrix th:first-child, .matrix td:first-child { text-align: left; padding-left: 0; }
+.matrix col.c1 { width: 560px; }
+.matrix thead th { height: 96px; vertical-align: bottom; padding-bottom: 18px; border-bottom: 2px solid var(--ink); font-size: 26px; font-weight: 700; }
+.matrix thead th small { display: block; font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+.matrix td:first-child { font-weight: 600; color: var(--ink); }
+.matrix td { color: var(--ink-muted); }
+.matrix .rec { background: var(--blue-soft); }
+.matrix thead th.rec { background: var(--blue); color: #fff; border-radius: 14px 14px 0 0; border-bottom-color: var(--blue); }
+.matrix thead th.rec small { color: rgba(255, 255, 255, 0.8); }
+.matrix tbody tr:last-child td { border-bottom: 2px solid var(--ink); font-weight: 700; color: var(--ink); font-size: 24px; }
+.matrix tbody tr:last-child td.rec { color: var(--blue); }
+.matrix .yes { color: var(--blue); }
+.matrix .yes svg { width: 30px; height: 30px; vertical-align: middle; }
+.matrix .no { display: inline-block; width: 20px; height: 2px; background: #b9c3d3; vertical-align: middle; }
+
+/* ===========================================
+   11 CLIENTS — logotype wall (text placeholders)
+   =========================================== */
+.wall { grid-column: 1 / span 12; grid-row: 1 / span 4; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.wall div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; place-items: center; color: #5b6b82; text-align: center; padding: 0 12px; }
+.lg1 { font-weight: 800; letter-spacing: 0.16em; font-size: 24px; }
+.lg2 { font-weight: 500; font-size: 30px; letter-spacing: -0.03em; }
+.lg3 { font-family: var(--mono); font-size: 24px; font-weight: 500; }
+.lg4 { font-weight: 700; font-size: 28px; letter-spacing: -0.02em; }
+.lg5 { font-weight: 400; font-size: 26px; letter-spacing: 0.3em; text-transform: uppercase; }
+.lg6 { font-weight: 800; font-size: 28px; font-style: italic; letter-spacing: -0.02em; }
+.partners { grid-column: 1 / span 12; grid-row: 5 / span 2; display: grid; grid-template-columns: 300px repeat(4, 1fr); gap: var(--gutter); align-items: center; }
+.partners .chip { height: 88px; border-radius: 14px; background: var(--surface); display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 24px; font-weight: 700; color: var(--ink-muted); }
+.partners .chip .ico { color: var(--blue); width: 36px; height: 36px; }
+
+/* ===========================================
+   12 CLOSING
+   =========================================== */
+.s-close .main { position: absolute; left: var(--pad-x); top: 220px; width: 980px; }
+.s-close h2 { font-size: 84px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 800; margin-top: 28px; }
+.next { list-style: none; margin-top: 56px; border-top: 1px solid var(--line); }
+.next li { display: grid; grid-template-columns: 170px 1fr; padding: 22px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.next .d { font-family: var(--mono); font-size: 20px; color: var(--blue); font-weight: 500; }
+.next p { font-size: 26px; font-weight: 500; }
+.contact { position: absolute; right: var(--pad-x); bottom: 128px; width: 470px; color: #fff; }
+.contact .who b { display: block; font-size: 36px; font-weight: 700; letter-spacing: -0.02em; }
+.contact .who span { display: block; font-size: 22px; opacity: 0.85; margin-top: 6px; }
+.contact ul { list-style: none; margin-top: 36px; border-top: 1px solid rgba(255, 255, 255, 0.35); }
+.contact li { display: flex; gap: 18px; align-items: center; padding: 18px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.35); font-size: 22px; font-weight: 500; }
+.contact li .ico { width: 30px; height: 30px; }
+.s-close .band-label { position: absolute; right: var(--pad-x); top: 64px; font-family: var(--mono); font-size: 18px; color: #fff; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<!-- Icon sprite: 24px grid, 1.5 stroke, round caps and joins. Use with <svg class="ico"><use href="#i-name"/></svg> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+        <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.6 4.5 4.5 0 0 0 7 18.5z"/></symbol>
+        <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-2.9 8-7 9.5-4.1-1.5-7-5.2-7-9.5V6l7-3z"/><path d="M9 12l2 2 4-4.5"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V7"/><path d="M17 16v-3"/><path d="M5 9l5-4 4 3 5-4"/></symbol>
+        <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><rect x="10" y="10" width="4" height="4" rx="0.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></symbol>
+        <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></symbol>
+        <symbol id="i-signal" viewBox="0 0 24 24"><circle cx="12" cy="18" r="1.5"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/><path d="M2.5 8.5a13 13 0 0 1 19 0"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.8 0 4.5 2.4 4.5 5.5"/></symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19L12 3.5z"/><path d="M12 10v4.5"/><path d="M12 17.5v.01"/></symbol>
+        <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 7.5l9-4.5 9 4.5v9l-9 4.5-9-4.5v-9z"/><path d="M3 7.5l9 4.5 9-4.5"/><path d="M12 12v9"/></symbol>
+        <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.4-4.4"/></symbol>
+        <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14 7l3 3"/></symbol>
+        <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/><path d="M13.5 4l-3 16"/></symbol>
+        <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></symbol>
+        <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15l-3-3c1.5-4.5 4.5-8 10-8 0 5.5-3.5 8.5-8 10z" transform="translate(-1 1)"/><path d="M8 13l-3 1-2 4 4-2 1-3"/><circle cx="14.5" cy="9.5" r="1.5"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/></symbol>
+        <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6 8.5-6"/></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></symbol>
+        <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></symbol>
+        <symbol id="i-mark" viewBox="0 0 24 24"><path d="M4 18V6l8 6 8-6v12"/></symbol>
+    </defs>
+</svg>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+    <!-- 01 COVER -->
+    <section class="slide s-cover" aria-label="Cover">
+        <header class="top">
+            <div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems</div>
+            <span class="section">Solution proposal</span>
+        </header>
+        <div class="band" aria-hidden="true">
+            <svg viewBox="0 0 780 1080">
+                <g fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="1.5">
+                    <circle cx="560" cy="540" r="140"/><circle cx="560" cy="540" r="260"/><circle cx="560" cy="540" r="380"/>
+                </g>
+                <g stroke="#fff" stroke-opacity="0.55" stroke-width="2">
+                    <line x1="560" y1="540" x2="380" y2="300"/><line x1="560" y1="540" x2="700" y2="290"/><line x1="560" y1="540" x2="330" y2="760"/><line x1="560" y1="540" x2="720" y2="820"/><line x1="380" y1="300" x2="700" y2="290"/>
+                </g>
+                <g fill="#fff">
+                    <circle cx="560" cy="540" r="20"/>
+                    <circle cx="380" cy="300" r="9"/><circle cx="700" cy="290" r="9"/><circle cx="330" cy="760" r="9"/><circle cx="720" cy="820" r="9"/>
+                </g>
+                <g fill="#fff" fill-opacity="0.35"><circle cx="420" cy="540" r="5"/><circle cx="560" cy="280" r="5"/><circle cx="560" cy="920" r="5"/><circle cx="300" cy="540" r="5"/></g>
+            </svg>
+        </div>
+        <div class="main">
+            <p class="label reveal" style="--i:0">Solution proposal · November 2026</p>
+            <h1 class="reveal" style="--i:1">Live visibility for <span class="grad">every pallet.</span></h1>
+            <p class="lede reveal" style="--i:2">A connected logistics data platform for Harbor Logistics Group: scope, architecture and a 24-week rollout plan.</p>
+        </div>
+        <div class="cover-meta reveal" style="--i:3">
+            <div><span>Prepared for</span><b>Harbor Logistics Group</b></div>
+            <div><span>Prepared by</span><b>Northbridge Systems</b></div>
+            <div><span>Reference</span><b class="num">NB-2026-117</b></div>
+        </div>
+        <footer class="foot"><span>Demo deck · fictional companies</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 02 AGENDA -->
+    <section class="slide s-agenda" aria-label="Agenda">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>00</b>Agenda</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Agenda</p><h2 class="reveal" style="--i:1">What we will cover today</h2></div>
+            <p class="lead reveal" style="--i:2">60 minutes, with time for questions after each part.</p>
+        </div>
+        <div class="frame">
+            <ol class="agenda">
+                <li class="reveal" style="--i:2"><span class="n">01</span><h3>About Northbridge</h3><p>Who we are, what we build, who we build it for</p><span class="pg">p.03</span></li>
+                <li class="reveal on" style="--i:3"><span class="n">02</span><h3>Your challenge</h3><p>What we heard in the discovery workshops</p><span class="pg">p.05</span></li>
+                <li class="reveal" style="--i:4"><span class="n">03</span><h3>Proposed solution</h3><p>Platform architecture and how delivery works</p><span class="pg">p.06</span></li>
+                <li class="reveal" style="--i:5"><span class="n">04</span><h3>Proof and plan</h3><p>A comparable project, then a 24-week roadmap</p><span class="pg">p.08</span></li>
+                <li class="reveal" style="--i:6"><span class="n">05</span><h3>Services and next steps</h3><p>Service tiers, references and the decision path</p><span class="pg">p.10</span></li>
+            </ol>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 03 COMPANY OVERVIEW -->
+    <section class="slide s-about" aria-label="Company overview">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>01</b>About us</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Company overview</p><h2 class="reveal" style="--i:1">Northbridge at a glance</h2></div>
+        </div>
+        <div class="frame">
+            <div class="cell intro">
+                <p class="lede reveal" style="--i:2">We design, build and run data platforms for companies that move physical goods — from the sensor on the pallet to the dashboard in the control room.</p>
+                <dl class="facts-list reveal" style="--i:3">
+                    <div><dt>Founded</dt><dd>2009, Rotterdam</dd></div>
+                    <div><dt>Industries</dt><dd>Logistics · Manufacturing · Energy · Retail</dd></div>
+                    <div><dt>Certified</dt><dd>ISO 27001 · ISO 9001 · SOC 2 Type II</dd></div>
+                </dl>
+            </div>
+            <div class="tiles">
+                <div class="tile hl reveal" style="--i:3"><svg class="ico"><use href="#i-users"/></svg><div><b class="num">1,350</b><p class="small">engineers and consultants</p></div></div>
+                <div class="tile reveal" style="--i:4"><svg class="ico"><use href="#i-globe"/></svg><div><b class="num">14</b><p class="small">countries with delivery teams</p></div></div>
+                <div class="tile reveal" style="--i:5"><svg class="ico"><use href="#i-layers"/></svg><div><b class="num">320<small>+</small></b><p class="small">platforms in production</p></div></div>
+                <div class="tile reveal" style="--i:6"><svg class="ico"><use href="#i-chart"/></svg><div><b class="num">€412<small>M</small></b><p class="small">revenue, fiscal year 2025</p></div></div>
+            </div>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 04 CAPABILITIES -->
+    <section class="slide s-caps" aria-label="Capabilities">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>01</b>About us</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Capabilities</p><h2 class="reveal" style="--i:1">Six capabilities, one accountable team</h2></div>
+        </div>
+        <div class="frame">
+            <div class="caps">
+                <div class="card reveal" style="--i:2"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-db"/></svg></span><span class="code">C1</span></div><h3>Data platform</h3><p class="small">Cloud data lake and streaming core, sized for millions of events per hour.</p></div>
+                <div class="card reveal" style="--i:3"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-signal"/></svg></span><span class="code">C2</span></div><h3>IoT and edge</h3><p class="small">Sensor onboarding, gateways and offline buffering at the dock.</p></div>
+                <div class="card reveal" style="--i:4"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-chart"/></svg></span><span class="code">C3</span></div><h3>Analytics and AI</h3><p class="small">ETA forecasting, anomaly detection and operational dashboards.</p></div>
+                <div class="card reveal" style="--i:5"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-link"/></svg></span><span class="code">C4</span></div><h3>Integration</h3><p class="small">Connectors for WMS, ERP, TMS and carrier APIs, with one data model.</p></div>
+                <div class="card reveal" style="--i:6"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-shield"/></svg></span><span class="code">C5</span></div><h3>Security</h3><p class="small">Identity, encryption and audit built in, certified to ISO 27001.</p></div>
+                <div class="card reveal" style="--i:7"><div class="card-top"><span class="ico-tile"><svg class="ico"><use href="#i-clock"/></svg></span><span class="code">C6</span></div><h3>Managed operations</h3><p class="small">24/7 monitoring and support with a 99.9% availability target.</p></div>
+            </div>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 05 CHALLENGE -->
+    <section class="slide s-challenge" aria-label="Your challenge">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>02</b>Your challenge</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Your challenge</p><h2 class="reveal" style="--i:1">Problems surface after the truck has left</h2></div>
+        </div>
+        <div class="frame">
+            <div class="cell callout">
+                <div>
+                    <p class="big num reveal" style="--i:2">38%</p>
+                    <p class="lede reveal" style="--i:3">of delivery exceptions are discovered only after dispatch, when they cost the most to fix.</p>
+                </div>
+                <p class="src reveal" style="--i:4">Source: discovery workshops, Sep–Oct 2026 (demo figures)</p>
+            </div>
+            <ol class="issues">
+                <li class="reveal" style="--i:3"><span class="ico-tile"><svg class="ico"><use href="#i-layers"/></svg></span><div><h3>Five systems, no single view</h3><p class="small">WMS, TMS, two ERPs and telematics each hold part of the picture.</p></div><div class="imetric"><b class="num">5</b><span>systems</span></div></li>
+                <li class="reveal" style="--i:4"><span class="ico-tile"><svg class="ico"><use href="#i-clock"/></svg></span><div><h3>Status arrives in batches</h3><p class="small">Most data lands overnight; planners work from yesterday.</p></div><div class="imetric"><b class="num">14 h</b><span>avg. delay</span></div></li>
+                <li class="reveal" style="--i:5"><span class="ico-tile"><svg class="ico"><use href="#i-alert"/></svg></span><div><h3>Exceptions found by customers</h3><p class="small">Temperature and delay issues are reported by the receiver first.</p></div><div class="imetric"><b class="num">1 in 4</b><span>claims</span></div></li>
+            </ol>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 06 ARCHITECTURE -->
+    <section class="slide s-arch" aria-label="Architecture">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>03</b>Proposed solution</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Architecture</p><h2 class="reveal" style="--i:1">One platform, dock to dashboard</h2></div>
+            <p class="lead reveal" style="--i:2">Four layers; Northbridge Core is the part we build and run. Everything else connects to it.</p>
+        </div>
+        <div class="frame">
+            <div class="arch reveal" style="--i:3">
+                <svg viewBox="0 0 1696 622" role="img" aria-label="Layered architecture: edge devices feed an ingestion layer, the Northbridge Core platform and three applications; security and operations span all layers">
+                    <defs>
+                        <linearGradient id="g-core" x1="0" y1="0" x2="1" y2="0.3"><stop offset="0" stop-color="#0a2a80"/><stop offset="0.55" stop-color="#1e5eff"/><stop offset="1" stop-color="#22b5f0"/></linearGradient>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1l8 4-8 4" fill="none" stroke="#1e5eff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+                    </defs>
+
+                    <!-- layer labels -->
+                    <text class="t-layer" x="0" y="64">APPLICATIONS</text>
+                    <text class="t-layer" x="0" y="222" fill="#1e5eff" style="fill:#1e5eff">CORE PLATFORM</text>
+                    <text class="t-layer" x="0" y="380">INGESTION</text>
+                    <text class="t-layer" x="0" y="538">EDGE</text>
+
+                    <!-- core band (the one gradient element) -->
+                    <rect x="212" y="146" width="1176" height="140" rx="18" fill="url(#g-core)"/>
+
+                    <!-- connectors: 3 columns at x = 410, 800, 1190 -->
+                    <g class="wire" marker-end="url(#arrow)">
+                        <path d="M410 474 V402"/><path d="M800 474 V402"/><path d="M1190 474 V402"/>
+                        <path d="M410 316 V286"/><path d="M800 316 V286"/><path d="M1190 316 V286"/>
+                        <path d="M410 146 V120"/><path d="M800 146 V120"/><path d="M1190 146 V120"/>
+                    </g>
+                    <text class="t-mono" x="424" y="444">MQTT · REST · SFTP</text>
+
+                    <!-- applications row y=0..110 -->
+                    <g>
+                        <rect class="box" x="228" y="10" width="364" height="110" rx="14"/>
+                        <rect class="box" x="618" y="10" width="364" height="110" rx="14"/>
+                        <rect class="box" x="1008" y="10" width="364" height="110" rx="14"/>
+                        <svg x="256" y="41" width="48" height="48" viewBox="0 0 24 24" class="ic"><use href="#i-chart"/></svg>
+                        <svg x="646" y="41" width="48" height="48" viewBox="0 0 24 24" class="ic"><use href="#i-users"/></svg>
+                        <svg x="1036" y="41" width="48" height="48" viewBox="0 0 24 24" class="ic"><use href="#i-alert"/></svg>
+                        <text class="t-box" x="324" y="60">Control tower</text><text class="t-sub" x="324" y="88">Live network view</text>
+                        <text class="t-box" x="714" y="60">Customer portal</text><text class="t-sub" x="714" y="88">Track and trace, ETAs</text>
+                        <text class="t-box" x="1104" y="60">Exception alerts</text><text class="t-sub" x="1104" y="88">Rules to SMS, email, app</text>
+                    </g>
+
+                    <!-- core row y=146..286 -->
+                    <g>
+                        <rect x="228" y="168" width="364" height="96" rx="12" fill="#fff"/>
+                        <rect x="618" y="168" width="364" height="96" rx="12" fill="#fff"/>
+                        <rect x="1008" y="168" width="364" height="96" rx="12" fill="#fff"/>
+                        <svg x="256" y="196" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-db"/></svg>
+                        <svg x="646" y="196" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-cpu"/></svg>
+                        <svg x="1036" y="196" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-route"/></svg>
+                        <text class="t-box" x="316" y="210">Event data lake</text><text class="t-sub" x="316" y="238">7-year retention</text>
+                        <text class="t-box" x="706" y="210">Rules engine</text><text class="t-sub" x="706" y="238">Thresholds, SLAs</text>
+                        <text class="t-box" x="1096" y="210">ETA forecasting</text><text class="t-sub" x="1096" y="238">ML, retrained weekly</text>
+                    </g>
+
+                    <!-- ingestion row y=316..402 -->
+                    <g>
+                        <rect class="box" x="228" y="316" width="364" height="86" rx="14"/>
+                        <rect class="box" x="618" y="316" width="364" height="86" rx="14"/>
+                        <rect class="box" x="1008" y="316" width="364" height="86" rx="14"/>
+                        <svg x="256" y="339" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-signal"/></svg>
+                        <svg x="646" y="339" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-link"/></svg>
+                        <svg x="1036" y="339" width="40" height="40" viewBox="0 0 24 24" class="ic"><use href="#i-layers"/></svg>
+                        <text class="t-box" x="316" y="368">Stream gateway</text>
+                        <text class="t-box" x="706" y="368">API hub</text>
+                        <text class="t-box" x="1096" y="368">Batch import</text>
+                    </g>
+
+                    <!-- edge row y=474..574 -->
+                    <g>
+                        <rect class="box" x="228" y="474" width="364" height="100" rx="14" fill="#f4f7fc" style="fill:#f4f7fc"/>
+                        <rect class="box" x="618" y="474" width="364" height="100" rx="14" style="fill:#f4f7fc"/>
+                        <rect class="box" x="1008" y="474" width="364" height="100" rx="14" style="fill:#f4f7fc"/>
+                        <svg x="256" y="502" width="44" height="44" viewBox="0 0 24 24" class="ic"><use href="#i-box"/></svg>
+                        <svg x="646" y="502" width="44" height="44" viewBox="0 0 24 24" class="ic"><use href="#i-route"/></svg>
+                        <svg x="1036" y="502" width="44" height="44" viewBox="0 0 24 24" class="ic"><use href="#i-db"/></svg>
+                        <text class="t-box" x="320" y="519">Pallet sensors</text><text class="t-sub" x="320" y="547">Temp, shock, GPS</text>
+                        <text class="t-box" x="710" y="519">Fleet telematics</text><text class="t-sub" x="710" y="547">420 vehicles</text>
+                        <text class="t-box" x="1100" y="519">WMS and ERP</text><text class="t-sub" x="1100" y="547">Existing systems</text>
+                    </g>
+
+                    <!-- cross-cutting column -->
+                    <line x1="1412" y1="10" x2="1412" y2="574" stroke="#dce3ee" stroke-width="1.5" stroke-dasharray="6 8"/>
+                    <rect x="1436" y="10" width="260" height="564" rx="14" fill="#f4f7fc"/>
+                    <text class="t-layer" x="1464" y="56">ACROSS ALL LAYERS</text>
+                    <g class="ic">
+                        <svg x="1464" y="96" width="36" height="36" viewBox="0 0 24 24"><use href="#i-shield"/></svg>
+                        <svg x="1464" y="214" width="36" height="36" viewBox="0 0 24 24"><use href="#i-users"/></svg>
+                        <svg x="1464" y="332" width="36" height="36" viewBox="0 0 24 24"><use href="#i-search"/></svg>
+                        <svg x="1464" y="450" width="36" height="36" viewBox="0 0 24 24"><use href="#i-clock"/></svg>
+                    </g>
+                    <text class="t-box" x="1464" y="166" style="font-size:22px">Encryption</text><text class="t-sub" x="1464" y="192">At rest and in transit</text>
+                    <text class="t-box" x="1464" y="284" style="font-size:22px">Identity and SSO</text><text class="t-sub" x="1464" y="310">Role-based access</text>
+                    <text class="t-box" x="1464" y="402" style="font-size:22px">Audit trail</text><text class="t-sub" x="1464" y="428">Every read and write</text>
+                    <text class="t-box" x="1464" y="520" style="font-size:22px">24/7 monitoring</text><text class="t-sub" x="1464" y="546">Northbridge SRE</text>
+                </svg>
+            </div>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 07 SOLUTION FLOW -->
+    <section class="slide s-flow" aria-label="Delivery approach">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>03</b>Proposed solution</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Delivery approach</p><h2 class="reveal" style="--i:1">Five steps, value at every gate</h2></div>
+            <p class="lead reveal" style="--i:2">Each step ends with a decision meeting. You can stop after any gate and keep what was delivered.</p>
+        </div>
+        <div class="frame">
+            <ol class="steps">
+                <li class="reveal" style="--i:2"><span class="step-dot"><svg class="ico"><use href="#i-search"/></svg></span><span class="meta">01 · 2 weeks</span><h3>Discover</h3><p class="small">Map sites, systems and the ten exceptions that cost the most.</p><div class="out"><div><svg class="ico sm"><use href="#i-check"/></svg>Data inventory</div><div><svg class="ico sm"><use href="#i-check"/></svg>Success metrics</div></div></li>
+                <li class="reveal" style="--i:3"><span class="step-dot"><svg class="ico"><use href="#i-pen"/></svg></span><span class="meta">02 · 3 weeks</span><h3>Design</h3><p class="small">Target architecture, data model and control-tower wireframes.</p><div class="out"><div><svg class="ico sm"><use href="#i-check"/></svg>Solution design</div><div><svg class="ico sm"><use href="#i-check"/></svg>Security review</div></div></li>
+                <li class="reveal" style="--i:4"><span class="step-dot"><svg class="ico"><use href="#i-code"/></svg></span><span class="meta">03 · 10 weeks</span><h3>Build</h3><p class="small">Platform, connectors and alerts in two-week sprints with demos.</p><div class="out"><div><svg class="ico sm"><use href="#i-check"/></svg>Core platform</div><div><svg class="ico sm"><use href="#i-check"/></svg>5 connectors</div></div></li>
+                <li class="reveal" style="--i:5"><span class="step-dot"><svg class="ico"><use href="#i-flag"/></svg></span><span class="meta">04 · 6 weeks</span><h3>Pilot</h3><p class="small">Two warehouses and 60 trucks live, measured against the baseline.</p><div class="out"><div><svg class="ico sm"><use href="#i-check"/></svg>Pilot report</div><div><svg class="ico sm"><use href="#i-check"/></svg>Go / no-go</div></div></li>
+                <li class="reveal" style="--i:6"><span class="step-dot"><svg class="ico"><use href="#i-rocket"/></svg></span><span class="meta">05 · 3 weeks</span><h3>Scale</h3><p class="small">Roll out to the remaining 14 sites, then hand over to operations.</p><div class="out"><div><svg class="ico sm"><use href="#i-check"/></svg>Network live</div><div><svg class="ico sm"><use href="#i-check"/></svg>Runbooks</div></div></li>
+            </ol>
+            <div class="summary reveal" style="--i:7">
+                <div><svg class="ico"><use href="#i-clock"/></svg>24 weeks end to end</div>
+                <div><svg class="ico"><use href="#i-doc"/></svg>Fixed fee per step</div>
+                <div><svg class="ico"><use href="#i-users"/></svg>Steering group at every gate</div>
+            </div>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 08 CASE STUDY -->
+    <section class="slide s-case" aria-label="Case study">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>04</b>Proof and plan</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Case study</p><h2 class="reveal" style="--i:1">Six weeks to a visible cold chain</h2></div>
+        </div>
+        <div class="frame">
+            <div class="panel story reveal" style="--i:2">
+                <div>
+                    <p class="logotype">MERIDIAN<span>/</span>COLD</p>
+                    <div class="tags"><span>Cold-chain logistics</span><span>9 depots</span><span>2025</span></div>
+                </div>
+                <div class="blk"><h4>Challenge</h4><p class="small">Temperature excursions were found at delivery, hours after the product was lost.</p></div>
+                <div class="blk"><h4>What we did</h4><p class="small">Sensors on 4,000 pallets, streaming into Northbridge Core with live alerts to drivers.</p></div>
+            </div>
+            <div class="results">
+                <div class="metrics">
+                    <div class="metric reveal" style="--i:3"><b>−42%</b><p class="small">spoilage claims in the first two quarters</p></div>
+                    <div class="metric reveal" style="--i:4"><b>99.2%</b><p class="small">of ETAs within a 15-minute window</p></div>
+                    <div class="metric reveal" style="--i:5"><b>6 wks</b><p class="small">from contract to first depot live</p></div>
+                </div>
+                <div class="compare reveal" style="--i:6">
+                    <h4>Time to detect a temperature excursion</h4>
+                    <div class="bar-row"><span>Before</span><i style="--w:100%"></i><b>4 h 30 min</b></div>
+                    <div class="bar-row after"><span>After</span><i style="--w:4.4%"></i><b>12 min</b></div>
+                    <p class="small">Median across 9 depots, Q3 2025 vs. Q3 2024.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Fictional client · demo figures</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 09 ROADMAP -->
+    <section class="slide s-roadmap" aria-label="Roadmap">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>04</b>Proof and plan</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Roadmap</p><h2 class="reveal" style="--i:1">Network live in 24 weeks</h2></div>
+            <p class="lead reveal" style="--i:2">Starting 11 January 2027. Pilot results decide the rollout at week 21.</p>
+        </div>
+        <div class="frame">
+            <div class="gantt reveal" style="--i:3">
+                <span class="mh" style="grid-column: 2 / span 4">Jan</span><span class="mh" style="grid-column: 6 / span 4">Feb</span><span class="mh" style="grid-column: 10 / span 4">Mar</span><span class="mh" style="grid-column: 14 / span 4">Apr</span><span class="mh" style="grid-column: 18 / span 4">May</span><span class="mh" style="grid-column: 22 / span 4">Jun</span>
+                <i class="grid-col" style="grid-column: 2"></i><i class="grid-col" style="grid-column: 6"></i><i class="grid-col" style="grid-column: 10"></i><i class="grid-col" style="grid-column: 14"></i><i class="grid-col" style="grid-column: 18"></i><i class="grid-col" style="grid-column: 22"></i>
+
+                <span class="rl" style="grid-row: 2">Milestones</span>
+                <span class="ms" style="grid-column: 2 / span 6"><i></i>M1 Kick-off</span>
+                <span class="ms" style="grid-column: 7 / span 6"><i></i>M2 Design signed</span>
+                <span class="ms" style="grid-column: 17 / span 6"><i></i>M3 Pilot live</span>
+                <span class="ms end flip" style="grid-column: 20 / span 6"><i></i>M4 Network live</span>
+
+                <span class="rl" style="grid-row: 3">Discover and design<small>Steps 01–02</small></span><i class="rowline" style="grid-row: 3"></i>
+                <span class="bar" style="grid-row: 3; grid-column: 2 / span 5">5 wks</span>
+                <span class="rl" style="grid-row: 4">Platform build<small>Step 03</small></span><i class="rowline" style="grid-row: 4"></i>
+                <span class="bar" style="grid-row: 4; grid-column: 7 / span 10">10 wks · 5 sprints</span>
+                <span class="rl" style="grid-row: 5">Integrations<small>WMS · TMS · ERP</small></span><i class="rowline" style="grid-row: 5"></i>
+                <span class="bar" style="grid-row: 5; grid-column: 10 / span 9">9 wks</span>
+                <span class="rl" style="grid-row: 6">Pilot and rollout<small>Steps 04–05</small></span><i class="rowline" style="grid-row: 6"></i>
+                <span class="bar key" style="grid-row: 6; grid-column: 17 / span 6">Pilot · 2 sites</span>
+                <span class="bar" style="grid-row: 6; grid-column: 23 / span 3">14 sites</span>
+                <span class="rl" style="grid-row: 7">Change and training<small>Ongoing</small></span><i class="rowline" style="grid-row: 7"></i>
+                <span class="bar ongoing" style="grid-row: 7; grid-column: 6 / span 20">Planner training · super-users · runbooks</span>
+            </div>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 10 SERVICE MATRIX -->
+    <section class="slide s-matrix" aria-label="Service tiers">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>05</b>Services</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Service tiers</p><h2 class="reveal" style="--i:1">Choose your level of support</h2></div>
+            <p class="lead reveal" style="--i:2">All tiers include the Core platform licence for 16 sites. Indicative pricing, excluding VAT.</p>
+        </div>
+        <div class="frame">
+            <table class="matrix reveal" style="--i:3">
+                <colgroup><col class="c1"><col><col><col></colgroup>
+                <thead><tr><th>Service</th><th><small>Tier 1</small>Essential</th><th class="rec"><small>Recommended</small>Professional</th><th><small>Tier 3</small>Enterprise</th></tr></thead>
+                <tbody>
+                    <tr><td>Core platform and control tower</td><td class="yes"><svg class="ico"><use href="#i-check"/></svg></td><td class="rec yes"><svg class="ico"><use href="#i-check"/></svg></td><td class="yes"><svg class="ico"><use href="#i-check"/></svg></td></tr>
+                    <tr><td>Standard connectors (WMS, TMS, ERP)</td><td>3</td><td class="rec">5</td><td>Unlimited</td></tr>
+                    <tr><td>ETA forecasting and anomaly alerts</td><td><span class="no"></span></td><td class="rec yes"><svg class="ico"><use href="#i-check"/></svg></td><td class="yes"><svg class="ico"><use href="#i-check"/></svg></td></tr>
+                    <tr><td>Support hours</td><td>Business hours</td><td class="rec">24/7</td><td>24/7, named team</td></tr>
+                    <tr><td>Availability target</td><td>99.5%</td><td class="rec">99.9%</td><td>99.95%</td></tr>
+                    <tr><td>Customer success manager</td><td><span class="no"></span></td><td class="rec">Shared</td><td>Dedicated</td></tr>
+                    <tr><td>Monthly fee, 16 sites</td><td>€18,400</td><td class="rec">€31,200</td><td>From €46,000</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <footer class="foot"><span>Northbridge Systems · Confidential · Demo</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 11 CLIENTS AND PARTNERS -->
+    <section class="slide s-clients" aria-label="Clients and partners">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems<em>Harbor Logistics proposal</em></div><span class="section"><b>05</b>References</span></header>
+        <div class="head">
+            <div><p class="label reveal" style="--i:0">Clients and partners</p><h2 class="reveal" style="--i:1">Trusted in 14 countries</h2></div>
+            <p class="lead reveal" style="--i:2">Placeholder names. Replace each cell with a client logo, kept in one grey.</p>
+        </div>
+        <div class="frame">
+            <div class="wall reveal" style="--i:3">
+                <div class="lg1">ALDERPORT</div>
+                <div class="lg2">kessler freight</div>
+                <div class="lg3">nordvale_</div>
+                <div class="lg4">Trident Energy</div>
+                <div class="lg5">Halcyon</div>
+                <div class="lg6">Brightwater</div>
+                <div class="lg4">Orbis Marine</div>
+                <div class="lg5">Corvid</div>
+                <div class="lg1">WESTMARK</div>
+                <div class="lg2">sable &amp; pine</div>
+                <div class="lg6">Portline</div>
+                <div class="lg3">verity/health</div>
+            </div>
+            <div class="partners reveal" style="--i:4">
+                <p class="label plain">Technology partners</p>
+                <div class="chip"><svg class="ico"><use href="#i-cloud"/></svg>Cirrostack</div>
+                <div class="chip"><svg class="ico"><use href="#i-signal"/></svg>Quillnet IoT</div>
+                <div class="chip"><svg class="ico"><use href="#i-db"/></svg>Basalt DB</div>
+                <div class="chip"><svg class="ico"><use href="#i-shield"/></svg>Ondaline</div>
+            </div>
+        </div>
+        <footer class="foot"><span>All names fictional · demo deck</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+    <!-- 12 CLOSING / CONTACT -->
+    <section class="slide s-close" aria-label="Next steps and contact">
+        <header class="top"><div class="brand"><svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1e5eff"/><path d="M9 24V10l8 7 8-7v14" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Northbridge Systems</div><span class="section"><b>05</b>Next steps</span></header>
+        <div class="band" aria-hidden="true">
+            <svg viewBox="0 0 780 1080">
+                <g fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="1.5"><circle cx="640" cy="200" r="120"/><circle cx="640" cy="200" r="240"/><circle cx="640" cy="200" r="360"/></g>
+                <circle cx="640" cy="200" r="16" fill="#fff"/>
+            </svg>
+        </div>
+        <span class="band-label">Contact</span>
+        <div class="main">
+            <p class="label reveal" style="--i:0">Next steps</p>
+            <h2 class="reveal" style="--i:1">Let’s build the control tower together.</h2>
+            <ol class="next">
+                <li class="reveal" style="--i:2"><span class="d">27 Nov</span><p>Questions on this proposal answered in writing</p></li>
+                <li class="reveal" style="--i:3"><span class="d">04 Dec</span><p>Site visit: Rotterdam pilot warehouse</p></li>
+                <li class="reveal" style="--i:4"><span class="d">18 Dec</span><p>Decision and contract, kick-off 11 Jan 2027</p></li>
+            </ol>
+        </div>
+        <div class="contact reveal" style="--i:5">
+            <div class="who"><b>Sofia Lindqvist</b><span>Client Director, Logistics</span></div>
+            <ul>
+                <li><svg class="ico"><use href="#i-mail"/></svg>sofia.lindqvist@northbridge.example</li>
+                <li><svg class="ico"><use href="#i-phone"/></svg>+31 10 555 0142</li>
+                <li><svg class="ico"><use href="#i-pin"/></svg>Wilhelminakade 90, Rotterdam</li>
+            </ul>
+        </div>
+        <footer class="foot"><span>Demo deck · fictional companies</span><span class="pagenum" data-pagenum></span></footer>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "slug": "pastel-geometry",
+  "name": "Pastel Geometry",
+  "tagline": "One rounded white card on powder blue, with five pastel pill tabs on the right edge and soft geometric shapes. Adapted from the Pastel Geometry preset in frontend-slides.",
+  "mood": [
+    "friendly",
+    "organized",
+    "approachable",
+    "calm"
+  ],
+  "occasion": [
+    "onboarding",
+    "team handbook",
+    "internal update",
+    "workshop",
+    "course module",
+    "product walkthrough"
+  ],
+  "tone": [
+    "warm",
+    "clear",
+    "soft",
+    "modern"
+  ],
+  "formality": "medium-low",
+  "density": "medium",
+  "palette": {
+    "bg-primary": "#c8d9e6",
+    "card-bg": "#faf9f7",
+    "pill-pink": "#f0b4d4",
+    "pill-mint": "#a8d4c4",
+    "pill-sage": "#5a7c6a",
+    "pill-lavender": "#9b8dc4",
+    "pill-violet": "#7c6aad",
+    "ink": "#1f2b36",
+    "description": "powder-blue background, one warm off-white rounded card with a soft shadow, five pastel pills (pink, mint, sage, lavender, violet) as section tabs and accents, deep slate ink for text"
+  },
+  "typography": {
+    "display": "Plus Jakarta Sans",
+    "body": "Plus Jakarta Sans",
+    "style": "one geometric sans throughout: extra-bold 800 headlines with tight negative tracking in sentence case, 700 for item titles and chips, 400/500 for body"
+  },
+  "scheme": "light",
+  "best_for": "Friendly, well-organised decks: new-starter onboarding, team handbooks, internal how-we-work updates, workshops, course modules and product walkthroughs. Strong for agendas, step-by-step lists, simple stats and who-to-ask tables.",
+  "avoid_for": "Hard-edged sales pitches, crisis or serious financial news, and very dense reading documents. The pastel palette and rounded shapes read soft and casual.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

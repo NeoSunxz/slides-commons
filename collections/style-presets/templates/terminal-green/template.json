@@ -1,0 +1,45 @@
+{
+  "slug": "terminal-green",
+  "name": "Terminal Green",
+  "tagline": "A terminal session on GitHub-dark: JetBrains Mono only, green prompt and cursor, scan lines, diff panes and a tmux status bar. Adapted from the Terminal Green preset in frontend-slides.",
+  "mood": [
+    "technical",
+    "hacker",
+    "focused",
+    "playful"
+  ],
+  "occasion": [
+    "engineering all-hands",
+    "tech talk",
+    "postmortem",
+    "developer meetup",
+    "platform review",
+    "internal tooling demo"
+  ],
+  "tone": [
+    "developer",
+    "precise",
+    "dry",
+    "monospace"
+  ],
+  "formality": "medium-low",
+  "density": "medium",
+  "palette": {
+    "bg": "#0d1117",
+    "green": "#39d353",
+    "surface": "#161b22",
+    "border": "#30363d",
+    "text": "#e6edf3",
+    "description": "GitHub-dark background and neutral steps; terminal green for prompts, cursor, keys and the one highlighted value; a darker green ramp for markers and secondary bars; red only for removed diff lines"
+  },
+  "typography": {
+    "display": "JetBrains Mono",
+    "body": "JetBrains Mono",
+    "style": "monospace only: headlines at 700/800 with tight tracking and markdown '#' markers, body at 400, italic comments as labels, code with syntax colors"
+  },
+  "scheme": "dark",
+  "best_for": "Engineering talks for engineers: platform and CI reviews, postmortems, developer meetups, tooling demos and architecture walk-throughs. Strong for config diffs, command output, benchmarks and before/after numbers.",
+  "avoid_for": "Non-technical audiences, sales and executive decks, brand or marketing launches, and anything that needs warmth or long prose. Monospace is wide and tiring in paragraphs.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

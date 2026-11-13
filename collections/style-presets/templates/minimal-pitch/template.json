@@ -1,0 +1,46 @@
+{
+  "slug": "minimal-pitch",
+  "name": "Minimal Pitch",
+  "tagline": "A quiet, confident investor deck: white canvas, one green accent, very large type and one idea per slide. Original slides-commons design.",
+  "mood": [
+    "confident",
+    "calm",
+    "minimal",
+    "clear"
+  ],
+  "occasion": [
+    "investor pitch",
+    "fundraising",
+    "startup demo day",
+    "board update",
+    "strategy memo",
+    "product vision"
+  ],
+  "tone": [
+    "quiet",
+    "precise",
+    "modern",
+    "airy"
+  ],
+  "formality": "medium-high",
+  "density": "low",
+  "palette": {
+    "paper": "#ffffff",
+    "ink": "#111214",
+    "ink-muted": "#55585e",
+    "rule": "#e6e7e9",
+    "accent": "#0b7a55",
+    "accent-tint": "#e3f1ea",
+    "description": "pure white canvas, near-black ink, hairline greys and a single deep green accent used once per slide"
+  },
+  "typography": {
+    "display": "Manrope",
+    "body": "Manrope",
+    "style": "one geometric grotesque in four weights: very large semibold headlines with tight tracking, regular body, small wide-tracked uppercase labels, tabular figures for numbers in columns"
+  },
+  "scheme": "light",
+  "best_for": "Seed to Series B pitch decks and any argument that should land one idea per slide: problem, solution, product, why now, market size (nested TAM/SAM/SOM circles), traction chart, business model, 2x2 competition, team, the ask with use of funds.",
+  "avoid_for": "Dense reports, training material, data-heavy reviews with many tables, and loud keynote moments. The white space is the design; slides with more than one idea break it.",
+  "slide_count": 12,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

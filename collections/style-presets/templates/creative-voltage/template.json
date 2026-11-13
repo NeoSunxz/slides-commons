@@ -1,0 +1,45 @@
+{
+  "slug": "creative-voltage",
+  "name": "Creative Voltage",
+  "tagline": "Electric-blue and midnight panels with neon-yellow badges, halftone dot textures and one tilted script accent per slide. Adapted from the Creative Voltage preset in frontend-slides.",
+  "mood": [
+    "bold",
+    "creative",
+    "energetic",
+    "retro-modern"
+  ],
+  "occasion": [
+    "festival or event pitch",
+    "sponsor deck",
+    "creative showcase",
+    "community launch",
+    "conference talk",
+    "agency credentials"
+  ],
+  "tone": [
+    "loud",
+    "playful",
+    "graphic",
+    "high-contrast"
+  ],
+  "formality": "low",
+  "density": "medium",
+  "palette": {
+    "bg-primary": "#0066ff",
+    "bg-dark": "#1a1a2e",
+    "accent-neon": "#d4ff00",
+    "text-light": "#ffffff",
+    "description": "an electric-blue panel beside a midnight-navy panel on every slide, neon-yellow for badges, highlights and the one hero number, white type throughout, halftone dot textures fading out of the corners"
+  },
+  "typography": {
+    "display": "Syne",
+    "body": "Space Mono",
+    "accent": "Yellowtail (script accents only)",
+    "style": "extended Syne 800 in capitals for short display words, Syne 700 sentence case for titles, Space Mono for all running text and labels, and a single tilted neon script word per slide"
+  },
+  "scheme": "dark",
+  "best_for": "Festival and event pitches, sponsor decks, creative showcases, community or product launches and talks for designers, developers and musicians. Strong for punchy numbers, tiered offers, set lists and one loud quote.",
+  "avoid_for": "Formal, financial, legal or medical settings and anything that needs to feel quiet or conservative. The neon, script and halftone make every slide feel like a gig poster.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

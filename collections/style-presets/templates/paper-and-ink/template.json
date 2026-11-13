@@ -1,0 +1,45 @@
+{
+  "slug": "paper-and-ink",
+  "name": "Paper & Ink",
+  "tagline": "Warm cream pages, charcoal serif type and a single crimson accent, with drop caps, pull quotes, running heads and fine ornamented rules. Adapted from the Paper & Ink preset in frontend-slides.",
+  "mood": [
+    "literary",
+    "thoughtful",
+    "elegant",
+    "calm"
+  ],
+  "occasion": [
+    "publishing and book launch",
+    "editorial or magazine pitch",
+    "humanities lecture",
+    "foundation or arts briefing",
+    "author talk",
+    "annual letter"
+  ],
+  "tone": [
+    "editorial",
+    "literary",
+    "refined",
+    "warm"
+  ],
+  "formality": "medium-high",
+  "density": "medium",
+  "palette": {
+    "cream": "#faf9f7",
+    "charcoal": "#1a1a1a",
+    "crimson": "#c41e3a",
+    "paper-2": "#f1eee8",
+    "ink-3": "#74706a",
+    "description": "warm cream paper, charcoal ink for text and rules, crimson as the single accent for drop caps, ornaments, numerals and the one highlighted figure; warm greys for captions and hairlines"
+  },
+  "typography": {
+    "display": "Cormorant Garamond",
+    "body": "Source Serif 4",
+    "style": "high-contrast Garamond display at 500/600 with italic for emphasis and titles of works, paired with a sturdy text serif for body copy and letter-spaced uppercase running heads; old-style figures in text, lining figures in numbers"
+  },
+  "scheme": "light",
+  "best_for": "Publishing, literary and editorial presentations, humanities lectures, foundations, arts organisations and annual letters — talks where words carry the weight. Strong for essays with drop caps, pull quotes, contents pages, schedules and a few well-set numbers.",
+  "avoid_for": "Fast product launches, dense dashboards, technical deep-dives and high-energy sales decks. The quiet serif look reads as slow and reflective by design.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

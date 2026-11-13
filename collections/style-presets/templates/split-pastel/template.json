@@ -1,0 +1,46 @@
+{
+  "slug": "split-pastel",
+  "name": "Split Pastel",
+  "tagline": "A peach and lavender split screen with a graph-paper grid on the right, icon badge pills and rounded black CTA buttons. Adapted from the Split Pastel preset in frontend-slides.",
+  "mood": [
+    "playful",
+    "friendly",
+    "creative",
+    "modern"
+  ],
+  "occasion": [
+    "creative review",
+    "product pitch",
+    "workshop",
+    "kickoff",
+    "consumer brand update",
+    "community event"
+  ],
+  "tone": [
+    "playful",
+    "warm",
+    "upbeat",
+    "clear"
+  ],
+  "formality": "low",
+  "density": "medium-low",
+  "palette": {
+    "bg-peach": "#f5e6dc",
+    "bg-lavender": "#e4dff0",
+    "text-dark": "#1a1a1a",
+    "badge-mint": "#c8f0d8",
+    "badge-yellow": "#f0f0c8",
+    "badge-pink": "#f0d4e0",
+    "description": "a vertical split, peach on the left and lavender with a faint graph-paper grid on the right; near-black type and buttons; mint, yellow and pink badge pills with small dark icon circles"
+  },
+  "typography": {
+    "display": "Outfit",
+    "body": "Outfit",
+    "style": "one round geometric sans throughout: extra-bold 800 headlines with tight tracking in sentence case, 600 for badges and buttons, 400 for body"
+  },
+  "scheme": "light",
+  "best_for": "Playful, creative decks: creative reviews, consumer product pitches, workshops, kickoffs, community and family-brand updates. Strong for before/after comparisons (the split is the comparison), big single numbers, simple charts and calls to action.",
+  "avoid_for": "Formal finance, legal, medical or crisis communication, and dense reading documents. The pastel split, badges and bouncy motion read casual.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

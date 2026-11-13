@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<!--
+  Pastel Geometry — slides-commons style-preset template.
+  A slides-commons derivative of the "Pastel Geometry" preset in frontend-slides'
+  STYLE_PRESETS.md (MIT, (c) 2025 Zara Zhang). Not an official frontend-slides file.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pastel Geometry — Brightwater Studio New Starter Guide</title>
+
+<!-- Fonts: Plus Jakarta Sans for everything (display 700/800, body 400/500) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   The seven preset colors come first; the rest are derived from them.
+   =========================================== */
+:root {
+    /* Preset colors (Pastel Geometry) */
+    --bg-primary: #c8d9e6;
+    --card-bg: #faf9f7;
+    --pill-pink: #f0b4d4;
+    --pill-mint: #a8d4c4;
+    --pill-sage: #5a7c6a;
+    --pill-lavender: #9b8dc4;
+    --pill-violet: #7c6aad;
+
+    /* Derived tokens (ink from the blue background's hue, tints of the pills) */
+    --ink: #1f2b36;                        /* headlines and body on the card */
+    --ink-muted: #56636f;                  /* secondary text */
+    --ink-faint: #8a96a1;                  /* chrome, axis labels */
+    --rule: rgba(31, 43, 54, 0.12);        /* hairlines on the card */
+    --tint-blue: #eaf1f6;                  /* quiet panel (bg-primary, light) */
+    --tint-pink: #fbe9f2;
+    --tint-mint: #e6f3ee;
+    --tint-lavender: #ece9f5;
+    --shadow-card: 0 40px 80px -32px rgba(31, 43, 54, 0.28), 0 2px 8px rgba(31, 43, 54, 0.06);
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #aebfcc;
+    --slide-bg: var(--bg-primary);
+
+    /* Typography (authored at 1920x1080) */
+    --font: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Layout (authored at 1920x1080) */
+    --card-x: 96px;
+    --card-y: 72px;
+    --card-w: 1632px;
+    --card-h: 936px;
+    --card-radius: 48px;
+    --card-pad-x: 88px;
+    --gutter: 32px;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur: 0.7s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   Pastel blue background, one white card, pills on the right edge.
+   =========================================== */
+.slide {
+    background: var(--bg-primary);
+    color: var(--ink);
+    font-family: var(--font);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-weight: 800; }
+
+/* ---------- Vertical pills (section tabs) on the right edge ----------
+   Five pills, one per section, consistent 80px width, heights
+   short -> medium -> tall -> medium -> short. They tuck 24px behind the card;
+   the current section's pill slides out 32px further. */
+.pills {
+    position: absolute;
+    left: calc(var(--card-x) + var(--card-w) - 24px);
+    top: 104px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    list-style: none;
+    z-index: 0;
+}
+.pills li {
+    width: 80px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: transform 0.6s var(--ease-out);
+}
+.pills li span { opacity: 0.6; }
+.pills li:nth-child(1) { height: 104px; background: var(--pill-pink); }
+.pills li:nth-child(2) { height: 168px; background: var(--pill-mint); }
+.pills li:nth-child(3) { height: 248px; background: var(--pill-sage); color: #fff; }
+.pills li:nth-child(4) { height: 168px; background: var(--pill-lavender); color: #fff; }
+.pills li:nth-child(5) { height: 104px; background: var(--pill-violet); color: #fff; }
+.pills li.on { transform: translateX(32px); }
+.pills li.on span { opacity: 1; }
+
+/* ---------- The card ---------- */
+.card {
+    position: absolute;
+    left: var(--card-x);
+    top: var(--card-y);
+    width: var(--card-w);
+    height: var(--card-h);
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
+    z-index: 1;
+}
+
+/* Card chrome: brand top-left, action icon top-right,
+   section chip bottom-left, page number bottom-right */
+.ctop, .cfoot {
+    position: absolute;
+    left: var(--card-pad-x);
+    right: var(--card-pad-x);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.ctop { top: 44px; height: 64px; }
+.cfoot { bottom: 44px; height: 44px; }
+.brand { display: flex; align-items: center; gap: 16px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.brand-mark { display: flex; gap: 5px; align-items: flex-end; }
+.brand-mark i { width: 10px; border-radius: 5px; }
+.brand-mark i:nth-child(1) { height: 16px; background: var(--pill-pink); }
+.brand-mark i:nth-child(2) { height: 26px; background: var(--pill-mint); }
+.brand-mark i:nth-child(3) { height: 34px; background: var(--pill-sage); }
+.brand-mark i:nth-child(4) { height: 26px; background: var(--pill-lavender); }
+.brand-mark i:nth-child(5) { height: 16px; background: var(--pill-violet); }
+.brand small { font-size: 20px; font-weight: 500; color: var(--ink-faint); }
+
+/* Download / action icon: drawn with CSS only */
+.action {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--tint-blue);
+    flex: none;
+}
+.action::before {               /* arrow stem */
+    content: "";
+    position: absolute;
+    left: 30.5px; top: 17px;
+    width: 3px; height: 22px;
+    border-radius: 2px;
+    background: var(--ink);
+}
+.action::after {                /* arrow head */
+    content: "";
+    position: absolute;
+    left: 25px; top: 27px;
+    width: 11px; height: 11px;
+    border-right: 3px solid var(--ink);
+    border-bottom: 3px solid var(--ink);
+    border-radius: 0 0 2px 0;
+    transform: rotate(45deg);
+}
+.action i {                     /* tray */
+    position: absolute;
+    left: 20px; bottom: 16px;
+    width: 24px; height: 3px;
+    border-radius: 2px;
+    background: var(--ink);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    padding: 0 22px 0 14px;
+    border-radius: 22px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+}
+.chip::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: rgba(255, 255, 255, 0.75); }
+.chip.c1 { background: var(--pill-pink); }
+.chip.c2 { background: var(--pill-mint); }
+.chip.c3 { background: var(--pill-sage); color: #fff; }
+.chip.c4 { background: var(--pill-lavender); color: #fff; }
+.chip.c5 { background: var(--pill-violet); color: #fff; }
+.pagenum { font-size: 20px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pagenum span { color: var(--ink-faint); font-weight: 500; }
+
+/* Content frame inside the card: 12 columns x 6 rows, 1456 x 668 px
+   (column 92px, row 84.67px, 32px gutters) */
+.frame {
+    position: absolute;
+    top: 148px;
+    left: var(--card-pad-x);
+    right: var(--card-pad-x);
+    bottom: 120px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: var(--gutter);
+}
+.stack { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.stack.end { justify-content: flex-end; }
+.stack.start { justify-content: flex-start; }
+
+/* Soft rounded panels inside the card (tints, never white-on-white) */
+.panel {
+    border-radius: 32px;
+    padding: 44px 48px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.panel.blue { background: var(--tint-blue); }
+.panel.pink { background: var(--tint-pink); }
+.panel.mint { background: var(--tint-mint); }
+.panel.lav  { background: var(--tint-lavender); }
+
+/* ===========================================
+   TYPE SCALE
+   =========================================== */
+.eyebrow { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-muted); }
+.t-hero    { font-size: 136px; line-height: 0.98; letter-spacing: -0.04em; }
+.t-display { font-size: 104px; line-height: 1.0;  letter-spacing: -0.035em; }
+.t-state   { font-size: 80px;  line-height: 1.12; letter-spacing: -0.03em; }
+.t-title   { font-size: 68px;  line-height: 1.06; letter-spacing: -0.03em; }
+.t-sub     { font-size: 36px;  line-height: 1.15; letter-spacing: -0.015em; font-weight: 700; }
+.lede      { font-size: 32px;  line-height: 1.45; color: var(--ink-muted); }
+.body      { font-size: 26px;  line-height: 1.5;  color: var(--ink-muted); }
+.small     { font-size: 22px;  line-height: 1.5;  color: var(--ink-muted); }
+.eyebrow + h1, .eyebrow + h2 { margin-top: 24px; }
+h1 + .lede, h2 + .lede, h2 + .body, h1 + .body { margin-top: 28px; }
+
+/* Rounded highlight behind a phrase (pill-shaped marker) */
+.hl {
+    background: var(--pill-mint);
+    border-radius: 0.5em;
+    padding: 0 0.18em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+.hl.pink { background: var(--pill-pink); }
+
+/* ===========================================
+   SLIDE 1 — COVER
+   =========================================== */
+.s-cover .main { grid-column: 1 / span 7; grid-row: 1 / span 6; }
+.s-cover .lede { max-width: 760px; }
+.meta { display: flex; gap: 56px; margin-top: 56px; }
+.meta dt { font-size: 18px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.02em; }
+.meta dd { font-size: 24px; font-weight: 500; margin-top: 6px; }
+.shapes { grid-column: 8 / span 5; grid-row: 1 / span 6; position: relative; }
+.shapes i { position: absolute; display: block; border-radius: 999px; }
+
+/* ===========================================
+   SLIDE 2 — AGENDA
+   =========================================== */
+.s-agenda .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.agenda { grid-column: 5 / span 8; grid-row: 1 / span 6; list-style: none; display: grid; grid-template-rows: repeat(5, 1fr); }
+.agenda li {
+    display: grid;
+    grid-template-columns: 16px 48px 1fr auto;
+    gap: 0 28px;
+    align-items: center;
+    border-bottom: 1px solid var(--rule);
+}
+.agenda li:last-child { border-bottom: 0; }
+.agenda .sw { width: 16px; height: 72px; border-radius: 8px; }
+.agenda .n { font-size: 28px; font-weight: 800; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.agenda h3 { font-size: 32px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; }
+.agenda p { font-size: 22px; color: var(--ink-muted); margin-top: 4px; }
+.agenda .when { font-size: 18px; font-weight: 700; color: var(--ink-muted); background: var(--tint-blue); padding: 10px 18px; border-radius: 20px; white-space: nowrap; }
+
+/* ===========================================
+   SLIDE 3 — SECTION DIVIDER
+   =========================================== */
+.s-divider .bigpill {
+    grid-column: 1 / span 4; grid-row: 1 / span 6;
+    background: var(--pill-mint);
+    border-radius: 999px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+}
+.bigpill .num { font-size: 220px; font-weight: 800; letter-spacing: -0.06em; line-height: 1; color: var(--ink); }
+.bigpill .cap { font-size: 20px; font-weight: 700; margin-top: 12px; color: var(--ink); opacity: 0.7; }
+.s-divider .side { grid-column: 6 / span 7; grid-row: 1 / span 6; }
+.s-divider .side .body { max-width: 760px; }
+.dots { display: flex; gap: 14px; margin-top: 48px; }
+.dots i { width: 20px; height: 20px; border-radius: 50%; background: var(--rule); }
+.dots i.on { background: var(--pill-mint); width: 56px; border-radius: 10px; }
+
+/* ===========================================
+   SLIDE 4 — STATEMENT
+   =========================================== */
+.s-statement .stmt { grid-column: 1 / span 11; grid-row: 1 / span 6; }
+.s-statement .small { margin-top: 44px; color: var(--ink-faint); }
+
+/* ===========================================
+   SLIDE 5 — LIST (five days)
+   =========================================== */
+.s-list .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.days { grid-column: 5 / span 8; grid-row: 1 / span 6; list-style: none; display: grid; grid-template-rows: repeat(5, 1fr); gap: 12px; }
+.days li { display: grid; grid-template-columns: 128px 1fr; gap: 32px; align-items: center; }
+.days .day {
+    height: 72px;
+    border-radius: 36px;
+    background: var(--tint-mint);
+    display: grid; place-items: center;
+    font-size: 22px; font-weight: 800; letter-spacing: 0.02em;
+}
+.days li.today .day { background: var(--pill-mint); }
+.days h3 { font-size: 30px; font-weight: 700; letter-spacing: -0.015em; }
+.days p { font-size: 22px; line-height: 1.4; color: var(--ink-muted); margin-top: 4px; }
+
+/* ===========================================
+   SLIDE 6 — TWO COLUMNS
+   =========================================== */
+.s-two .head, .s-table .head { padding-bottom: 8px; }
+.s-two .head { grid-column: 1 / span 12; grid-row: 1 / span 2; }
+.s-two .panel { grid-row: 3 / span 4; }
+.s-two .panel.mint { grid-column: 1 / span 6; }
+.s-two .panel.pink { grid-column: 7 / span 6; }
+.col-head { display: flex; align-items: center; gap: 16px; }
+.col-head .badge { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.panel.mint .badge { background: var(--pill-sage); }
+.panel.pink .badge { background: var(--pill-pink); }
+.badge.yes::after { content: ""; width: 18px; height: 10px; border-left: 3px solid #fff; border-bottom: 3px solid #fff; transform: translateY(-3px) rotate(-45deg); }
+.badge.no::after { content: ""; width: 18px; height: 3px; border-radius: 2px; background: var(--ink); }
+.col-head h3 { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.ticks { list-style: none; margin-top: 20px; }
+.ticks li { font-size: 26px; line-height: 1.4; padding: 18px 0; border-bottom: 1px solid var(--rule); }
+.ticks li:last-child { border-bottom: 0; padding-bottom: 0; }
+.ticks li b { font-weight: 700; }
+.ticks li span { color: var(--ink-muted); }
+
+/* ===========================================
+   SLIDE 7 — STATS
+   =========================================== */
+.s-stats .panel.lav { grid-column: 1 / span 5; grid-row: 1 / span 6; justify-content: space-between; }
+.stat-xl { font-size: 220px; font-weight: 800; line-height: 0.9; letter-spacing: -0.06em; color: var(--pill-violet); }
+.s-stats .panel .lede { color: var(--ink); margin-top: 20px; }
+.s-stats .rows { grid-column: 6 / span 7; grid-row: 1 / span 6; display: grid; grid-template-rows: auto repeat(3, 1fr); }
+.s-stats .rows h2 { padding-bottom: 8px; }
+.stat-row { display: grid; grid-template-columns: 260px 1fr; gap: 8px 32px; align-content: center; border-top: 1px solid var(--rule); }
+.stat-row .num { white-space: nowrap; grid-row: 1 / span 2; font-size: 76px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; align-self: center; }
+.stat-row p { font-size: 22px; line-height: 1.35; color: var(--ink-muted); align-self: end; }
+.stat-row p strong { color: var(--ink); font-weight: 700; }
+.meter { height: 16px; border-radius: 8px; background: var(--tint-blue); overflow: hidden; align-self: start; margin-top: 8px; }
+.meter i { display: block; height: 100%; width: var(--v); border-radius: 8px; background: var(--c, var(--pill-sage)); transform-origin: left; }
+
+/* ===========================================
+   SLIDE 8 — PILL BAR CHART (pure CSS)
+   =========================================== */
+.s-chart .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.chart { grid-column: 5 / span 8; grid-row: 1 / span 6; display: grid; grid-template-rows: 1fr 48px; padding-top: 40px; }
+.plot { position: relative; }
+.plot .gl { position: absolute; left: 0; right: 0; border-top: 2px dotted var(--rule); }
+.plot .gl span { position: absolute; left: 0; top: -30px; font-size: 18px; font-weight: 700; color: var(--ink-faint); }
+.bars { position: absolute; inset: 0 0 0 88px; display: flex; align-items: flex-end; gap: 48px; }
+.bar { flex: 1; position: relative; height: var(--h); border-radius: 999px; background: var(--bg-primary); transform-origin: bottom; }
+.bar b { position: absolute; left: 0; right: 0; bottom: 100%; padding-bottom: 12px; text-align: center; font-size: 22px; font-weight: 700; color: var(--ink-muted); }
+.bar.hi { background: var(--pill-violet); }
+.bar.hi b { font-size: 36px; font-weight: 800; color: var(--pill-violet); letter-spacing: -0.02em; }
+.x-axis { display: flex; gap: 48px; padding: 16px 0 0 88px; }
+.x-axis span { flex: 1; text-align: center; font-size: 18px; font-weight: 700; color: var(--ink-faint); white-space: nowrap; }
+.x-axis span.on { color: var(--ink); }
+
+/* ===========================================
+   SLIDE 9 — TABLE
+   =========================================== */
+.s-table .head { grid-column: 1 / span 12; grid-row: 1 / span 2; }
+.table-wrap { grid-column: 1 / span 12; grid-row: 3 / span 4; border-radius: 28px; overflow: hidden; background: var(--tint-lavender); }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; padding: 0 36px; }
+thead th { height: 64px; font-size: 18px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-muted); background: var(--pill-lavender); color: #fff; }
+tbody tr + tr td, tbody tr + tr th { border-top: 1px solid rgba(31, 43, 54, 0.08); }
+tbody th { font-size: 26px; font-weight: 700; }
+tbody td { font-size: 24px; color: var(--ink-muted); }
+th:first-child { width: 28%; }
+th:nth-child(2) { width: 27%; }
+th:last-child { width: 20%; }
+.who { display: flex; align-items: center; gap: 16px; color: var(--ink); font-weight: 500; }
+.av { font-style: normal; width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 15px; font-weight: 800; color: var(--ink); }
+.tag { display: inline-block; padding: 6px 16px; border-radius: 18px; background: var(--card-bg); font-size: 20px; font-weight: 700; color: var(--ink); }
+
+/* ===========================================
+   SLIDE 10 — QUOTE
+   =========================================== */
+.s-quote .panel.pink { grid-column: 1 / span 9; grid-row: 1 / span 6; justify-content: space-between; padding: 56px 64px; }
+.qmark { width: 104px; height: 64px; display: flex; gap: 16px; }
+.qmark i { width: 44px; height: 64px; border-radius: 22px 22px 22px 4px; background: var(--pill-pink); }
+.s-quote blockquote { font-size: 68px; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; }
+.s-quote .att { grid-column: 10 / span 3; grid-row: 1 / span 6; }
+.att .avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--pill-lavender); color: #fff; display: grid; place-items: center; font-size: 40px; font-weight: 800; letter-spacing: -0.02em; }
+.att .name { font-size: 32px; font-weight: 700; margin-top: 28px; letter-spacing: -0.01em; }
+.att .small { margin-top: 8px; }
+
+/* ===========================================
+   SLIDE 11 — CLOSING
+   =========================================== */
+.s-close .main { grid-column: 1 / span 6; grid-row: 1 / span 6; }
+.s-close .panel.blue { grid-column: 7 / span 6; grid-row: 1 / span 6; justify-content: space-between; }
+.checks { list-style: none; margin-top: 16px; }
+.checks li { display: grid; grid-template-columns: 40px 1fr; gap: 20px; align-items: start; padding: 26px 0; border-bottom: 1px solid var(--rule); }
+.checks li:last-child { border-bottom: 0; }
+.checks .box { width: 40px; height: 40px; border-radius: 12px; border: 3px solid var(--pill-violet); }
+.checks h3 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+.checks p { font-size: 22px; color: var(--ink-muted); margin-top: 2px; }
+.dl-row { display: flex; align-items: center; gap: 24px; padding: 20px 28px 20px 20px; border-radius: 999px; background: var(--card-bg); }
+.dl-row .action { background: var(--pill-violet); }
+.dl-row .action::before, .dl-row .action i { background: #fff; }
+.dl-row .action::after { border-color: #fff; }
+.dl-row b { font-size: 26px; font-weight: 700; display: block; }
+.dl-row span { font-size: 20px; color: var(--ink-muted); }
+.contact { margin-top: 48px; font-size: 24px; line-height: 1.6; color: var(--ink-muted); }
+.contact b { color: var(--ink); font-weight: 700; }
+
+/* ===========================================
+   ANIMATIONS (triggered by .visible on the active slide)
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 80ms + 100ms);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+.pop { transform: scale(0.6); opacity: 0; transition: transform 0.8s var(--ease-out), opacity 0.5s ease; transition-delay: calc(var(--i, 0) * 70ms + 150ms); }
+.slide.visible .pop { transform: none; opacity: 1; }
+.grow { transform: scaleY(0); transition: transform 0.9s var(--ease-out); transition-delay: calc(var(--i, 0) * 60ms + 200ms); }
+.slide.visible .grow { transform: scaleY(1); }
+.fill { transform: scaleX(0); transition: transform 1s var(--ease-out); transition-delay: calc(var(--i, 0) * 80ms + 300ms); }
+.slide.visible .fill { transform: scaleX(1); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide s-cover active visible" data-label="Cover">
+        <ol class="pills" aria-hidden="true"><li class="on"><span>01</span></li><li><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack main">
+                    <p class="eyebrow reveal">Spring 2027 cohort · Product Design</p>
+                    <h1 class="t-hero reveal" style="--i:1">Welcome to Brightwater.</h1>
+                    <p class="lede reveal" style="--i:2">Everything you need for your first 30 days, in one friendly place.</p>
+                    <dl class="meta reveal" style="--i:3">
+                        <div><dt>Your buddy</dt><dd>Priya Nair</dd></div>
+                        <div><dt>First day</dt><dd>Monday 8 March</dd></div>
+                        <div><dt>Studio</dt><dd>Leeds, 3rd floor</dd></div>
+                    </dl>
+                </div>
+                <div class="shapes" aria-hidden="true">
+                    <i class="pop" style="--i:1;left:28px;top:212px;width:120px;height:300px;background:var(--pill-pink)"></i>
+                    <i class="pop" style="--i:2;left:172px;top:60px;width:120px;height:120px;background:var(--pill-sage)"></i>
+                    <i class="pop" style="--i:3;left:172px;top:204px;width:120px;height:420px;background:var(--pill-mint)"></i>
+                    <i class="pop" style="--i:4;left:316px;top:20px;width:120px;height:500px;background:var(--pill-violet)"></i>
+                    <i class="pop" style="--i:5;left:460px;top:268px;width:120px;height:120px;background:var(--pill-pink)"></i>
+                    <i class="pop" style="--i:6;left:460px;top:412px;width:120px;height:236px;background:var(--pill-lavender)"></i>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c1">01 · Welcome</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 2. AGENDA =========================================== -->
+    <section class="slide s-agenda" data-label="Agenda">
+        <ol class="pills" aria-hidden="true"><li class="on"><span>01</span></li><li><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack intro">
+                    <p class="eyebrow reveal">Five short chapters</p>
+                    <h2 class="t-display reveal" style="--i:1">Your first 30&nbsp;days</h2>
+                    <p class="body reveal" style="--i:2">Read it before Monday, or with your buddy over coffee on day one.</p>
+                </div>
+                <ol class="agenda">
+                    <li class="reveal" style="--i:1"><i class="sw" style="background:var(--pill-pink)"></i><span class="n">01</span><div><h3>Welcome</h3><p>Who we are and what we make</p></div><span class="when">Before day 1</span></li>
+                    <li class="reveal" style="--i:2"><i class="sw" style="background:var(--pill-mint)"></i><span class="n">02</span><div><h3>Your first week</h3><p>Five days, five small wins</p></div><span class="when">Days 1–5</span></li>
+                    <li class="reveal" style="--i:3"><i class="sw" style="background:var(--pill-sage)"></i><span class="n">03</span><div><h3>How we work</h3><p>Async notes, small releases, honest reviews</p></div><span class="when">Weeks 2–3</span></li>
+                    <li class="reveal" style="--i:4"><i class="sw" style="background:var(--pill-lavender)"></i><span class="n">04</span><div><h3>Getting support</h3><p>Who to ask, and how fast they reply</p></div><span class="when">Any time</span></li>
+                    <li class="reveal" style="--i:5"><i class="sw" style="background:var(--pill-violet)"></i><span class="n">05</span><div><h3>Before Monday</h3><p>A three-item checklist</p></div><span class="when">This week</span></li>
+                </ol>
+            </div>
+            <footer class="cfoot"><span class="chip c1">01 · Welcome</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 3. SECTION DIVIDER ================================== -->
+    <section class="slide s-divider" data-label="Section 02">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li class="on"><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="bigpill pop" style="--i:0">
+                    <span class="num">02</span>
+                    <span class="cap">Chapter</span>
+                </div>
+                <div class="stack side">
+                    <p class="eyebrow reveal" style="--i:2">Days 1–5</p>
+                    <h2 class="t-display reveal" style="--i:3">Your first week</h2>
+                    <p class="body reveal" style="--i:4">No big project, no deadlines. Just enough structure that Friday feels like a small win instead of a blur.</p>
+                    <div class="dots reveal" style="--i:5" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></div>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c2">02 · Your first week</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 4. STATEMENT ======================================== -->
+    <section class="slide s-statement" data-label="Statement">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li class="on"><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack stmt">
+                    <p class="eyebrow reveal">The one goal for week one</p>
+                    <h2 class="t-state reveal" style="--i:1">By Friday you’ll have shipped <span class="hl">one&nbsp;small&nbsp;thing</span> and met everyone who can help you ship the&nbsp;next.</h2>
+                    <p class="small reveal" style="--i:2">It can be a copy fix. Last spring’s cohort shipped 14 of them between them.</p>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c2">02 · Your first week</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 5. LIST ============================================= -->
+    <section class="slide s-list" data-label="Five days">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li class="on"><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack intro">
+                    <p class="eyebrow reveal">The week, day by day</p>
+                    <h2 class="t-title reveal" style="--i:1">Five days, five small wins</h2>
+                    <p class="body reveal" style="--i:2">Every day ends at 4 pm with a short check-in with your buddy.</p>
+                </div>
+                <ol class="days">
+                    <li class="today reveal" style="--i:1"><span class="day">Mon</span><div><h3>Laptop, coffee, hello</h3><p>Set-up runs from 9:30; lunch with the design team at 12:30.</p></div></li>
+                    <li class="reveal" style="--i:2"><span class="day">Tue</span><div><h3>Shadow a design review</h3><p>Sit in, listen, and post one question in the review notes.</p></div></li>
+                    <li class="reveal" style="--i:3"><span class="day">Wed</span><div><h3>Pick your first ticket</h3><p>Choose from the “good first fix” board with your buddy.</p></div></li>
+                    <li class="reveal" style="--i:4"><span class="day">Thu</span><div><h3>Pair on the change</h3><p>Two hours with an engineer; open the pull request together.</p></div></li>
+                    <li class="reveal" style="--i:5"><span class="day">Fri</span><div><h3>Ship it and show it</h3><p>Release by 2 pm, then a two-minute demo at studio drinks.</p></div></li>
+                </ol>
+            </div>
+            <footer class="cfoot"><span class="chip c2">02 · Your first week</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 6. TWO COLUMNS ====================================== -->
+    <section class="slide s-two" data-label="Do and skip">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li class="on"><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack end head">
+                    <p class="eyebrow reveal">How we work</p>
+                    <h2 class="t-title reveal" style="--i:1">Small habits, kept on purpose</h2>
+                </div>
+                <div class="panel mint reveal" style="--i:2">
+                    <div class="col-head"><span class="badge yes"></span><h3>We do</h3></div>
+                    <ul class="ticks">
+                        <li><b>Write it down first.</b> <span>A one-page note before any meeting.</span></li>
+                        <li><b>Ship small, ship often.</b> <span>Most changes go out the same week.</span></li>
+                        <li><b>Review kindly.</b> <span>Comments say what to try, not just what’s wrong.</span></li>
+                    </ul>
+                </div>
+                <div class="panel pink reveal" style="--i:3">
+                    <div class="col-head"><span class="badge no"></span><h3>We skip</h3></div>
+                    <ul class="ticks">
+                        <li><b>Status meetings.</b> <span>Updates live in the Friday note instead.</span></li>
+                        <li><b>Big-bang launches.</b> <span>No release waits on another team’s.</span></li>
+                        <li><b>Late-night replies.</b> <span>Messages after 6 pm can wait until morning.</span></li>
+                    </ul>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c3">03 · How we work</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 7. STATS ============================================ -->
+    <section class="slide s-stats" data-label="Stats">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li class="on"><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="panel lav reveal">
+                    <p class="eyebrow">Starter survey · day 30</p>
+                    <div>
+                        <div class="stat-xl">94%</div>
+                        <p class="lede">of last year’s 31 starters felt ready to work on their own by day&nbsp;30.</p>
+                    </div>
+                </div>
+                <div class="rows">
+                    <h2 class="t-sub reveal" style="--i:1">It works because it’s small</h2>
+                    <div class="stat-row reveal" style="--i:2"><span class="num">6 days</span><p><strong>To a first shipped change</strong>, down from 21 in 2025</p><div class="meter"><i class="fill" style="--v:29%;--c:var(--pill-sage);--i:2"></i></div></div>
+                    <div class="stat-row reveal" style="--i:3"><span class="num">4.7</span><p><strong>Buddy rating</strong>, out of 5, from 31 starters</p><div class="meter"><i class="fill" style="--v:94%;--c:var(--pill-mint);--i:3"></i></div></div>
+                    <div class="stat-row reveal" style="--i:4"><span class="num">12</span><p><strong>People you’ll meet</strong> one-to-one in the first month</p><div class="meter"><i class="fill" style="--v:60%;--c:var(--pill-pink);--i:4"></i></div></div>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c3">03 · How we work</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 8. CHART ============================================ -->
+    <section class="slide s-chart" data-label="Chart">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li class="on"><span>03</span></li><li><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack intro">
+                    <p class="eyebrow reveal">Days to first shipped change</p>
+                    <h2 class="t-title reveal" style="--i:1">Faster every cohort</h2>
+                    <p class="body reveal" style="--i:2">Since the buddy system started in 2025, new starters ship their first change three times sooner.</p>
+                </div>
+                <div class="chart" role="img" aria-label="Pill bar chart: median days to a first shipped change per cohort, from 21 days in spring 2025 to 6 days in spring 2027.">
+                    <div class="plot">
+                        <div class="gl" style="bottom:0%"><span>0</span></div><div class="gl" style="bottom:33.33%"><span>8</span></div><div class="gl" style="bottom:66.67%"><span>16</span></div><div class="gl" style="bottom:100%"><span>24</span></div>
+                        <!-- Bar height = value / 24 (the top of the axis) -->
+                        <div class="bars">
+                            <div class="bar grow" style="--h:87.5%;--i:0"><b>21</b></div>
+                            <div class="bar grow" style="--h:70.8%;--i:1"><b>17</b></div>
+                            <div class="bar grow" style="--h:58.3%;--i:2"><b>14</b></div>
+                            <div class="bar grow" style="--h:45.8%;--i:3"><b>11</b></div>
+                            <div class="bar grow" style="--h:37.5%;--i:4"><b>9</b></div>
+                            <div class="bar grow hi" style="--h:25%;--i:5"><b>6</b></div>
+                        </div>
+                    </div>
+                    <div class="x-axis"><span>Spr 25</span><span>Aut 25</span><span>Spr 26</span><span>Aut 26</span><span>Win 26</span><span class="on">Spr 27</span></div>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c3">03 · How we work</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 9. TABLE ============================================ -->
+    <section class="slide s-table" data-label="Who to ask">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li><span>03</span></li><li class="on"><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack end head">
+                    <p class="eyebrow reveal">Getting support</p>
+                    <h2 class="t-title reveal" style="--i:1">Who to ask for what</h2>
+                </div>
+                <div class="table-wrap reveal" style="--i:2">
+                    <table>
+                        <thead><tr><th>You need help with</th><th>Ask</th><th>Where</th><th>Reply within</th></tr></thead>
+                        <tbody>
+                            <tr><th>Laptop &amp; accounts</th><td><span class="who"><i class="av" style="background:var(--pill-mint)">IT</i>Studio IT desk</span></td><td>#help-it</td><td><span class="tag">2 hours</span></td></tr>
+                            <tr><th>Your first ticket</th><td><span class="who"><i class="av" style="background:var(--pill-pink)">PN</i>Priya, your buddy</span></td><td>Direct message</td><td><span class="tag">Same day</span></td></tr>
+                            <tr><th>Design feedback</th><td><span class="who"><i class="av" style="background:var(--bg-primary)">DR</i>Review crew</span></td><td>Tuesday review</td><td><span class="tag">Weekly</span></td></tr>
+                            <tr><th>Pay, leave &amp; benefits</th><td><span class="who"><i class="av" style="background:var(--pill-lavender);color:#fff">PT</i>People team</span></td><td>#ask-people</td><td><span class="tag">1 working day</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c4">04 · Getting support</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 10. QUOTE =========================================== -->
+    <section class="slide s-quote" data-label="Quote">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li><span>03</span></li><li class="on"><span>04</span></li><li><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <figure class="panel pink reveal">
+                    <div class="qmark" aria-hidden="true"><i></i><i></i></div>
+                    <blockquote>I shipped a tiny copy fix on day four. Nobody made a fuss, and that’s exactly why I stopped feeling new.</blockquote>
+                </figure>
+                <div class="stack end att">
+                    <div class="avatar pop" style="--i:2" aria-hidden="true">JO</div>
+                    <p class="name reveal" style="--i:3">Jonah Osei</p>
+                    <p class="small reveal" style="--i:4">Product Designer, autumn 2026 cohort</p>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c4">04 · Getting support</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+    <!-- ============== 11. CLOSING ========================================= -->
+    <section class="slide s-close" data-label="Closing">
+        <ol class="pills" aria-hidden="true"><li><span>01</span></li><li><span>02</span></li><li><span>03</span></li><li><span>04</span></li><li class="on"><span>05</span></li></ol>
+        <div class="card">
+            <header class="ctop"><div class="brand"><span class="brand-mark"><i></i><i></i><i></i><i></i><i></i></span>Brightwater Studio <small>New starter guide</small></div><span class="action" aria-hidden="true"><i></i></span></header>
+            <div class="frame">
+                <div class="stack main">
+                    <p class="eyebrow reveal">That’s the guide</p>
+                    <h2 class="t-hero reveal" style="--i:1">See you on Monday.</h2>
+                    <p class="contact reveal" style="--i:2"><b>Questions before then?</b><br>Priya Nair · priya.nair@brightwater.example<br>#new-starters-spring27</p>
+                </div>
+                <div class="panel blue reveal" style="--i:2">
+                    <div>
+                        <p class="eyebrow">Before day one</p>
+                        <ul class="checks">
+                            <li><span class="box"></span><div><h3>Send your bank details</h3><p>Via the link in your offer email</p></div></li>
+                            <li><span class="box"></span><div><h3>Pick a laptop: 14-inch or 16-inch</h3><p>Reply to IT by Wednesday</p></div></li>
+                            <li><span class="box"></span><div><h3>Tell us one thing you love making</h3><p>It goes on your welcome card</p></div></li>
+                        </ul>
+                    </div>
+                    <div class="dl-row"><span class="action" aria-hidden="true"><i></i></span><div><b>Download this checklist</b><span>PDF · 2 pages · 180 KB</span></div></div>
+                </div>
+            </div>
+            <footer class="cfoot"><span class="chip c5">05 · Before Monday</span><span class="pagenum" data-pagenum></span></footer>
+        </div>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>
