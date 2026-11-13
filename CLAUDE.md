@@ -182,7 +182,10 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-13：v0.1.0 发布（PR #1 合并到 main，提交 97816b0；Pages 上线 https://neosunxz.github.io/slides-commons/ ，详情页路径 `t/<slug>/`；GitHub Release v0.1.0）。main 已保护（需 PR + 必过 `validate + test`），默认分支 dev。
 - 2026-11-13：「只给提示词、不放 zip」模拟验收通过（curl 下载 → python 解压 → 8 页中文演讲型）。据此改提示词（维护者确认）：缺内容由 agent 代写、页面不放占位、最终回复逐条列出代写内容；design.md 自相矛盾取更严格的规则；CJK 字重规则优先于 design.md；二维码/链接仅在用户给了真实链接时使用；章节编号与页码一致；`--slide-bg` 取画布底色而非面板色；解压顺序 unzip → python → tar → Expand-Archive。演讲型面板下限不设。`npm test` 374 通过。
   - 待定：`--slide-bg` 目前是通用措辞，未按模板从数据推导具体色值。
-- 下一步：自托管字体（见下方计划），然后 M4。
+- 2026-11-13：自托管字体第一步完成（拉丁字体）：Fontsource npm 包（47 个 `@fontsource/*` + 5 个 `@fontsource-variable/*`，devDependencies）；`scripts/fonts.mjs` 从模板的 Google Fonts 链接解析字体族/字重。预览副本把拉丁字体以 data: URI 内联（沙箱 iframe 在 file:// 禁止加载本地文件、http 下 origin=null 会被 CORS 拦截，所以不能引用 `site/fonts/`），CJK 字体仍走只含 CJK 字体族的 Google 链接；`site/fonts/<family>/OFL.txt` 存协议。zip 增加 `fonts/`（woff2 + OFL.txt + `fonts.css`），总计 12.4MB。提示词要求把拉丁字体以 base64 嵌入成稿（latin + latin-ext 都嵌，可变字体只嵌一次），只有 CJK 用 Google 链接；为可读性偏离 design.md 配色/字号须在最终回复列出。模拟验收（signal，7 页英文，断网仍加载全部字体，成稿 481KB）通过。`npm test` 485 通过。CREDITS.md 已加 Web fonts 一节。
+  - 待处理：raw-grid 的 design.md 允许 CJK 用 Noto Sans SC（唯一例外），但提示词让它用系统 CJK 字体，应改为引用该链接。
+  - 新增模板若用了 Fontsource 没有的拉丁字体，校验会失败（可加到 `scripts/fonts.mjs` 的 `GOOGLE_FALLBACK`）。
+- 下一步：自托管字体第二步（CJK 按字裁剪嵌入），或先做 M4，待维护者定。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`

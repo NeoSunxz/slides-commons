@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Latin web fonts are now self-hosted (Fontsource, SIL OFL 1.1): previews no longer need Google Fonts for Latin text.
+- Each pack ships `fonts/` (woff2 files, `OFL.txt`, `fonts.css`).
+- The prompt asks the agent to embed Latin fonts as base64 so decks work offline. CJK fonts still come from Google Fonts.
+
 ### Changed
 
+- The prompt quotes a CJK-only Google Fonts link.
+- CJK family detection now covers ZCOOL, LXGW, Long Cang and similar families.
+- The prompt asks the agent to list any legibility deviations from design.md.
 - Prompt now drafts missing content itself instead of leaving placeholders, and lists every drafted item in the final reply.
 - When design.md contradicts itself, the prompt tells the agent to follow the stricter rule.
 - The CJK font-weight rule in the prompt now overrides design.md.
