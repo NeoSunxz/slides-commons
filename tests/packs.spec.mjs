@@ -28,7 +28,11 @@ for (const slug of ALL_SLUGS) {
       'template.html', 'design.md', 'viewport-base.css', 'LICENSE-templates', 'LICENSE-skill',
       'PROMPT.md', 'PROMPT.zh.md', 'README.md', ...siblings,
     ].map((f) => `${slug}/${f}`).sort();
-    expect(entries.filter((e) => !e.isDirectory && !e.isDir).map((e) => e.name).sort()).toEqual(expected);
+    // fonts/ is verified in fonts.spec.mjs; here only that it exists exactly for templates with web fonts.
+    const all = entries.filter((e) => !e.isDirectory && !e.isDir).map((e) => e.name).sort();
+    const nonFont = all.filter((n) => !n.startsWith(`${slug}/fonts/`));
+    expect(all.some((n) => n.startsWith(`${slug}/fonts/`)), `${slug}: fonts/ presence`).toBe(!NO_WEBFONT_SLUGS.includes(slug));
+    expect(nonFont).toEqual(expected);
     // deck-stage.js ships exactly for the deck-stage templates (and nothing else is a sibling).
     expect(siblings.filter((f) => f !== 'deck-stage.js'), 'unexpected sibling assets').toEqual([]);
     expect(siblings.includes('deck-stage.js')).toBe(DECK_STAGE_SLUGS.includes(slug));
@@ -103,10 +107,10 @@ test('prompts: templates without web fonts say system fonts are the design, no f
       expect.soft(links, `${slug} ${lang}: prompt asks for a Google Fonts <link>`).toEqual([]);
     }
   }
-  // And the converse: every template that has web fonts shows its font link.
+  // And the converse: every template that has web fonts ships them in fonts/ (detail in fonts.spec.mjs).
   for (const slug of ALL_SLUGS.filter((s) => !NO_WEBFONT_SLUGS.includes(s))) {
     const en = zipFile(readSiteZip(SITE, slug).entries, slug, 'PROMPT.md').toString();
-    expect.soft(en, `${slug}: font link in the prompt`).toMatch(/<link[^>]+(fonts\.googleapis\.com|api\.fontshare\.com)/);
+    expect.soft(en, `${slug}: fonts/ in the prompt`).toMatch(/`fonts\/`/);
   }
 });
 

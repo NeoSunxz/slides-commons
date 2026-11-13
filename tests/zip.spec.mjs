@@ -27,7 +27,8 @@ test('download, unzip and open the pack', async ({ page }) => {
   const { entries, problems } = readZip(fs.readFileSync(zipPath));
   expect(problems, 'zip integrity problems').toEqual([]);
   const files = entries.filter((e) => !e.isDir).map((e) => e.name).sort();
-  expect(files).toEqual(EXPECTED_FILES);
+  expect(files.filter((f) => !f.startsWith(`${SLUG}/fonts/`))).toEqual(EXPECTED_FILES);
+  expect(files.some((f) => f === `${SLUG}/fonts/fonts.css`), 'fonts/fonts.css in zip').toBe(true);
   expect(entries.every((e) => e.name.startsWith(`${SLUG}/`)), 'all entries under <slug>/').toBe(true);
 
   const get = (n) => entries.find((e) => e.name === `${SLUG}/${n}`).data.toString('utf8');
@@ -65,6 +66,14 @@ test('download, unzip and open the pack', async ({ page }) => {
   if (cjkEnd < 0) cjkEnd = lines.length;
   const cjkLinks = [...new Set(lines.slice(cjkStart, cjkEnd).join('\n').match(/https:\/\/fonts\.googleapis\.com\/css2\?[^"'\s)<>`]+/g) ?? [])];
   expect(cjkLinks, 'one CJK font link in design.md').toHaveLength(1);
+  // The prompt quotes the CJK-only version of that link (Latin families removed, display= kept).
+  const famsOf = (u) => new URL(u).searchParams.getAll('family').map((f) => f.split(':')[0].replace(/\+/g, ' '));
+  const isCjk = (n) => /\b(SC|TC|HK|JP|KR|CJK)\b|^ZCOOL |^LXGW |Long Cang|Ma Shan Zheng|Zhi Mang Xing|Liu Jian Mao Cao/.test(n);
+  const keptFams = new URL(cjkLinks[0]).searchParams.getAll('family').filter((f) => isCjk(f.split(':')[0].replace(/\+/g, ' ')));
+  const expectedLink = keptFams.length
+    ? `https://fonts.googleapis.com/css2?${keptFams.map((f) => `family=${f.replace(/ /g, '+')}`).join('&')}&display=${new URL(cjkLinks[0]).searchParams.get('display')}`
+    : null;
+  expect(famsOf(cjkLinks[0]).some((f) => !isCjk(f)) || expectedLink, 'sanity').toBeTruthy();
 
   for (const [name, noDisplay] of [['PROMPT.md', /no display/], ['PROMPT.zh.md', /没有图形界面/]]) {
     const md = get(name);
@@ -72,7 +81,9 @@ test('download, unzip and open the pack', async ({ page }) => {
     const order = ['unzip ', 'python3 -m zipfile -e ', 'tar -xf ', 'Expand-Archive '].map((k) => s0.indexOf(k));
     expect(order.every((x) => x >= 0), `${name} §0 lists all four extract commands (${order})`).toBe(true);
     expect([...order].sort((a, b) => a - b), `${name} §0 order unzip → python → tar → Expand-Archive`).toEqual(order);
-    expect(section(md, 4), `${name} §4 contains design.md's CJK font link`).toContain(cjkLinks[0]);
+    if (expectedLink) expect(section(md, 4), `${name} §4 contains the CJK-only font link`).toContain(expectedLink);
+    else expect(section(md, 4), `${name} §4 has no Google Fonts link`).not.toMatch(/fonts\.googleapis\.com/);
+    expect(section(md, 4), `${name} §4 must not contain the unfiltered link`).not.toContain(cjkLinks[0] === expectedLink ? '\0' : cjkLinks[0]);
     expect(section(md, 6), `${name} §6 no-display fallback`).toMatch(noDisplay);
   }
 
