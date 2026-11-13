@@ -78,8 +78,8 @@ function glanceEn(ctx) {
 function extractStepsEn(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
-    `2. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)`,
-    `3. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
+    `2. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
+    `3. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)`,
     `4. Windows PowerShell: ${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
   ].map((l) => indent + l).join('\n');
 }
@@ -112,7 +112,7 @@ export function promptEn(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? ` (here ${code(ctx.stageBg.name)} ${ctx.stageBg.value})` : '';
-  const bgVars = `In ${code(':root')}, set ${code('--slide-bg')} to the slide canvas color ${code('design.md')} names (the default slide surface) and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
+  const bgVars = `In ${code(':root')}, set ${code('--slide-bg')} to the color ${code('design.md')} names as the default slide canvas / background (for example a token called ${code('bg')}), not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
   const baseCss = ctx.hasViewportBase
     ? `- **Base CSS:** paste the full, unmodified contents of ${code('viewport-base.css')} into the ${code('<style>')} block before your own rules. ${bgVars}`
     : `- **Base CSS:** lock ${code('html, body')} to the window with ${code('overflow: hidden')}. ${bgVars}`;
@@ -134,7 +134,7 @@ export function promptEn(ctx) {
   - Deck without CJK text: use the original link from section 2.
   - Deck with Chinese, Japanese or Korean text: use the combined link from the CJK section of ${code('design.md')} instead of the original one.${cjkLink} If ${code('design.md')} gives no combined link, add the CJK family it recommends, at the weights it specifies, to the original link as one more ${code('family=')} parameter.
   - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
-  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there.`;
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight.`;
   const netEn = `- **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed user-supplied images as data URIs, downscaled to the size they are shown at.${ctx.cdnScripts.length ? `\n- **Charts:** the original ${code('template.html')} loads a script from a CDN (${ctx.cdnScripts.map(code).join(', ')}). Do not copy that. Charts are welcome, but draw them with inline SVG (the default) or canvas code written in the file. Inline a pinned copy of the chart library only if the user explicitly asks for it.` : ''}`;
 
   const fontCheckEn = ctx.systemFontsOnly
@@ -167,7 +167,7 @@ ${glanceEn(ctx)}
 1. **Ask before building.** In one message, ask the user:
    1. Purpose and audience: what is the deck for (pitch, conference talk, internal review, teaching, …) and who will see it?
    2. Length: roughly how many slides (5–10, 10–20, 20+)?
-   3. Content: ask them to paste or point to their material (notes, outline, document, data, images), or to confirm that you should draft it from a topic. Also ask for anything that should appear as deck chrome: speaker name, date, organisation, and a link or URL for the closing slide. Leave out whatever they don't give you; never invent it.
+   3. Content: ask them to paste or point to their material (notes, outline, document, data, images), or to confirm that you should draft it from a topic. Also ask for anything that should appear as deck chrome: speaker name, date, organisation, and a link or URL for the closing slide. Leave out whatever deck chrome they don't give you; never invent it.
    4. Density: speaker-led (low density: one idea per slide, large type, few words) or reading-first (high density: self-contained slides with more detail)?
 
    Skip any question the user has already answered. Then stop and wait for the reply.
@@ -191,13 +191,16 @@ ${netEn}
 ## 5. Hard constraints
 
 - **Keep the fonts:** the exact families, weights, letter-spacing, line-heights and text-transforms from ${code('design.md')}. Never substitute. If a font does not load, find out why (section 6) instead of replacing it.
+- **When ${code('design.md')} contradicts itself** (for example it says the accent color is never a text color, yet an ${code('<em>')} rule colors text with it), follow the stricter rule and tell the user in your final reply.
 - **Keep the palette:** only the colors listed above. No new accent, no recoloring, no gradients or shadows unless ${code('design.md')} uses them.
 - **Keep the decorative vocabulary:** the marks, rules, stamps, textures and ornaments ${code('design.md')} describes are part of the identity, not optional decoration.
 - **Keep the spacing rhythm:** insets, grid, gaps and paddings from ${code('design.md')}.
 - **Keep the component grammar:** build with the system's own components and their internal structure (cards, stat blocks, tables, page-number tags, …).
 - **Never mix templates.** Do not borrow layouts, colors or type from other templates, presets or generic presentation styles.
 - **Missing layout? Design it inside the same system**, with the same fonts, palette, decoration, spacing and chrome, so it would look at home between two original slides. Don't switch styles or drop the content.
-- **Real content only.** Use the user's material. Never reuse demo text, numbers, names or logos from ${code('template.html')}. Don't invent facts or statistics; if you need placeholders, mark them clearly and list them for the user.
+- **Real content, drafted when missing.** Use the user's material. Never reuse demo text, numbers, names or logos from ${code('template.html')}. When the user names a topic but gives no content (for example "two pieces of user feedback", "thanks", "goals"), draft that content yourself; never put placeholders such as "TBD" on a slide. Keep drafts plausible and modest. Every drafted item (including any example quote, name or number you made up) must be listed in your final reply (section 6) so the user can review or replace it.
+- **Only real links and codes.** Decorations that look functional (QR codes, links, URLs, email addresses) are used only when the user gave a real one; otherwise omit them.
+- **Numbers must agree:** section numbers and labels shown on slides must match the slide's page number (the cover is page 1), so they never disagree with the page counter.
 - **No internal labels on slides.** Never show the template name (${name} / ${slug}), the words "template" or "preview", file names, paths, or notes about the user's requirements. Visible chrome is real deck content only: title, sections, date, author, page numbers.
 - **The user's density choice wins** over any density guidance in ${code('design.md')}. For low density, keep the system's grid and panel vocabulary but use fewer, larger panels and one idea per slide; fill any spare panels with the system's own ornaments, never invented ones. If content does not fit, split it across more slides; never shrink text below the sizes in ${code('design.md')} and never let it overflow.
 - **Minimum text size for speaker-led decks:** the smallest label tokens in ${code('design.md')} (often 14–16px at 1920×1080) shrink to about 9–10px on a 1280px-wide screen and are unreadable when projected. For speaker-led (low-density) decks, raise any text below 20px (at the 1920×1080 stage) to at least 20px, keeping the token's other properties (font, tracking, case). For reading-first decks keep the ${code('design.md')} sizes. This is the one place where the user's density choice overrides the sizes in ${code('design.md')}.
@@ -225,7 +228,7 @@ ${netEn}
    - Windows: ${code('start "" "<file>.html"')} in cmd, or ${code('Start-Process "<file>.html"')} in PowerShell
 
    If the command is not available or there is no display (for example a remote or headless session), skip this step and give the user the file's absolute path.
-6. Report the file's full path, the slide count, how to navigate, and any placeholders or open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
+6. Report the file's full path, the slide count, how to navigate, every item you drafted (slide number and text, including any made-up example quotes, names or numbers), any contradictions you resolved in ${code('design.md')}, and open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
 `;
 }
 
@@ -286,8 +289,8 @@ function glanceZh(ctx) {
 function extractStepsZh(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
-    `2. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）`,
-    `3. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
+    `2. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
+    `3. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）`,
     `4. Windows PowerShell：${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
   ].map((l) => indent + l).join('\n');
 }
@@ -320,7 +323,7 @@ export function promptZh(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? `（本模板为 ${code(ctx.stageBg.name)} ${ctx.stageBg.value}）` : '';
-  const bgVars = `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 指定的幻灯片画布颜色（默认的页面底色），把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
+  const bgVars = `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 中指定为默认幻灯片画布 / 背景的颜色（例如名为 ${code('bg')} 的 token），不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
   const baseCss = ctx.hasViewportBase
     ? `- **基础 CSS**：把 ${code('viewport-base.css')} 的全部内容原样粘贴进 ${code('<style>')}，放在你自己的规则之前。${bgVars}`
     : `- **基础 CSS**：${code('html, body')} 锁定为窗口大小并设 ${code('overflow: hidden')}。${bgVars}`;
@@ -342,7 +345,7 @@ export function promptZh(ctx) {
   - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
   - 幻灯片含中文、日文或韩文：改用 ${code('design.md')} CJK 一节给出的合并链接，代替原模板的链接。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就把它推荐的 CJK 字体按规定字重作为一个新的 ${code('family=')} 参数加到原链接上。
   - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
-  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。`;
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。`;
   const netZh = `- **不发起其他网络请求**：不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。${ctx.cdnScripts.length ? `\n- **图表**：原版 ${code('template.html')} 从 CDN 加载了脚本（${ctx.cdnScripts.map(code).join('、')}）。不要照搬。图表可以做，但要用内联 SVG（默认）或写在文件里的 canvas 代码绘制。只有用户明确要求时，才内联一份固定版本的图表库。` : ''}`;
 
   const fontCheckZh = ctx.systemFontsOnly
@@ -375,7 +378,7 @@ ${glanceZh(ctx)}
 1. **先问再做。** 用一条消息向用户提问：
    1. 用途与受众：这份幻灯片做什么用（融资路演、大会演讲、内部评审、教学……），给谁看？
    2. 篇幅：大约多少页（5–10、10–20、20 以上）？
-   3. 内容：请用户粘贴或指明素材（笔记、提纲、文档、数据、图片），或确认由你根据主题起草。同时询问需要出现在页面框架里的信息：演讲者姓名、日期、机构，以及结尾页的链接或网址。用户没提供的就省略，绝不编造。
+   3. 内容：请用户粘贴或指明素材（笔记、提纲、文档、数据、图片），或确认由你根据主题起草。同时询问需要出现在页面框架里的信息：演讲者姓名、日期、机构，以及结尾页的链接或网址。页面框架信息用户没提供的就省略，绝不编造。
    4. 密度：演讲型（低密度：一页一个观点，大字号，少文字）还是阅读型（高密度：每页自成一体，信息更多）？
 
    用户已经回答过的问题就跳过。问完后停下，等待回复。
@@ -399,13 +402,16 @@ ${netZh}
 ## 5. 硬性约束
 
 - **不换字体**：字体族、字重、字间距、行高和大小写转换都与 ${code('design.md')} 完全一致。绝不替换。字体加载失败时先查明原因（见第 6 节），不要换字体。
+- **${code('design.md')} 自相矛盾时**（例如它说强调色绝不用作文字颜色，却有一条 ${code('<em>')} 规则把文字染成该颜色），遵循更严格的规则，并在最终回复里告诉用户。
 - **不改配色**：只用上面列出的颜色。不加新强调色，不改色，除非 ${code('design.md')} 本身使用，否则不加渐变或阴影。
 - **保留装饰语汇**：${code('design.md')} 描述的标记、线条、印章、纹理和装饰是风格本身的一部分，不是可有可无的点缀。
 - **保持间距节奏**：内边距、网格、间隙和留白都按 ${code('design.md')}。
 - **保持组件语法**：使用设计系统自己的组件及其内部结构（卡片、数据块、表格、页码标签……）。
 - **绝不混用模板。** 不借用其他模板、预设或通用演示风格的版式、配色或字体。
 - **缺少某种版式？在同一系统内设计它**，使用相同的字体、配色、装饰、间距和页面框架元素，让它放在两张原版页面之间也毫不违和。不要换风格，也不要删掉内容。
-- **只用真实内容。** 使用用户的素材。绝不复用 ${code('template.html')} 中的示例文字、数字、人名或标志。不编造事实或数据；需要占位时明确标出，并列给用户。
+- **内容真实；缺失时自行起草。** 使用用户的素材。绝不复用 ${code('template.html')} 中的示例文字、数字、人名或标志。用户只给了主题而没给内容时（例如“两条用户反馈”“致谢”“目标”），由你自己起草这些内容；页面上绝不放“待补充”之类的占位符。起草的内容要合理、克制。每一条起草的内容（包括你编造的示例引语、人名或数字）都必须列在最终回复里（第 6 节），方便用户审阅或替换。
+- **只用真实的链接和码。** 看起来有功能的装饰（二维码、链接、网址、邮箱）只有在用户提供了真实内容时才使用；否则省略。
+- **编号必须一致**：页面上显示的章节编号和标签必须与该页的页码一致（封面为第 1 页），不能与页码计数矛盾。
 - **页面上不出现内部标签。** 绝不显示模板名（${name} / ${slug}）、"template"/"模板"或"preview"/"预览"字样、文件名、路径，或关于用户需求的备注。页面上可见的框架文字只能是真实内容：标题、章节、日期、作者、页码。
 - **以用户选择的密度为准**，它优先于 ${code('design.md')} 中任何关于密度的说法。低密度时保留设计系统的网格和面板语汇，但使用更少、更大的面板，一页一个观点；空余面板用设计系统自己的装饰填充，绝不自创装饰。内容放不下就拆成更多页；字号不得小于 ${code('design.md')} 的规定，也绝不允许溢出。
 - **演讲型幻灯片的最小字号**：${code('design.md')} 中最小的标签 token（通常在 1920×1080 下为 14–16px）在 1280px 宽的屏幕上只有约 9–10px，投影时根本看不清。演讲型（低密度）幻灯片中，凡是在 1920×1080 画布上小于 20px 的文字，一律提高到至少 20px，保留该 token 的其他属性（字体、字距、大小写）。阅读型幻灯片保持 ${code('design.md')} 的字号。这是用户的密度选择唯一优先于 ${code('design.md')} 字号的地方。
@@ -433,7 +439,7 @@ ${netZh}
    - Windows：cmd 中用 ${code('start "" "<file>.html"')}，PowerShell 中用 ${code('Start-Process "<file>.html"')}
 
    如果该命令不可用，或者没有图形界面（例如远程或无头环境），跳过这一步，直接把文件的绝对路径告诉用户。
-6. 汇报文件的完整路径、页数、翻页方式，以及所有占位内容或待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
+6. 汇报文件的完整路径、页数、翻页方式，你起草的每一条内容（页码和文字，包括任何编造的示例引语、人名或数字）、你处理过的 ${code('design.md')} 内部矛盾，以及待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
 `;
 }
 
