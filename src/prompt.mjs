@@ -13,6 +13,7 @@
 //   paletteNote,               // template.json palette.description (may be '')
 //   typography: [{role, family}], typographyStyle,
 //   fontLinks: [url],          // stylesheet URLs (Google Fonts / Fontshare) found in template.html
+//   localFonts: boolean,       // the pack has fonts/ (self-hosted Latin fonts + fonts.css)
 //   zh: { description, palette_description, typography_style } | null,  // Chinese translations (zh prompt only)
 //   cjkFontLinks: [url],       // the same, found in design.md's CJK section (may be empty)
 //   signatureMoves: [string],  // preview card "Preview Ingredients", tokens resolved
@@ -43,6 +44,9 @@ function filesEn(ctx) {
       rows.push([code(a), 'A file `template.html` uses. Reference only.']);
     }
   }
+  if (ctx.localFonts) {
+    rows.push([code('fonts/'), 'The template\'s Latin fonts as woff2 files (one folder per family, each with its license), and `fonts/fonts.css` with ready-made `@font-face` rules for exactly the families and weights this template uses. Embed them in your deck (see “Fonts” in section 4).']);
+  }
   rows.push([`${code('PROMPT.md')}, ${code('PROMPT.zh.md')}`, 'These instructions (English / Chinese).']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join(', '), 'Attribution and licenses. Leave them as they are.']);
   return ['| File | Purpose |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -61,6 +65,8 @@ function glanceEn(ctx) {
   }
   if (ctx.systemFontsOnly) {
     L.push('- **Font loading:** none. The original uses the system font stack; system fonts are the design, so add no web fonts.');
+  } else if (ctx.localFonts) {
+    L.push('- **Font loading:** the Latin fonts are in the pack\'s `fonts/` folder and get embedded in the deck; only CJK fonts come from Google Fonts. See “Fonts” in section 4.');
   } else if (ctx.fontLinks.length) {
     L.push('- **Font loading** (the original link; for decks with CJK text see “Fonts” in section 4):');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
@@ -128,7 +134,13 @@ export function promptEn(ctx) {
     ? ` For this template that link is: ${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}.`
     : '';
 
-  const fontsEn = ctx.systemFontsOnly
+  const localEn = `- **Fonts:** the Latin fonts are in the pack's ${code('fonts/')} folder; embed them in the deck. Only CJK fonts (if the deck has CJK text) are loaded from Google Fonts. Never link Google Fonts for the Latin families and never reference files in ${code('fonts/')} from the deck: it must stay a single file that works offline.
+  - Latin: ${code('fonts/fonts.css')} holds ready-made ${code('@font-face')} rules for exactly the families and weights this template uses (each split by ${code('unicode-range')} into latin and latin-ext). Copy the rules for the weights and styles your deck actually uses into your ${code('<style>')}, with each ${code('url(...)')} replaced by a base64 data URI (${code('data:font/woff2;base64,…')}). Generate the base64 with a small Node or Python script rather than by hand. Embed both the latin and the latin-ext rules for every face you use, so characters such as → or accented letters added in later edits do not silently fall back. Keep the family names, ${code('font-display')} and ${code('unicode-range')} unchanged. Leaving out unused weights applies to per-weight static files; a variable font file covers all its weights, so embed it once. Where ${code('design.md')} says the Latin fonts load from Google Fonts (e.g. under “Known Gaps”), the pack's ${code('fonts/')} supersedes it.
+  - Deck without CJK text: no font request at all.
+  - Deck with Chinese, Japanese or Korean text: add one Google Fonts ${code('<link>')} for the CJK family only. Take the combined link from the CJK section of ${code('design.md')} and remove its Latin families (they are embedded).${cjkLink} If ${code('design.md')} gives no combined link, request the CJK family it recommends, at the weights it specifies.
+  - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight.`;
+  const fontsEn = ctx.localFonts ? localEn : ctx.systemFontsOnly
     ? `- **Fonts:** this template's design is its system font stack (see ${code('design.md')}). Use exactly that stack and do not add web fonts, font links or font files: the rule that fonts come from Google Fonts or Fontshare does not apply to this template. For CJK text, rely on the system CJK fonts the stack falls back to.`
     : `- **Fonts:** load them only from Google Fonts or Fontshare, with the exact families and weights from ${code('design.md')}, with one ${code('<link>')} per font service (a single Google Fonts link, not several).
   - Deck without CJK text: use the original link from section 2.
@@ -140,7 +152,7 @@ export function promptEn(ctx) {
   const fontCheckEn = ctx.systemFontsOnly
     ? '- the type renders in the stack from `design.md`, and no web fonts or font requests are present;'
     : `- the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: it returns true even when a face failed to load. Instead wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare the rendered text width against a fallback font. If a font request fails with a network error, retry or reload before concluding anything; change the import only if the URL itself is wrong;`;
-  const netCheckEn = ctx.systemFontsOnly ? 'no network requests at all' : 'no network requests beyond the font hosts';
+  const netCheckEn = ctx.systemFontsOnly ? 'no network requests at all' : ctx.localFonts ? 'no network requests at all (or, for CJK text, only the Google Fonts request)' : 'no network requests beyond the font hosts';
 
   return `# Build a slide deck with the ${name} design system
 
@@ -228,7 +240,7 @@ ${netEn}
    - Windows: ${code('start "" "<file>.html"')} in cmd, or ${code('Start-Process "<file>.html"')} in PowerShell
 
    If the command is not available or there is no display (for example a remote or headless session), skip this step and give the user the file's absolute path.
-6. Report the file's full path, the slide count, how to navigate, every item you drafted (slide number and text, including any made-up example quotes, names or numbers), any contradictions you resolved in ${code('design.md')}, and open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
+6. Report the file's full path, the slide count, how to navigate, every item you drafted (slide number and text, including any made-up example quotes, names or numbers), any contradictions you resolved in ${code('design.md')}, every place where a legibility rule (contrast or minimum size) made you deviate from its colors or sizes (what changed, from what to what), and open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
 `;
 }
 
@@ -250,6 +262,9 @@ function filesZh(ctx) {
     } else {
       rows.push([code(a), '`template.html` 用到的文件。仅作参考。']);
     }
+  }
+  if (ctx.localFonts) {
+    rows.push([code('fonts/'), '本模板的拉丁字体 woff2 文件（每个字体族一个文件夹，附许可证），以及 `fonts/fonts.css`：恰好覆盖本模板所用字体族和字重的现成 `@font-face` 规则。把它们嵌入你的幻灯片（见第 4 节“字体”）。']);
   }
   rows.push([`${code('PROMPT.md')}、${code('PROMPT.zh.md')}`, '本说明（英文 / 中文）。']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join('、'), '署名与许可证。保持原样。']);
@@ -274,6 +289,8 @@ function glanceZh(ctx) {
   }
   if (ctx.systemFontsOnly) {
     L.push('- **字体加载**：无。原模板使用系统字体栈；系统字体就是设计本身，不要添加网页字体。');
+  } else if (ctx.localFonts) {
+    L.push('- **字体加载**：拉丁字体在素材包的 `fonts/` 文件夹里，要嵌入你的幻灯片；只有 CJK 字体从 Google Fonts 加载。见第 4 节“字体”。');
   } else if (ctx.fontLinks.length) {
     L.push('- **字体加载**（原模板的链接；幻灯片含 CJK 文字时见第 4 节“字体”）：');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
@@ -339,7 +356,13 @@ export function promptZh(ctx) {
     ? `本模板的这条链接是：${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}。`
     : '';
 
-  const fontsZh = ctx.systemFontsOnly
+  const localZh = `- **字体**：拉丁字体在素材包的 ${code('fonts/')} 文件夹里，要嵌入幻灯片；只有 CJK 字体（幻灯片含 CJK 文字时）从 Google Fonts 加载。不要为拉丁字体链接 Google Fonts，也不要在幻灯片里引用 ${code('fonts/')} 中的文件：它必须保持为单个、可离线使用的文件。
+  - 拉丁字体：${code('fonts/fonts.css')} 里是恰好覆盖本模板所用字体族和字重的现成 ${code('@font-face')} 规则（按 ${code('unicode-range')} 拆成 latin 与 latin-ext）。把幻灯片实际用到的字重和字形对应的规则复制进你的 ${code('<style>')}，并把每个 ${code('url(...)')} 换成 base64 data URI（${code('data:font/woff2;base64,…')}）。base64 用一个小的 Node 或 Python 脚本生成，不要手工处理。每个用到的字体都要同时嵌入 latin 与 latin-ext 两组规则，这样之后编辑时加入 → 或带重音的字母也不会悄悄回退。字体族名、${code('font-display')} 和 ${code('unicode-range')} 保持不变。“没用到的字重不要放进去”只适用于按字重分开的静态文件；可变字体文件已覆盖所有字重，只嵌入一次。${code('design.md')} 中说拉丁字体从 Google Fonts 加载的地方（如“Known Gaps”），以素材包的 ${code('fonts/')} 为准。
+  - 幻灯片不含 CJK 文字：完全不发起字体请求。
+  - 幻灯片含中文、日文或韩文：添加一条只含 CJK 字体族的 Google Fonts ${code('<link>')}。取 ${code('design.md')} CJK 一节给出的合并链接，去掉其中的拉丁字体族（它们已嵌入）。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就按它推荐的 CJK 字体和规定字重请求。
+  - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。`;
+  const fontsZh = ctx.localFonts ? localZh : ctx.systemFontsOnly
     ? `- **字体**：本模板的设计就是系统字体栈（见 ${code('design.md')}）。严格使用该字体栈，不要添加网页字体、字体链接或字体文件：“字体只从 Google Fonts 或 Fontshare 加载”这条规则不适用于本模板。CJK 文字依靠该字体栈回退到的系统 CJK 字体。`
     : `- **字体**：只从 Google Fonts 或 Fontshare 加载，字体族和字重与 ${code('design.md')} 完全一致，每个字体服务只用一个 ${code('<link>')}（Google Fonts 只用一条链接，不要多条）。
   - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
@@ -351,7 +374,7 @@ export function promptZh(ctx) {
   const fontCheckZh = ctx.systemFontsOnly
     ? '- 文字按 `design.md` 的字体栈渲染，页面中没有网页字体或字体请求；'
     : `- 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：即使字体加载失败它也会返回 true。应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；只有 URL 本身有误时才修改引入方式；`;
-  const netCheckZh = ctx.systemFontsOnly ? '完全没有网络请求' : '除字体服务外没有其他网络请求';
+  const netCheckZh = ctx.systemFontsOnly ? '完全没有网络请求' : ctx.localFonts ? '完全没有网络请求（含 CJK 文字时只允许那条 Google Fonts 请求）' : '除字体服务外没有其他网络请求';
 
   return `# 用 ${name} 设计系统制作幻灯片
 
@@ -439,7 +462,7 @@ ${netZh}
    - Windows：cmd 中用 ${code('start "" "<file>.html"')}，PowerShell 中用 ${code('Start-Process "<file>.html"')}
 
    如果该命令不可用，或者没有图形界面（例如远程或无头环境），跳过这一步，直接把文件的绝对路径告诉用户。
-6. 汇报文件的完整路径、页数、翻页方式，你起草的每一条内容（页码和文字，包括任何编造的示例引语、人名或数字）、你处理过的 ${code('design.md')} 内部矛盾，以及待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
+6. 汇报文件的完整路径、页数、翻页方式，你起草的每一条内容（页码和文字，包括任何编造的示例引语、人名或数字）、你处理过的 ${code('design.md')} 内部矛盾、因可读性规则（对比度或最小字号）而偏离其配色或字号的每一处（改了什么，从什么改成什么），以及待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
 `;
 }
 

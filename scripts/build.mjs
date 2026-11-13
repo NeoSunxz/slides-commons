@@ -33,12 +33,14 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
+import { createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, dataUrl, relativeUrl } from './fonts.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, detailPage, creditsPage, setSources, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
+const FONT_STORE = createFontStore(ROOT);
 
 function cliOption(name) {
   const argv = process.argv.slice(2);
@@ -607,6 +609,9 @@ function buildContext(t) {
     licenses.push({ file: 'LICENSE-skill', path: p });
   }
 
+  // Latin fonts served locally (see scripts/fonts.mjs).
+  const fontPlan = planTemplateFonts(html, FONT_STORE);
+
   const ctx = {
     slug: t.slug,
     name: t.name,
@@ -622,7 +627,8 @@ function buildContext(t) {
     typography,
     typographyStyle: t.typography.style ?? '',
     fontLinks: fontLinks(html),
-    cjkFontLinks: fontLinks(cjkSection(designMd)),
+    localFonts: fontPlan.faces.length > 0,
+    cjkFontLinks: cjkOnlyLinks(fontLinks(cjkSection(designMd))),
     signatureMoves: preview.moves.map((m) => resolveTokens(m, colorMap)),
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
     // Detected from the template itself, never from slugs:
@@ -643,7 +649,7 @@ function buildContext(t) {
       : comp.repo,
   } : null;
 
-  return { ctx, designPath, designFrom, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
+  return { ctx, fontPlan, designPath, designFrom, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
 }
 
 // ---------------------------------------------------------------------------
@@ -707,6 +713,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
       if (e instanceof BuildError) { problems.push(e.message); continue; }
       throw e;
     }
+    for (const e of info.fontPlan.errors) problems.push(`${at} local font: ${e} (run npm ci; or add the package to devDependencies)`);
     items.push({ t, description: info.ctx.description });
     if (!info.ctx.description) problems.push(`${at} ${rel(info.designPath)} has no front matter "description"`);
 
@@ -855,6 +862,29 @@ function preparePreview(html, bridge, dir, slug) {
   return idx >= 0 ? out.slice(0, idx) + tag + out.slice(idx) : out + tag;
 }
 
+// Licenses of the fonts embedded in previews: site/fonts/<family-slug>/OFL.txt. (The font
+// files themselves are embedded as data: URIs in the preview copies, see above.)
+function copyFontLicense(f) {
+  const dir = path.join(SITE, 'fonts', f.id);
+  const lic = path.join(dir, fontLicenseName(f));
+  if (f.license && !exists(lic)) { fs.mkdirSync(dir, { recursive: true }); fs.copyFileSync(f.license, lic); }
+}
+const fontLicenseName = (f) => (/SIL OPEN FONT LICENSE/i.test(read(f.license)) ? 'OFL.txt' : 'LICENSE.txt');
+
+// fonts/ inside the pack: the woff2 files this template needs, one license per family, and
+// fonts.css with ready-made @font-face rules (relative URLs) for the agent to embed.
+function packFontEntries(z, faces) {
+  if (!faces.length) return [];
+  const seen = new Set();
+  const out = [{ name: z + 'fonts/fonts.css', data: Buffer.from(`/* Self-hosted Latin fonts for this template (from Fontsource, SIL OFL; licenses next to the files).\n   Embed the rules you use in your deck with the url() replaced by a base64 data: URI. */\n${fontFaceCss(faces, relativeUrl(''))}\n`, 'utf8') }];
+  for (const f of faces) {
+    if (!seen.has(f.file)) { seen.add(f.file); out.push({ name: z + 'fonts/' + f.file, data: fs.readFileSync(f.src) }); }
+    const lic = `${f.id}/${fontLicenseName(f)}`;
+    if (f.license && !seen.has(lic)) { seen.add(lic); out.push({ name: z + 'fonts/' + lic, data: fs.readFileSync(f.license) }); }
+  }
+  return out;
+}
+
 function main() {
   const started = Date.now();
   const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
@@ -902,7 +932,16 @@ function main() {
 
     // Preview copy: template dir minus meta/design files, bridge injected into the HTML copy.
     const pdir = path.join(SITE, 'preview', t.slug);
-    writeFile(path.join(pdir, t.src.layout.htmlFile), preparePreview(info.html, bridge, t.dir, t.slug));
+    let previewHtml = info.html;
+    const faces = info.fontPlan.faces;
+    if (faces.length) {
+      previewHtml = rewriteGoogleFonts(previewHtml, info.fontPlan.requests, new Set(faces.map((f) => f.family)));
+      const rules = `\n<style data-slides-commons-fonts>/* self-hosted Latin fonts, embedded because a sandboxed preview frame cannot fetch font files over file:// or without CORS (added by the site build; the original loads them from Google Fonts; licenses: fonts/<family>/OFL.txt) */\n${fontFaceCss(faces, dataUrl)}\n</style>\n`;
+      const m = previewHtml.match(/<head\b[^>]*>/i);
+      previewHtml = m ? previewHtml.slice(0, m.index + m[0].length) + rules + previewHtml.slice(m.index + m[0].length) : rules + previewHtml;
+    }
+    writeFile(path.join(pdir, t.src.layout.htmlFile), preparePreview(previewHtml, bridge, t.dir, t.slug));
+    for (const f of faces) copyFontLicense(f);
     for (const a of info.assets) {
       const dest = path.join(pdir, ...a.split('/'));
       fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -933,6 +972,16 @@ function main() {
         });
       }
     }
+    if (faces.length) {
+      credits.push({
+        what: 'Latin web fonts in `fonts/` (the families `template.html` requests from Google Fonts)',
+        author: 'their respective authors (named in each font license)',
+        project: 'Fontsource',
+        license: 'SIL Open Font License 1.1',
+        licenseFile: 'fonts/<family>/OFL.txt',
+        url: 'https://fontsource.org',
+      });
+    }
     const readme = packReadme(ctx, credits, SITE_NAME);
 
     const z = `${t.slug}/`;
@@ -942,6 +991,7 @@ function main() {
       ...info.assets.map((a) => ({ name: z + a, data: fs.readFileSync(path.join(t.dir, ...a.split('/'))) })),
       { name: z + 'design.md', data: fs.readFileSync(info.designPath) },
       ...(info.viewportBasePath ? [{ name: z + 'viewport-base.css', data: fs.readFileSync(info.viewportBasePath) }] : []),
+      ...packFontEntries(z, faces),
       ...info.licenses.map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
       { name: z + 'PROMPT.md', data: Buffer.from(en, 'utf8') },
       { name: z + 'PROMPT.zh.md', data: Buffer.from(zh, 'utf8') },
