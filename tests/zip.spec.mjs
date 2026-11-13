@@ -69,9 +69,9 @@ test('download, unzip and open the pack', async ({ page }) => {
   for (const [name, noDisplay] of [['PROMPT.md', /no display/], ['PROMPT.zh.md', /没有图形界面/]]) {
     const md = get(name);
     const s0 = section(md, 0);
-    const order = ['unzip ', 'tar -xf ', 'python3 -m zipfile -e ', 'Expand-Archive '].map((k) => s0.indexOf(k));
+    const order = ['unzip ', 'python3 -m zipfile -e ', 'tar -xf ', 'Expand-Archive '].map((k) => s0.indexOf(k));
     expect(order.every((x) => x >= 0), `${name} §0 lists all four extract commands (${order})`).toBe(true);
-    expect([...order].sort((a, b) => a - b), `${name} §0 order unzip → tar → python → Expand-Archive`).toEqual(order);
+    expect([...order].sort((a, b) => a - b), `${name} §0 order unzip → python → tar → Expand-Archive`).toEqual(order);
     expect(section(md, 4), `${name} §4 contains design.md's CJK font link`).toContain(cjkLinks[0]);
     expect(section(md, 6), `${name} §6 no-display fallback`).toMatch(noDisplay);
   }
