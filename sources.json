@@ -31,6 +31,66 @@
         "previewCard": "bold-template-pack/templates/{slug}/preview.md",
         "viewportBase": "viewport-base.css"
       }
+    },
+    {
+      "id": "style-presets",
+      "name": "Style Presets",
+      "author": "NeoSunxz and slides-commons contributors",
+      "authorUrl": "https://github.com/NeoSunxz",
+      "license": "MIT",
+      "repo": "https://github.com/NeoSunxz/slides-commons",
+      "branch": "main",
+      "path": "collections/style-presets",
+      "repoPath": "collections/style-presets",
+      "packLicenseName": "LICENSE",
+      "derivedFrom": {
+        "name": "frontend-slides STYLE_PRESETS.md",
+        "author": "Zara Zhang",
+        "authorUrl": "https://github.com/zarazhangrui",
+        "url": "https://github.com/zarazhangrui/frontend-slides/blob/main/STYLE_PRESETS.md",
+        "license": "MIT",
+        "slugs": [
+          "bold-signal",
+          "electric-studio",
+          "creative-voltage",
+          "dark-botanical",
+          "notebook-tabs",
+          "pastel-geometry",
+          "split-pastel",
+          "vintage-editorial",
+          "neon-cyber",
+          "terminal-green",
+          "swiss-modern",
+          "paper-and-ink"
+        ]
+      },
+      "layout": {
+        "templatesDir": "templates",
+        "metaFile": "template.json",
+        "htmlFile": "template.html",
+        "designFile": "design.md",
+        "screenshotsDir": "screenshots",
+        "licenseFile": "LICENSE"
+      },
+      "companion": {
+        "id": "frontend-slides",
+        "name": "Frontend Slides",
+        "author": "Zara Zhang",
+        "license": "MIT",
+        "repo": "https://github.com/zarazhangrui/frontend-slides",
+        "branch": "main",
+        "path": "upstream/skill",
+        "licenseFile": "LICENSE",
+        "viewportBase": "viewport-base.css"
+      },
+      "screenshots": {
+        "slides": [
+          1,
+          "middle",
+          "last"
+        ]
+      },
+      "collection": true
     }
   ]
 }

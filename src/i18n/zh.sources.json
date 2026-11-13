@@ -35,6 +35,15 @@
     "palette_description": "0f62c5740970",
     "typography_style": "037c350b8cd9"
   },
+  "boardroom-quarterly": {
+    "tagline": "8c1ef3ac530d",
+    "description": "bee63d8f4d6a",
+    "best_for": "09ddcff373e9",
+    "avoid_for": "549145c75db0",
+    "occasion": "1c140bd9c046",
+    "palette_description": "fd7b3b618a64",
+    "typography_style": "f133ac85aaaa"
+  },
   "bold-poster": {
     "tagline": "c6254e4d3d13",
     "description": "6c6d77faea52",
@@ -43,6 +52,15 @@
     "occasion": "7c7f68349c3f",
     "palette_description": "8e37b557949d",
     "typography_style": "d406ccd64448"
+  },
+  "bold-signal": {
+    "tagline": "309ae3502447",
+    "description": "8d9c681b200f",
+    "best_for": "82c897deea4c",
+    "avoid_for": "b6f58ffcf9d1",
+    "occasion": "174355b312bf",
+    "palette_description": "5d6644c997dd",
+    "typography_style": "dfb2dee52dc2"
   },
   "broadside": {
     "tagline": "0804a7613269",
@@ -80,6 +98,15 @@
     "palette_description": "d3bc7fec04c0",
     "typography_style": "b83a2bd76ab9"
   },
+  "consulting-report": {
+    "tagline": "6079eaf4b072",
+    "description": "21a37278a78c",
+    "best_for": "8035abc4bff9",
+    "avoid_for": "42b156990180",
+    "occasion": "bcc5adb55f26",
+    "palette_description": "d9ecac391edc",
+    "typography_style": "69f8c14159b7"
+  },
   "coral": {
     "tagline": "12348ba5b673",
     "description": "482f73bf9ce8",
@@ -98,6 +125,15 @@
     "palette_description": "5052b850f670",
     "typography_style": "db80a976a953"
   },
+  "creative-voltage": {
+    "tagline": "eb3e73e5d0a5",
+    "description": "02ddafe064a1",
+    "best_for": "5302d59f64e3",
+    "avoid_for": "db177a03c33e",
+    "occasion": "f127fc33acab",
+    "palette_description": "1d3bc7f69e03",
+    "typography_style": "3e21d84601f5"
+  },
   "daisy-days": {
     "tagline": "d5aba75c6add",
     "description": "f81e35cbab0b",
@@ -106,6 +142,15 @@
     "occasion": "0eba8388c583",
     "palette_description": "42730b90a435",
     "typography_style": "d0362238c6b6"
+  },
+  "dark-botanical": {
+    "tagline": "a160be225706",
+    "description": "ac1e816a17a8",
+    "best_for": "b2635ee433fa",
+    "avoid_for": "70c8d343538a",
+    "occasion": "00de2ed2ebf0",
+    "palette_description": "efd6555fe1ce",
+    "typography_style": "708bd652ea05"
   },
   "editorial-forest": {
     "tagline": "dfaf478b063f",
@@ -124,6 +169,15 @@
     "occasion": "33e98f0af496",
     "palette_description": "5b70fcdfbfa9",
     "typography_style": "e63e1946b1bd"
+  },
+  "electric-studio": {
+    "tagline": "5f82726d53a9",
+    "description": "6f9d880ed2c0",
+    "best_for": "8df59c782712",
+    "avoid_for": "252182a37440",
+    "occasion": "a055551da259",
+    "palette_description": "a96c318bd961",
+    "typography_style": "0e48134fe1d1"
   },
   "emerald-editorial": {
     "tagline": "16decd6bd193",
@@ -161,6 +215,15 @@
     "palette_description": "99879518c5bc",
     "typography_style": "84d3e9cdb13c"
   },
+  "minimal-pitch": {
+    "tagline": "7dbb96e07c3f",
+    "description": "d86660f2b51d",
+    "best_for": "836700a1fca0",
+    "avoid_for": "19e1aad1e610",
+    "occasion": "c9e078c49e98",
+    "palette_description": "3d64db426db1",
+    "typography_style": "642c6cfeb8f2"
+  },
   "monochrome": {
     "tagline": "f8f0275aa1c1",
     "description": "26f8092e2c81",
@@ -178,6 +241,42 @@
     "occasion": "cb3b7c75faf8",
     "palette_description": "814ef1b40b30",
     "typography_style": "4d1e72317bc1"
+  },
+  "neon-cyber": {
+    "tagline": "9da1fa71d819",
+    "description": "ff9d45030665",
+    "best_for": "217f0e71b4ac",
+    "avoid_for": "08db89ccf835",
+    "occasion": "3928f2044a50",
+    "palette_description": "e5873c0721c8",
+    "typography_style": "9c00b12b2117"
+  },
+  "notebook-tabs": {
+    "tagline": "801d92e6a980",
+    "description": "f319afe859c6",
+    "best_for": "c2a7831fd9f8",
+    "avoid_for": "ed61ab769594",
+    "occasion": "678607d18e07",
+    "palette_description": "dce830143c7b",
+    "typography_style": "2b182ec493ed"
+  },
+  "paper-and-ink": {
+    "tagline": "814915589f21",
+    "description": "d772c2eda43a",
+    "best_for": "ccb4b01f2ddd",
+    "avoid_for": "b28377599d80",
+    "occasion": "e890d940dce7",
+    "palette_description": "945b90ba1c88",
+    "typography_style": "04db2075f520"
+  },
+  "pastel-geometry": {
+    "tagline": "b5bd525bf128",
+    "description": "d3252dac51f4",
+    "best_for": "af6f5ebc27e1",
+    "avoid_for": "0ba21697adf7",
+    "occasion": "b2174f0006f0",
+    "palette_description": "b79850ace8a2",
+    "typography_style": "824896ed6dfd"
   },
   "peoples-platform": {
     "tagline": "18d45ccfdfe4",
@@ -278,6 +377,15 @@
     "palette_description": "c83b3205aa5f",
     "typography_style": "3208acbd0661"
   },
+  "split-pastel": {
+    "tagline": "fa0ccc2a653d",
+    "description": "96b6028243dd",
+    "best_for": "95c59cc3e9fb",
+    "avoid_for": "1894ae9028a4",
+    "occasion": "f81a7dec57ec",
+    "palette_description": "797d91a44cd9",
+    "typography_style": "0083bbe269c5"
+  },
   "stencil-tablet": {
     "tagline": "cbdcca702713",
     "description": "6154e25cd4a5",
@@ -296,6 +404,33 @@
     "palette_description": "67c99aba0d1e",
     "typography_style": "58ac6ec39e63"
   },
+  "swiss-modern": {
+    "tagline": "7e1974268f3d",
+    "description": "96f8d96a931b",
+    "best_for": "1e860ed69f29",
+    "avoid_for": "8caaaf849e69",
+    "occasion": "e5cf9c559196",
+    "palette_description": "49fdbb4fdb18",
+    "typography_style": "d85998ad7d27"
+  },
+  "tech-blue-business": {
+    "tagline": "06bcc2874c86",
+    "description": "04069532c9a2",
+    "best_for": "48d41cc1e3b7",
+    "avoid_for": "a2fb16d6c562",
+    "occasion": "5e504a728bbd",
+    "palette_description": "776bc05d4b0e",
+    "typography_style": "18e59b50c086"
+  },
+  "terminal-green": {
+    "tagline": "e42a3047fa6f",
+    "description": "2a7b06538428",
+    "best_for": "93cadcc7b279",
+    "avoid_for": "8f6bbca05102",
+    "occasion": "12384b5fa7fd",
+    "palette_description": "1e7f7423f2f5",
+    "typography_style": "4b305d95cf9d"
+  },
   "vellum": {
     "tagline": "50b13c15bfba",
     "description": "2dc6c2000637",
@@ -304,5 +439,14 @@
     "occasion": "ed015216f322",
     "palette_description": "3c25b676090f",
     "typography_style": "31427a81cd50"
+  },
+  "vintage-editorial": {
+    "tagline": "60e2ada295ac",
+    "description": "a87521b51034",
+    "best_for": "dd1b70d277ae",
+    "avoid_for": "3ba10525f02b",
+    "occasion": "84625bed4dc5",
+    "palette_description": "c7c9454bbb7c",
+    "typography_style": "8fe183e4490b"
   }
 }

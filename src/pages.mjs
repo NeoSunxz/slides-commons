@@ -27,6 +27,9 @@ const link = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
 const authorList = (authors) => authors.map((a) => (a.url ? link(a.url, a.name) : esc(a.name))).join(', ');
 const authorLink = (s) => (s.authorUrl ? link(s.authorUrl, s.author) : esc(s.author));
 const bare = (url) => url.replace(/^https?:\/\//, '');
+// The original a derivative source is based on: { name, author, authorUrl?, url, license }.
+const derivedLink = (d) => link(d.url, d.name);
+const derivedAuthor = (d) => (d.authorUrl ? link(d.authorUrl, d.author) : esc(d.author));
 
 // ---------------------------------------------------------------------------
 // UI strings
@@ -48,6 +51,8 @@ const STRINGS = {
     schemeNames: { light: 'Light', dark: 'Dark', mixed: 'Mixed' },
     by: (who) => `by ${who}`,
     byFrom: (who, from) => `by ${who} · from ${from}`,
+    byDerived: (who, d) => `by ${who} · based on ${derivedLink(d)} by ${derivedAuthor(d)}`,
+    byDerivedPlain: (d) => `based on ${d.name} by ${d.author}`,
     allTemplates: '← All templates',
     livePreview: 'Live preview',
     previewTitle: (name) => `${name} live preview`,
@@ -75,10 +80,13 @@ const STRINGS = {
     attribution: 'Attribution',
     attrMain: (t) => `<strong>${esc(t.name)}</strong> was created by ${authorList(t.authors)} and is published in ${link(t.sourceRepoUrl, t.sourceRepoName)} under the ${esc(t.license)} license. Original files: ${link(t.sourceDirUrl, bare(t.sourceDirUrl))}.`,
     attrDerived: (d) => `Adapted from ${link(d.url, d.name)} by ${authorList(d.authors)} (${esc(d.license)}).`,
-    attrCompanion: (c) => `The design notes (<code>design.md</code>, fixed-stage edition) and <code>viewport-base.css</code> in the pack come from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}).`,
+    attrCompanion: (c) => (c.providesDesign
+      ? `The design notes (<code>design.md</code>, fixed-stage edition) and <code>viewport-base.css</code> in the pack come from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}).`
+      : `<code>viewport-base.css</code> in the pack comes from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}); its license ships as <code>LICENSE-skill</code>.`),
+    attrDerivedSource: (d, t) => `<strong>${esc(t.name)}</strong> is a derivative work. Its visual direction (fonts, colors, signature elements) is based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}); the layouts, demo content and design system were written by ${authorList(t.authors)}. ${derivedAuthor(d)} did not make, review or endorse this template.`,
     attrNotOfficial: `${SITE_NAME} only previews and repackages these openly licensed files; the download includes the original license files. This is not the author's official site.`,
     attrTranslation: '',
-    footerBy: (s, links) => `Templates by ${authorLink(s)} (${esc(s.license)}): ${links}`,
+    footerBy: (s, links) => `Templates by ${authorLink(s)} (${esc(s.license)}): ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? 'some are ' : ''}based on ${derivedLink(s.derivedFrom)} by ${derivedAuthor(s.derivedFrom)}, who did not make or endorse them` : ''}`,
     footerIndependent: `${SITE_NAME} is an independent community gallery, not affiliated with the original authors.`,
     footerCredits: 'Credits &amp; licenses',
     creditsTitle: `Credits: ${SITE_NAME}`,
@@ -86,8 +94,9 @@ const STRINGS = {
     creditsHeading: 'Credits',
     creditsIntro: `${SITE_NAME} is an independent community gallery. Every template belongs to its author and is used under its open license. Nothing here is an official project of the original authors.`,
     creditsTranslation: '',
-    creditsSource: (s) => `${link(s.repo, bare(s.repo))} by ${authorLink(s)} (${esc(s.license)}). Its license ships in every pack as <code>LICENSE-templates</code>.`,
-    creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its fixed-stage <code>design.md</code> edition and <code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
+    creditsSource: (s) => `${link(s.repo, bare(s.repo))} by ${authorLink(s)} (${esc(s.license)}). Its license ships in every pack as <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>.`,
+    creditsDerived: (d, s) => `${d.slugs ? 'Some of these templates are derivative works (the rest are original): their' : 'These templates are derivative works: their'} visual direction (fonts, colors, signature elements) is based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}). The layouts, demo content and design systems were written by ${esc(s.author)}. ${derivedAuthor(d)} did not make, review or endorse them.`,
+    creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its ${c.designOverride ? 'fixed-stage <code>design.md</code> edition and ' : ''}<code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
     creditsOriginal: 'original',
   },
   zh: {
@@ -105,6 +114,8 @@ const STRINGS = {
     schemeNames: { light: '浅色', dark: '深色', mixed: '混合' },
     by: (who) => `作者：${who}`,
     byFrom: (who, from) => `作者：${who} · 来源：${from}`,
+    byDerived: (who, d) => `作者：${who} · 基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}`,
+    byDerivedPlain: (d) => `基于 ${d.author} 的 ${d.name}`,
     allTemplates: '← 全部模板',
     livePreview: '实时预览',
     previewTitle: (name) => `${name} 实时预览`,
@@ -135,10 +146,13 @@ const STRINGS = {
     attribution: '署名',
     attrMain: (t) => `<strong>${esc(t.name)}</strong> 由 ${authorList(t.authors)} 创作，发布于 ${link(t.sourceRepoUrl, t.sourceRepoName)}，采用 ${esc(t.license)} 许可证。原始文件：${link(t.sourceDirUrl, bare(t.sourceDirUrl))}。`,
     attrDerived: (d) => `改编自 ${authorList(d.authors)} 的 ${link(d.url, d.name)}（${esc(d.license)}）。`,
-    attrCompanion: (c) => `素材包中的设计说明（<code>design.md</code>，固定画布版）和 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}）。`,
+    attrCompanion: (c) => (c.providesDesign
+      ? `素材包中的设计说明（<code>design.md</code>，固定画布版）和 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}）。`
+      : `素材包中的 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}），许可证文件为 <code>LICENSE-skill</code>。`),
+    attrDerivedSource: (d, t) => `<strong>${esc(t.name)}</strong> 是衍生作品。它的视觉方向（字体、配色、标志性元素）基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）；版式、演示内容和设计系统由 ${authorList(t.authors)} 编写。${derivedAuthor(d)} 并未制作、审阅或认可此模板。`,
     attrNotOfficial: `${SITE_NAME} 仅预览并重新打包上述开源文件，下载的素材包内附原许可证文件。本站不是原作者的官方站点。`,
     attrTranslation: `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 MIT 许可）；译文由本项目提供，以英文原文为准。`,
-    footerBy: (s, links) => `模板来自 ${authorLink(s)}（${esc(s.license)}）：${links}`,
+    footerBy: (s, links) => `模板来自 ${authorLink(s)}（${esc(s.license)}）：${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? '其中部分' : ''}基于 ${derivedAuthor(s.derivedFrom)} 的 ${derivedLink(s.derivedFrom)}（其作者并未制作或认可这些模板）` : ''}`,
     footerIndependent: `${SITE_NAME} 是独立的社区画廊，与原作者无关联。`,
     footerCredits: '致谢与许可证',
     creditsTitle: `致谢：${SITE_NAME}`,
@@ -146,8 +160,9 @@ const STRINGS = {
     creditsHeading: '致谢',
     creditsIntro: `${SITE_NAME} 是独立的社区画廊。所有模板版权归原作者所有，按其开源许可证使用；本站内容均不是原作者的官方项目。`,
     creditsTranslation: `本站中文页面上的模板介绍（简介、设计说明、适用场景、情绪与语气标签等）由 ${SITE_NAME} 翻译自上游的英文文本；上游文本为 MIT 许可，译文由本项目提供，以英文原文为准。模板名称、字体名称和色值保持原样。`,
-    creditsSource: (s) => `${link(s.repo, bare(s.repo))}，作者 ${authorLink(s)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>LICENSE-templates</code>。`,
-    creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其固定画布版 <code>design.md</code> 和 <code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
+    creditsSource: (s) => `${link(s.repo, bare(s.repo))}，作者 ${authorLink(s)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>。`,
+    creditsDerived: (d, s) => `${d.slugs ? '其中部分模板是衍生作品（其余为原创）：' : '这些模板是衍生作品：'}视觉方向（字体、配色、标志性元素）基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）；版式、演示内容和设计系统由 ${esc(s.author)} 编写。${derivedAuthor(d)} 并未制作、审阅或认可这些模板。`,
+    creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其${c.designOverride ? '固定画布版 <code>design.md</code> 和 ' : ''}<code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
     creditsOriginal: '原始文件',
   },
 };
@@ -256,7 +271,7 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
       <p${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
-      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}</p>
+      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}${t.sourceDerived ? ` · ${esc(S.byDerivedPlain(t.sourceDerived))}` : ''}</p>
     </div>
   </a></li>`;
   }).join('\n');
@@ -332,7 +347,7 @@ export function detailPage(t, lang) {
 <section class="hero">
   <h1${en}>${esc(t.name)}</h1>
   <p class="tagline"${tagline.a}>${esc(tagline.v)}</p>
-  <p class="by">${S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
+  <p class="by">${t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', ')), t.sourceDerived) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
 
 <div class="detail">
@@ -399,6 +414,7 @@ export function detailPage(t, lang) {
   <h2>${S.attribution}</h2>
   <p>${S.attrMain(t)}</p>
   ${t.derived ? `<p>${S.attrDerived(t.derived)}</p>` : ''}
+  ${t.sourceDerived ? `<p>${S.attrDerivedSource(t.sourceDerived, t)}</p>` : ''}
   ${t.companionInfo ? `<p>${S.attrCompanion(t.companionInfo)}</p>` : ''}
   <p>${S.attrNotOfficial}</p>
   ${S.attrTranslation ? `<p>${S.attrTranslation}</p>` : ''}
@@ -418,6 +434,7 @@ export function creditsPage({ sources, templates, lang }) {
     return `<section class="credit">
   <h2>${esc(s.name)}</h2>
   <p>${S.creditsSource(s)}</p>
+  ${s.derivedFrom ? `<p>${S.creditsDerived(s.derivedFrom, s)}</p>` : ''}
   ${s.companion ? `<p>${S.creditsCompanion(s.companion)}</p>` : ''}
   <ul>
 ${list}

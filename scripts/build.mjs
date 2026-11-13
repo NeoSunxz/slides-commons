@@ -85,6 +85,16 @@ const joinCfg = (base, cfgPath, slug) => path.join(base, ...cfgPath.replace(/\{s
 const urlJoin = (...parts) => parts.map((p, i) => (i === 0 ? p.replace(/\/+$/, '') : p.replace(/^\/+|\/+$/g, ''))).filter(Boolean).join('/');
 const repoName = (url) => url.replace(/\/+$/, '').split('/').pop();
 const toPosix = (p) => p.split(path.sep).join('/');
+// Back-link to a template's directory in the source's repository. `repoPath` is where the
+// source directory lives inside the repo (empty for a repo of its own, e.g. a submodule).
+const templateDirUrl = (src, slug) => urlJoin(src.repo, 'tree', src.branch, src.repoPath ?? '', src.layout.templatesDir, slug);
+
+// Source-level derivedFrom applies to the listed slugs only (all templates if no list).
+const derivedOf = (src, slug) => {
+  const d = src.derivedFrom;
+  if (!d) return null;
+  return !d.slugs || d.slugs.includes(slug) ? d : null;
+};
 
 function readJson(p) {
   try { return JSON.parse(read(p)); } catch (e) { fail(`cannot read JSON ${rel(p)}: ${e.message}`); }
@@ -380,6 +390,7 @@ const LAYOUT_DEFAULTS = {
 function loadSources() {
   const cfgPath = SOURCES_FILE;
   const cfg = readJson(cfgPath);
+  const sourceSchema = readJson(path.join(SRC, 'schema', 'sources.schema.json'));
   if (!Array.isArray(cfg.sources) || !cfg.sources.length) fail('sources.json: "sources" must be a non-empty array');
   const ids = new Set();
   return cfg.sources.map((s, k) => {
@@ -387,6 +398,8 @@ function loadSources() {
     for (const f of ['id', 'name', 'author', 'license', 'repo', 'branch', 'path']) {
       if (typeof s[f] !== 'string' || !s[f]) fail(`${where}: missing "${f}"`);
     }
+    const serrs = validate(s, sourceSchema.$defs.source, sourceSchema, '$');
+    if (serrs.length) fail(`${where} (${s.id}) is invalid:\n  - ${serrs.join('\n  - ')}`);
     if (ids.has(s.id)) fail(`${where}: duplicate source id "${s.id}"`);
     ids.add(s.id);
     const dir = path.join(ROOT, ...s.path.split('/'));
@@ -423,6 +436,10 @@ function loadTemplates(sources, schema, problems = null) {
       const missing = src.include.filter((s) => !slugs.includes(s));
       if (missing.length) fail(`source ${src.id}: include lists unknown template(s): ${missing.join(', ')}`);
       slugs = slugs.filter((s) => src.include.includes(s));
+    }
+    if (src.derivedFrom?.slugs) {
+      const unknown = src.derivedFrom.slugs.filter((x) => !slugs.includes(x));
+      if (unknown.length) fail(`source ${src.id}: derivedFrom.slugs lists unknown template(s): ${unknown.join(', ')}`);
     }
     for (const dirName of slugs) {
       const dir = path.join(tdir, dirName);
@@ -602,7 +619,7 @@ function buildContext(t) {
 
   const srcLicense = path.join(src.dir, L.licenseFile);
   if (!exists(srcLicense)) fail(`source ${src.id}: license file ${rel(srcLicense)} not found`);
-  const licenses = [{ file: 'LICENSE-templates', path: srcLicense }];
+  const licenses = [{ file: src.packLicenseName ?? 'LICENSE-templates', path: srcLicense }];
   if (comp) {
     const p = path.join(comp.dir, comp.licenseFile ?? 'LICENSE');
     if (!exists(p)) fail(`companion ${comp.id}: license file ${rel(p)} not found`);
@@ -627,6 +644,8 @@ function buildContext(t) {
     typography,
     typographyStyle: t.typography.style ?? '',
     fontLinks: fontLinks(html),
+    // Font stylesheets from hosts that cannot be self-hosted (Fontshare): kept as links.
+    remoteFontLinks: fontLinks(html).filter((u) => new URL(u).hostname !== 'fonts.googleapis.com'),
     localFonts: fontPlan.faces.length > 0,
     cjkFontLinks: cjkOnlyLinks(fontLinks(cjkSection(designMd))),
     signatureMoves: preview.moves.map((m) => resolveTokens(m, colorMap)),
@@ -639,11 +658,12 @@ function buildContext(t) {
     licenses,
   };
 
-  const sourceDirUrl = urlJoin(src.repo, 'tree', src.branch, L.templatesDir, t.slug);
+  const sourceDirUrl = templateDirUrl(src, t.slug);
   const companionInfo = comp ? {
     repoName: repoName(comp.repo),
     author: comp.author,
     license: comp.license,
+    providesDesign: Boolean(comp.designOverride),
     dirUrl: comp.designOverride
       ? urlJoin(comp.repo, 'tree', comp.branch, path.posix.dirname(comp.designOverride.replace(/\{slug\}/g, t.slug)))
       : comp.repo,
@@ -656,8 +676,8 @@ function buildContext(t) {
 // Checks shared by the build and scripts/validate.mjs
 // ---------------------------------------------------------------------------
 
-// Hosts a template may load things from. (M4 adds api.fontshare.com.)
-const HOST_WHITELIST = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
+// Hosts a template may load things from (Fontshare: stylesheet + font files).
+const HOST_WHITELIST = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'api.fontshare.com', 'cdn.fontshare.com'];
 
 // Hosts of external subresources found by a static scan of src / srcset / <link href> /
 // @import / url(). Comments, xmlns attributes, plain <a href> links and data: URIs are
@@ -700,7 +720,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
 
     // Attribution and back-link target.
     const L = t.src.layout;
-    const expected = urlJoin(t.src.repo, 'tree', t.src.branch, L.templatesDir, t.slug);
+    const expected = templateDirUrl(t.src, t.slug);
     if (!/^https:\/\/.+\/tree\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
 
     if (!screenshotsFor(t.src, t.slug).length) {
@@ -956,7 +976,7 @@ function main() {
       author: t.authors.map((a) => a.name).join(', '),
       project: repoName(t.src.repo),
       license: t.license,
-      licenseFile: 'LICENSE-templates',
+      licenseFile: info.licenses[0].file,
       url: info.sourceDirUrl,
     }];
     if (t.src.companion) {
@@ -972,6 +992,18 @@ function main() {
         });
       }
     }
+    const srcDerived = derivedOf(t.src, t.slug);
+    if (srcDerived) {
+      const d = srcDerived;
+      credits.push({
+        what: 'Visual direction (fonts, colors, signature elements) of this derivative template; the author did not make or endorse it',
+        author: d.author,
+        project: d.name,
+        license: d.license,
+        licenseFile: t.src.companion?.author === d.author ? (info.licenses.find((l) => l.path !== info.licenses[0].path)?.file ?? null) : null,
+        url: d.url,
+      });
+    }
     if (faces.length) {
       credits.push({
         what: 'Latin web fonts in `fonts/` (the families `template.html` requests from Google Fonts)',
@@ -982,7 +1014,14 @@ function main() {
         url: 'https://fontsource.org',
       });
     }
-    const readme = packReadme(ctx, credits, SITE_NAME);
+    const readme = packReadme({
+      ...ctx,
+      packClosing: t.src.collection
+        ? (srcDerived
+          ? `${SITE_NAME} is an independent community gallery. This template is a derivative work of the project credited above (visual direction), written for ${SITE_NAME}; the original author did not make or endorse it. Files are licensed as listed above.`
+          : `This template is original work, written for ${SITE_NAME}. \`viewport-base.css\` is the only file taken from another project (see the credits above). ${SITE_NAME} is an independent community gallery and is not affiliated with or endorsed by the author of that file.`)
+        : undefined,
+    }, credits, SITE_NAME);
 
     const z = `${t.slug}/`;
     const entries = [
@@ -1015,7 +1054,7 @@ function main() {
       if (!osrc) fail(`${t.slug}: derivedFrom.source "${t.derivedFrom.source}" is not in sources.json`);
       derived = {
         name: o?.name ?? t.derivedFrom.slug,
-        url: urlJoin(osrc.repo, 'tree', osrc.branch, osrc.layout.templatesDir, t.derivedFrom.slug),
+        url: templateDirUrl(osrc, t.derivedFrom.slug),
         authors: o?.authors ?? [{ name: osrc.author, url: osrc.authorUrl }],
         license: o?.license ?? osrc.license,
       };
@@ -1032,6 +1071,7 @@ function main() {
       sourceRepoUrl: t.src.repo,
       sourceRepoName: repoName(t.src.repo),
       sourceDirUrl: info.sourceDirUrl,
+      sourceDerived: srcDerived,
       companionInfo: info.companionInfo,
       derived,
       promptEn: en,
@@ -1047,6 +1087,13 @@ function main() {
     writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, zhTerm: (m) => zhTerm(zhData, m) }));
     writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources, templates: pageData, lang }));
   }
+
+  // Machine-readable list of what was built (the Pages workflow checks the zip count against it).
+  writeFile(path.join(SITE, 'manifest.json'), JSON.stringify({
+    sources: sources.filter((s) => templates.some((t) => t.source === s.id)).map((s) => s.id),
+    templates: templates.map((t) => ({ slug: t.slug, source: t.source })),
+    zips: templates.map((t) => `zip/${t.slug}.zip`),
+  }, null, 2) + '\n');
 
   const ms = Date.now() - started;
   console.log(`built ${templates.length} template(s) from ${sources.length} source(s) into ${rel(SITE).startsWith('..') ? SITE : rel(SITE)}${path.sep} in ${ms} ms` +

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/NeoSunxz/slides-commons/src/schema/sources.schema.json",
+  "title": "slides-commons sources.json",
+  "description": "Validated by the hand-written checker in scripts/build.mjs (same subset as template.schema.json). `path` is a directory inside this repo; `repoPath` is where that directory lives inside `repo` (only needed when they differ, e.g. a collection that lives in this very repository).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sources"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$" },
+    "url": { "type": "string", "pattern": "^https?://" },
+    "str": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "author", "license", "repo", "branch", "path"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/str" },
+        "author": { "$ref": "#/$defs/str" },
+        "authorUrl": { "$ref": "#/$defs/url" },
+        "license": { "$ref": "#/$defs/str" },
+        "repo": { "$ref": "#/$defs/url" },
+        "branch": { "$ref": "#/$defs/str" },
+        "path": { "$ref": "#/$defs/str" },
+        "repoPath": { "description": "POSIX path of `path` inside `repo` (default: the repo root). Back-links are <repo>/tree/<branch>/<repoPath>/<templatesDir>/<slug>.", "type": "string" },
+        "include": { "type": "array", "items": { "$ref": "#/$defs/str" } },
+        "packLicenseName": { "description": "File name of the source license inside the zip (default LICENSE-templates).", "$ref": "#/$defs/str" },
+        "collection": { "description": "Own-work collection living inside this repo: pack README says so instead of 'unmodified copies of the originals'.", "type": "boolean" },
+        "derivedFrom": {
+          "description": "This source (or the templates listed in `slugs`) is a derivative work of something else; those pages credit both. Templates not listed are original work and get no such credit.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "author", "url", "license"],
+          "properties": {
+            "name": { "$ref": "#/$defs/str" },
+            "author": { "$ref": "#/$defs/str" },
+            "authorUrl": { "$ref": "#/$defs/url" },
+            "url": { "$ref": "#/$defs/url" },
+            "license": { "$ref": "#/$defs/str" },
+            "slugs": { "description": "Only these template slugs are derived. Omit = every template of the source.", "type": "array", "items": { "$ref": "#/$defs/str" }, "uniqueItems": true }
+          }
+        },
+        "screenshots": {
+          "description": "Used by `npm run screenshots` (only for sources inside this repo): which slides to capture, as 1-based numbers or \"middle\" / \"last\". Default: [1, \"middle\", \"last\"].",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "slides": { "type": "array", "minItems": 1, "items": { "type": ["integer", "string"] } }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "templatesDir": { "$ref": "#/$defs/str" },
+            "metaFile": { "$ref": "#/$defs/str" },
+            "htmlFile": { "$ref": "#/$defs/str" },
+            "designFile": { "$ref": "#/$defs/str" },
+            "screenshotsDir": { "$ref": "#/$defs/str" },
+            "licenseFile": { "$ref": "#/$defs/str" }
+          }
+        },
+        "companion": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "author", "license", "repo", "branch", "path"],
+          "properties": {
+            "id": { "$ref": "#/$defs/str" },
+            "name": { "$ref": "#/$defs/str" },
+            "author": { "$ref": "#/$defs/str" },
+            "license": { "$ref": "#/$defs/str" },
+            "repo": { "$ref": "#/$defs/url" },
+            "branch": { "$ref": "#/$defs/str" },
+            "path": { "$ref": "#/$defs/str" },
+            "licenseFile": { "$ref": "#/$defs/str" },
+            "designOverride": { "$ref": "#/$defs/str" },
+            "previewCard": { "$ref": "#/$defs/str" },
+            "viewportBase": { "$ref": "#/$defs/str" }
+          }
+        }
+      }
+    }
+  }
+}
