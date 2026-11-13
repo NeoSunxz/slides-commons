@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Prompt now drafts missing content itself instead of leaving placeholders, and lists every drafted item in the final reply.
+- When design.md contradicts itself, the prompt tells the agent to follow the stricter rule.
+- The CJK font-weight rule in the prompt now overrides design.md.
+- QR codes and links are only used when the user supplied a real link.
+- Section numbers must match page numbers.
+- `--slide-bg` wording clarified: it is the canvas background, not the panel color.
+- Unzip fallback order is now unzip, python, tar, Expand-Archive.
+
 ## [0.1.0] - 2026-11-12
 
 First public release (milestones M1 to M3): a static gallery of 34 HTML slide templates, each with a live preview, a copy-ready prompt and a downloadable pack for your own coding agent.

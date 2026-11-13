@@ -179,7 +179,10 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-12：M2 经维护者实测通过。M3 开发：`.github/workflows/ci.yml`（pull_request→dev/main，validate + test，只读权限，Action 全部固定到提交哈希）与 `pages.yml`（push main → 构建并部署，构建时 `SC_SITE_URL=https://<owner>.github.io/<repo>/`，产物自检）。提示词自动下载素材包已实现：`SC_SITE_URL` / `--site-url`（未设置时产物与之前逐字节一致）；`SC_I18N_DIR` / `--i18n-dir` 使翻译缺失/过期/结构错误可测。`npm test` 371 通过 0 跳过（约 3.3 分钟）。
   - 工作流尚未在 GitHub 上实际运行过。Pages 检查里 zip 数量 34 是写死的，增减模板/来源时同步修改。
   - 维护者一次性设置：默认分支 dev；Pages source = GitHub Actions；main 分支保护（需 PR + 必过检查 `validate + test`，禁强推）。
-- 下一步：合并 M1–M3 的发版 PR（dev → main，因为 Pages 工作流需先存在于 main）；上线后做一次「只给提示词、不放 zip」的自动下载模拟验收；再做自托管字体与 M4。
+- 2026-11-13：v0.1.0 发布（PR #1 合并到 main，提交 97816b0；Pages 上线 https://neosunxz.github.io/slides-commons/ ，详情页路径 `t/<slug>/`；GitHub Release v0.1.0）。main 已保护（需 PR + 必过 `validate + test`），默认分支 dev。
+- 2026-11-13：「只给提示词、不放 zip」模拟验收通过（curl 下载 → python 解压 → 8 页中文演讲型）。据此改提示词（维护者确认）：缺内容由 agent 代写、页面不放占位、最终回复逐条列出代写内容；design.md 自相矛盾取更严格的规则；CJK 字重规则优先于 design.md；二维码/链接仅在用户给了真实链接时使用；章节编号与页码一致；`--slide-bg` 取画布底色而非面板色；解压顺序 unzip → python → tar → Expand-Archive。演讲型面板下限不设。`npm test` 374 通过。
+  - 待定：`--slide-bg` 目前是通用措辞，未按模板从数据推导具体色值。
+- 下一步：自托管字体（见下方计划），然后 M4。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
