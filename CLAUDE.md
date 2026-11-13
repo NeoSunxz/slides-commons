@@ -53,7 +53,7 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 - `site-builder`：实现构建脚本和页面，只改 `scripts/`、`src/` 和 `.github/workflows/`（M3 起；维护者 2026-11-12 同意）
 - `site-tester`：构建并用 Playwright 验证，只写 `tests/`，只报告问题不修复
 - `release-manager`：提交、更新 CHANGELOG、准备发版，禁止 push 和改写历史
-- （M6 时新增）`template-designer`：只允许写 `collections/neosun/`
+- `template-designer`：设计和编写自有模板，只允许写 `collections/`（M4 起；维护者 2026-11-13 同意，原计划 M6 新增）
 
 每个里程碑顺序：site-builder → site-tester →（有问题回到 builder）→ release-manager。
 每个里程碑发版前停下等维护者确认；结束时把进度和下一步写进本文件"进度"一节。
@@ -185,7 +185,10 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-13：自托管字体第一步完成（拉丁字体）：Fontsource npm 包（47 个 `@fontsource/*` + 5 个 `@fontsource-variable/*`，devDependencies）；`scripts/fonts.mjs` 从模板的 Google Fonts 链接解析字体族/字重。预览副本把拉丁字体以 data: URI 内联（沙箱 iframe 在 file:// 禁止加载本地文件、http 下 origin=null 会被 CORS 拦截，所以不能引用 `site/fonts/`），CJK 字体仍走只含 CJK 字体族的 Google 链接；`site/fonts/<family>/OFL.txt` 存协议。zip 增加 `fonts/`（woff2 + OFL.txt + `fonts.css`），总计 12.4MB。提示词要求把拉丁字体以 base64 嵌入成稿（latin + latin-ext 都嵌，可变字体只嵌一次），只有 CJK 用 Google 链接；为可读性偏离 design.md 配色/字号须在最终回复列出。模拟验收（signal，7 页英文，断网仍加载全部字体，成稿 481KB）通过。`npm test` 485 通过。CREDITS.md 已加 Web fonts 一节。
   - 待处理：raw-grid 的 design.md 允许 CJK 用 Noto Sans SC（唯一例外），但提示词让它用系统 CJK 字体，应改为引用该链接。
   - 新增模板若用了 Fontsource 没有的拉丁字体，校验会失败（可加到 `scripts/fonts.mjs` 的 `GOOGLE_FALLBACK`）。
-- 下一步：自托管字体第二步（CJK 按字裁剪嵌入），或先做 M4，待维护者定。
+- 2026-11-13/14：M4 完成。新来源 `style-presets`（`collections/style-presets/`，本仓库内，`sources.json` 带 `repoPath`、`collection: true`、`packLicenseName: LICENSE`、`derivedFrom.slugs`）共 16 个模板：12 个改编自 frontend-slides `STYLE_PRESETS.md`（详情页/卡片/README 注明 "based on … by Zara Zhang"，并声明原作者未参与或背书），4 个原创白底商务模板（consulting-report、boardroom-quarterly、minimal-pitch、tech-blue-business，维护者要求加做并并入此集合，不带改编署名）。每模板 11–12 页，design.md 完整；截图用 `npm run screenshots` 生成后提交（只处理本仓库集合）。zip 带 LICENSE + LICENSE-skill（viewport-base.css 来自 frontend-slides）+ fonts/。neon-cyber 用 Fontshare（api/cdn.fontshare.com 白名单，不打包）。Yellowtail 字体是 Apache 2.0（其余 OFL）。Pages 自检改为对照 `site/manifest.json`，不再写死 34。zh.json 覆盖全部 50 个模板。raw-grid 提示词改为引用其 design.md 的 Noto Sans SC 链接。`npm test` 643 通过（`/tmp` 是 4.9GB tmpfs，满了会 ENOSPC，可设 `TMPDIR`）。
+  - 新增 `template-designer` 子 agent（只写 `collections/`）。
+  - 待处理：素材包 README 对所有字体都写 OFL，Yellowtail 应写 Apache 2.0；collection 模板无 preview.md，提示词没有 signature moves 一行（可从 design.md 提取）。
+- 下一步：发 v0.2.0（dev → main PR，含提示词修订、自托管拉丁字体、M4）；之后 M5 贡献流程，或自托管字体第二步（CJK 裁剪）。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`

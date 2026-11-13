@@ -9,12 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Style Presets collection (16 templates): 12 based on frontend-slides STYLE_PRESETS.md by Zara Zhang, and 4 original white-background business templates (consulting-report, boardroom-quarterly, minimal-pitch, tech-blue-business).
+- Source filter in the gallery.
+- `npm run screenshots` to generate template screenshots.
+- `site/manifest.json` listing the built templates.
+- Fontshare fonts are allowed for neon-cyber.
+- Chinese translations for all new templates.
 - Latin web fonts are now self-hosted (Fontsource, SIL OFL 1.1): previews no longer need Google Fonts for Latin text.
 - Each pack ships `fonts/` (woff2 files, `OFL.txt`, `fonts.css`).
 - The prompt asks the agent to embed Latin fonts as base64 so decks work offline. CJK fonts still come from Google Fonts.
 
 ### Changed
 
+- Pages check counts templates from the manifest instead of a hard-coded number.
+- The raw-grid prompt quotes its Noto Sans SC link for CJK text.
 - The prompt quotes a CJK-only Google Fonts link.
 - CJK family detection now covers ZCOOL, LXGW, Long Cang and similar families.
 - The prompt asks the agent to list any legibility deviations from design.md.

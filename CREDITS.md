@@ -8,12 +8,17 @@ slides-commons is an independent community gallery. It is **not** an official pr
 |---|---|---|---|
 | [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | [Zara Zhang](https://github.com/zarazhangrui) | MIT (© 2026 Zara Zhang) | HTML slide templates, metadata, screenshots, per-template `design.md` (`upstream/templates`) |
 | [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | [Zara Zhang](https://github.com/zarazhangrui) | MIT (© 2025 Zara Zhang) | Fixed-stage `design.md` variants, `preview.md` style cards, `viewport-base.css`, generation workflow (`upstream/skill`) |
+| [slides-commons Style Presets](https://github.com/NeoSunxz/slides-commons/tree/main/collections/style-presets) | NeoSunxz and slides-commons contributors | MIT | Full templates (layouts, demo content, `design.md`, screenshots) in `collections/style-presets` |
 
 Both are included as read-only git submodules under `upstream/`. Every downloadable template pack ships with the corresponding `LICENSE` files.
 
 ## Web fonts
 
-Latin web fonts bundled in previews and template packs come from the [Fontsource](https://fontsource.org) npm packages (`@fontsource/*`, `@fontsource-variable/*`; packaging MIT-licensed by the Fontsource contributors). The fonts themselves are open source, unmodified, and used under the SIL Open Font License 1.1; each font's copyright holders are named in the `OFL.txt` shipped next to it (`fonts/<family>/OFL.txt` in every pack, `fonts/<family>/OFL.txt` on the site). CJK fonts (Noto Sans SC, Noto Serif SC, Noto Sans JP) are still loaded from Google Fonts.
+Latin web fonts bundled in previews and template packs come from the [Fontsource](https://fontsource.org) npm packages (`@fontsource/*`, `@fontsource-variable/*`; packaging MIT-licensed by the Fontsource contributors). The fonts themselves are open source and unmodified. Most are under the SIL Open Font License 1.1; Yellowtail is under the Apache License 2.0. Each font's license and copyright holders are in the `OFL.txt` or `LICENSE.txt` shipped next to it (`fonts/<family>/` in every pack and on the site). CJK fonts (Noto Sans SC, Noto Serif SC, Noto Sans JP) are still loaded from Google Fonts. Templates that use Fontshare fonts (Clash Display, Satoshi) load them from Fontshare (`api.fontshare.com`, `cdn.fontshare.com`); those fonts are not bundled and remain under the Fontshare license terms.
+
+## Derivative collections
+
+The Style Presets collection (`collections/style-presets`) is a derivative work. Its visual direction (fonts, colors and signature elements of each template) is based on the 12 presets in [`STYLE_PRESETS.md`](https://github.com/zarazhangrui/frontend-slides/blob/main/STYLE_PRESETS.md) of [frontend-slides](https://github.com/zarazhangrui/frontend-slides) by [Zara Zhang](https://github.com/zarazhangrui) (MIT, © 2025 Zara Zhang). The layouts, demo content, extended tokens and `design.md` files were written by slides-commons contributors and are MIT licensed. These templates were not made, reviewed or endorsed by Zara Zhang. Their packs include this collection's `LICENSE`, frontend-slides' `LICENSE` (as `LICENSE-skill`) and `viewport-base.css` from frontend-slides.
 
 ## Derived content
 
