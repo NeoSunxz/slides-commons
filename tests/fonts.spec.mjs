@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { test as base, expect } from '@playwright/test';
-import { SITE, ALL_SLUGS, NO_WEBFONT_SLUGS, upstreamHtml, readSiteZip, hostOf, EXTERNAL_WHITELIST } from './helpers.mjs';
+import { SITE, ALL_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, upstreamHtml, readSiteZip, hostOf, EXTERNAL_WHITELIST } from './helpers.mjs';
 
 // NOTE: deliberately the plain Playwright test (no Google font cache): Google must be unreachable.
 const test = base;
@@ -22,7 +22,7 @@ function upstreamFamilies(slug) {
   return { latin: all.filter((n) => !isCjk(n)), cjk: all.filter(isCjk) };
 }
 
-const WEBFONT_SLUGS = ALL_SLUGS.filter((s) => !NO_WEBFONT_SLUGS.includes(s));
+const WEBFONT_SLUGS = ALL_SLUGS.filter((s) => !NO_WEBFONT_SLUGS.includes(s) && !FONTSHARE_SLUGS.includes(s));
 const fileUrl = (...p) => pathToFileURL(path.join(SITE, ...p)).href;
 
 async function checkPreview(page, url, slug, { fileMode }) {
@@ -108,7 +108,8 @@ for (const slug of ALL_SLUGS) {
     const { entries } = readSiteZip(SITE, slug);
     const names = entries.filter((e) => !e.isDir && !e.isDirectory).map((e) => e.name);
     const fontFiles = names.filter((n) => n.startsWith(`${slug}/fonts/`));
-    if (NO_WEBFONT_SLUGS.includes(slug)) {
+    if (NO_WEBFONT_SLUGS.includes(slug) || FONTSHARE_SLUGS.includes(slug)) {
+      // System-font templates and Fontshare-only templates (Fontshare is not in Fontsource) ship no fonts/.
       expect(fontFiles, `${slug} must have no fonts/`).toEqual([]);
       return;
     }
@@ -129,10 +130,12 @@ for (const slug of ALL_SLUGS) {
       expect(e.data.subarray(0, 4).toString('latin1'), `${w} magic`).toBe('wOF2');
     }
     const dirs = new Set(woff.map((w) => w.split('/')[0]));
-    for (const d of dirs) expect(set.has(`${slug}/fonts/${d}/OFL.txt`), `${slug}: ${d}/OFL.txt`).toBe(true);
-    for (const n of fontFiles.filter((x) => x.endsWith('OFL.txt'))) {
+    // Each family ships its own license: OFL.txt, or LICENSE.txt for the few non-OFL families (Yellowtail is Apache 2.0).
+    const licOf = (d) => ['OFL.txt', 'LICENSE.txt'].find((f) => set.has(`${slug}/fonts/${d}/${f}`));
+    for (const d of dirs) expect(licOf(d), `${slug}: ${d} has no OFL.txt / LICENSE.txt`).toBeTruthy();
+    for (const n of fontFiles.filter((x) => /\/(OFL|LICENSE)\.txt$/.test(x))) {
       expect(dirs.has(n.split('/')[2]), `${n}: license for a family with no files`).toBe(true);
-      expect(entries.find((e) => e.name === n).data.toString()).toMatch(/SIL OPEN FONT LICENSE/i);
+      expect(entries.find((e) => e.name === n).data.toString()).toMatch(/SIL OPEN FONT LICENSE|Apache License/i);
     }
     // every Latin family the template requests is covered
     for (const fam of upstreamFamilies(slug).latin) {
@@ -150,7 +153,7 @@ test('[fonts prompt] Latin-font templates mention fonts/ and base64 (EN+ZH); raw
     const { entries } = readSiteZip(SITE, slug);
     const en = entries.find((e) => e.name === `${slug}/PROMPT.md`).data.toString();
     const zh = entries.find((e) => e.name === `${slug}/PROMPT.zh.md`).data.toString();
-    if (NO_WEBFONT_SLUGS.includes(slug)) {
+    if (NO_WEBFONT_SLUGS.includes(slug) || FONTSHARE_SLUGS.includes(slug)) {
       if (/fonts\/|base64/.test(en)) bad.push(`${slug} en mentions fonts/ or base64`);
       if (/fonts\/|base64/.test(zh)) bad.push(`${slug} zh mentions fonts/ or base64`);
       continue;

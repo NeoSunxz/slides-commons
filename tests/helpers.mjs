@@ -12,7 +12,7 @@ export const ARTIFACTS = path.join(TESTS, 'artifacts');
 export const SLUG = 'neo-grid-bold';
 export const UPSTREAM_TEMPLATE_DIR = path.join(ROOT, 'upstream', 'templates', 'templates', SLUG);
 
-export const EXTERNAL_WHITELIST = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
+export const EXTERNAL_WHITELIST = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'api.fontshare.com', 'cdn.fontshare.com'];
 
 export function artifactPath(name) {
   fs.mkdirSync(ARTIFACTS, { recursive: true });
@@ -193,18 +193,46 @@ export const UPSTREAM_TEMPLATES = path.join(ROOT, 'upstream', 'templates');
 export const UPSTREAM_SKILL = path.join(ROOT, 'upstream', 'skill');
 const TDIR = path.join(UPSTREAM_TEMPLATES, 'templates');
 
-export const ALL_SLUGS = fs.readdirSync(TDIR, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && fs.existsSync(path.join(TDIR, d.name, 'template.json')))
-  .map((d) => d.name).sort();
+// Sources come from sources.json, templates from their directories on disk (not from site/,
+// which is rebuilt after the spec files are loaded).
+export const SOURCES_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources.json'), 'utf8'));
+const dirsOf = (src) => {
+  const dir = path.join(ROOT, src.path, src.layout.templatesDir);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(dir, d.name, src.layout.metaFile)))
+    .map((d) => ({ slug: d.name, source: src.id, dir: path.join(dir, d.name) }));
+};
+export const CATALOG = SOURCES_JSON.sources.flatMap(dirsOf).sort((a, b) => a.slug.localeCompare(b.slug));
+export const UPSTREAM_SOURCE_ID = 'zarazhangrui';
+export const COLLECTION_SOURCE_ID = 'style-presets';
+export const COLLECTION = SOURCES_JSON.sources.find((s) => s.id === COLLECTION_SOURCE_ID);
+export const ALL_SLUGS = CATALOG.map((t) => t.slug);
+export const UP_SLUGS = CATALOG.filter((t) => t.source === UPSTREAM_SOURCE_ID).map((t) => t.slug);
+export const COLLECTION_SLUGS = CATALOG.filter((t) => t.source === COLLECTION_SOURCE_ID).map((t) => t.slug);
+export const DERIVED_SLUGS = COLLECTION?.derivedFrom?.slugs ?? [];
+export const ORIGINAL_SLUGS = COLLECTION_SLUGS.filter((s) => !DERIVED_SLUGS.includes(s));
+export const sourceOf = (slug) => CATALOG.find((t) => t.slug === slug)?.source;
+export const isUpstream = (slug) => sourceOf(slug) === UPSTREAM_SOURCE_ID;
 
-export const upstreamDir = (slug) => path.join(TDIR, slug);
-export const upstreamMeta = (slug) => JSON.parse(fs.readFileSync(path.join(TDIR, slug, 'template.json'), 'utf8'));
-export const upstreamHtml = (slug) => fs.readFileSync(path.join(TDIR, slug, 'template.html'), 'utf8');
-export const hasDeckStageJs = (slug) => fs.existsSync(path.join(TDIR, slug, 'deck-stage.js'));
+export const dirUrl = (slug) => {
+  const src = SOURCES_JSON.sources.find((x) => x.id === sourceOf(slug));
+  const base = `${src.repo}/tree/${src.branch}/${src.repoPath ? `${src.repoPath}/` : ''}`;
+  return `${base}${src.layout.templatesDir}/${slug}`;
+};
+export const upstreamDir = (slug) => CATALOG.find((t) => t.slug === slug).dir;
+export const upstreamMeta = (slug) => JSON.parse(fs.readFileSync(path.join(upstreamDir(slug), 'template.json'), 'utf8'));
+export const upstreamHtml = (slug) => fs.readFileSync(path.join(upstreamDir(slug), 'template.html'), 'utf8');
+export const hasDeckStageJs = (slug) => fs.existsSync(path.join(upstreamDir(slug), 'deck-stage.js'));
 export const DECK_STAGE_SLUGS = ALL_SLUGS.filter(hasDeckStageJs);
 export const CDN_SLUGS = ALL_SLUGS.filter((s) => /cdn\.jsdelivr\.net/.test(upstreamHtml(s)));
+export const GOOGLE_FONT_SLUGS = ALL_SLUGS.filter((s) => /fonts\.googleapis\.com/.test(upstreamHtml(s)));
+export const FONTSHARE_SLUGS = ALL_SLUGS.filter((s) => /api\.fontshare\.com/.test(upstreamHtml(s)) && !GOOGLE_FONT_SLUGS.includes(s));
+// Neither Google Fonts nor Fontshare: system fonts only.
 export const NO_WEBFONT_SLUGS = ALL_SLUGS.filter((s) => !/fonts\.googleapis\.com|api\.fontshare\.com/.test(upstreamHtml(s)));
-export const skillDesign = (slug) => path.join(UPSTREAM_SKILL, 'bold-template-pack', 'templates', slug, 'design.md');
+export const skillDesign = (slug) => (isUpstream(slug)
+  ? path.join(UPSTREAM_SKILL, 'bold-template-pack', 'templates', slug, 'design.md')
+  : path.join(upstreamDir(slug), 'design.md'));
 
 /** A sample of slugs for the more expensive checks: every 5th + three named ones. */
 export const SAMPLE_SLUGS = [...new Set([
@@ -221,7 +249,7 @@ export function readSiteZip(outDir, slug) {
 // ---------------------------------------------------------------------------
 export const ZH_ALLOW = [
   /(https?:\/\/)?github\.com\/\S*/g, /Beautiful HTML Templates/g, /Frontend Slides/g, /\bHTML\b/g,
-  /Neo-Grid Bold/g, /Zara Zhang/g, /beautiful-html-templates/g, /frontend-slides/g, /slides-commons/g,
+  /Neo-Grid Bold/g, /Zara Zhang/g, /NeoSunxz and slides-commons contributors/g, /NeoSunxz/g, /STYLE_PRESETS\.md/g, /beautiful-html-templates/g, /frontend-slides/g, /slides-commons/g,
   /Space Grotesk/g, /JetBrains Mono/g, /\bMIT\b/g, /\bGitHub\b/g,
   /Claude Code/g, /\bCodex\b/g, /\bCursor\b/g, /coding agent/g, /\bEsc\b/g,
   /\b[\w-]+\.(md|css|js|html|zip)\b/g, /\.zip\b/g, /#[0-9A-Fa-f]{3,8}\b/g,

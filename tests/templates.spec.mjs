@@ -1,14 +1,23 @@
 // Every template: detail page health, paging against the real deck, phone overflow, screenshots.
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect } from './font-cache.mjs';
 import {
-  ALL_SLUGS, SAMPLE_SLUGS, CDN_SLUGS, DECK_STAGE_SLUGS, EXTERNAL_WHITELIST, SLUG,
+  SITE, ALL_SLUGS, SAMPLE_SLUGS, CDN_SLUGS, DECK_STAGE_SLUGS, EXTERNAL_WHITELIST, SLUG,
   monitor, settled, hostOf, previewFrame, artifactPath,
 } from './helpers.mjs';
 
 test.describe.configure({ mode: 'parallel' });
 
-test('upstream has 34 templates and the site has a page for each', async () => {
-  expect(ALL_SLUGS).toHaveLength(34);
+test('every template on disk (all sources) is in site/manifest.json and has a page, preview and zip', async () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(SITE, 'manifest.json'), 'utf8'));
+  expect(manifest.templates.map((t) => t.slug).sort()).toEqual([...ALL_SLUGS].sort());
+  expect(ALL_SLUGS.length).toBeGreaterThan(34);
+  for (const slug of ALL_SLUGS) {
+    for (const rel of [['t', slug, 'index.html'], ['zh', 't', slug, 'index.html'], ['zip', `${slug}.zip`]]) {
+      expect(fs.existsSync(path.join(SITE, ...rel)), `site/${rel.join('/')}`).toBe(true);
+    }
+  }
 });
 
 // Slides as the preview DOM itself defines them.

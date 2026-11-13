@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "vfix",
+      "name": "Validation Fixtures",
+      "author": "Fixture Author",
+      "license": "MIT",
+      "repo": "https://example.com/fixtures/validate",
+      "branch": "main",
+      "path": "tests/fixtures/validate-src",
+      "include": [
+        "valid-tpl"
+      ],
+      "derivedFrom": {
+        "name": "Some Preset List",
+        "author": "Someone Else",
+        "url": "https://example.com/original/PRESETS.md",
+        "license": "MIT",
+        "slugs": [
+          "valid-tpl"
+        ]
+      }
+    }
+  ]
+}
