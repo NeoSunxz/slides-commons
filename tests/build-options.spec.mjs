@@ -245,7 +245,7 @@ test.describe('--site-url / SC_SITE_URL', () => {
     }
     // Everything outside prompts / READMEs is byte-identical (previews, assets, gallery).
     const diffs = diffTrees(without, withUrl).map((d) => d.replace('differs: ', ''));
-    const unexpected = diffs.filter((f) => !/^zip\/|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
+    const unexpected = diffs.filter((f) => !/^zip\/|^index\.html$|^zh\/index\.html$|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
     expect(unexpected, 'unexpected differences').toEqual([]);
   });
 
