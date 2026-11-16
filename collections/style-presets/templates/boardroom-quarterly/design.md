@@ -204,6 +204,14 @@ The frame repeats on every content slide:
 
 **Density philosophy: high.** A board slide carries one message and all the numbers needed to trust it: six KPI cards, a nine-quarter trend, an 11-line P&L or a 7×10 heatmap is normal. Density is managed by alignment, tabular figures, hairlines and colour discipline — not by shrinking type below 17px.
 
+## Signature Moves
+
+- **Headline states the result.** A 44px bold one-sentence headline gives the takeaway with its number and reference, under a small blue uppercase section kicker.
+- **Direction by shape, favourability by colour.** Every delta pairs a CSS triangle (up, down, flat) with green or red for what it means, so a falling cost reads green.
+- **Status colours mean one thing.** Green, amber and red appear only against a reference and always carry a word or number; blue is the brand and the actual series.
+- **KPI cards with status strips.** White cards with a 1px border, a 4px green, amber or red top strip, a 54px tabular value, labelled deltas and a blue sparkline.
+- **Flat white board page.** Pure white canvas, Hanken Grotesk with tabular figures throughout, hairlines instead of shadows, and definitions and sources in the footer.
+
 ## Colors
 
 ### Palette

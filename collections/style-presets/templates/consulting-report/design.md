@@ -203,6 +203,14 @@ The frame is identical on every content slide:
 
 **Density philosophy: high.** One message per slide, but a lot of proof. A typical slide holds an action title, one or two charts or a 10-row table, and a so-what box or three findings. When a slide needs a second message, it needs a second slide.
 
+## Signature Moves
+
+- **Action titles.** Every evidence slide opens with a one-sentence navy serif finding over a hairline, so reading only the titles tells the whole story.
+- **One teal element per slide.** Data is drawn in the navy ladder; teal marks only the so-what: one bar, one row, one option column or one callout.
+- **Section tracker.** Short section names under 4px bars run across the top with the current one in navy, and a "Preliminary" status tag sits top-right.
+- **Directly labelled charts.** Values sit on the bars with no y-axis, gridlines or legend boxes, and no red or green; direction comes from the minus sign and the geometry.
+- **Source line on every evidence slide.** An 18px "Source: … Note: …" line sits just above the footer and marks demo or estimated data as such.
+
 ## Colors
 
 ### Palette

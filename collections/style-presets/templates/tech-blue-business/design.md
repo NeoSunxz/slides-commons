@@ -218,6 +218,14 @@ Tech Blue Business is the **reliable corporate deck**: white pages, navy text, t
 
 **Density philosophy: medium-high.** A business audience reads the slides afterwards, so each slide can carry a complete thought: a title, an optional lead, and one structured block (grid of 6 cards, 3 issue rows, a diagram, a table of 7 rows, a 5-row Gantt). Body text stays ≥ 20px; if a block needs more, split the slide.
 
+## Signature Moves
+
+- **Gradient as highlighter.** The navy-to-cyan gradient fills a slanted band on the cover and closing, and appears at most once more per content slide, on the element that matters most.
+- **Fixed head block.** Every content slide opens top-left with a 32×4px gradient tick, a mono uppercase label and a 60px title, with an optional lead sentence on the right.
+- **One line-icon family.** Stroke-only icons on a 24px grid with a 1.5 stroke and round caps, from one inline SVG sprite, usually blue on an 80px pale-blue tile.
+- **Flat, engineered structure.** White cards with 1px lines and 16px corners, pale surface panels and no shadows; diagrams use orthogonal blue connectors with open chevrons.
+- **Big navy numbers.** Metrics are extra-bold deep navy with tabular figures and half-size units; the single hero percentage may be gradient text.
+
 ## Colors
 
 ### Palette
