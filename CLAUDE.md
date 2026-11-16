@@ -187,7 +187,7 @@ zip（以 `<slug>/` 为根）：
   - 新增模板若用了 Fontsource 没有的拉丁字体，校验会失败（可加到 `scripts/fonts.mjs` 的 `GOOGLE_FALLBACK`）。
 - 2026-11-13/14：M4 完成。新来源 `style-presets`（`collections/style-presets/`，本仓库内，`sources.json` 带 `repoPath`、`collection: true`、`packLicenseName: LICENSE`、`derivedFrom.slugs`）共 16 个模板：12 个改编自 frontend-slides `STYLE_PRESETS.md`（详情页/卡片/README 注明 "based on … by Zara Zhang"，并声明原作者未参与或背书），4 个原创白底商务模板（consulting-report、boardroom-quarterly、minimal-pitch、tech-blue-business，维护者要求加做并并入此集合，不带改编署名）。每模板 11–12 页，design.md 完整；截图用 `npm run screenshots` 生成后提交（只处理本仓库集合）。zip 带 LICENSE + LICENSE-skill（viewport-base.css 来自 frontend-slides）+ fonts/。neon-cyber 用 Fontshare（api/cdn.fontshare.com 白名单，不打包）。Yellowtail 字体是 Apache 2.0（其余 OFL）。Pages 自检改为对照 `site/manifest.json`，不再写死 34。zh.json 覆盖全部 50 个模板。raw-grid 提示词改为引用其 design.md 的 Noto Sans SC 链接。`npm test` 643 通过（`/tmp` 是 4.9GB tmpfs，满了会 ENOSPC，可设 `TMPDIR`）。
   - 新增 `template-designer` 子 agent（只写 `collections/`）。
-  - 待处理：素材包 README 对所有字体都写 OFL，Yellowtail 应写 Apache 2.0；collection 模板无 preview.md，提示词没有 signature moves 一行（可从 design.md 提取）。
+- 2026-11-17：使用说明改为「复制提示词 → 粘贴给 coding agent（agent 自己下载素材包）→ 回答问题」（仅设置站点网址时；本地构建保留先下载的说明），复制提示词为主按钮、下载为次要并附离线说明；素材包 README 按实际协议文件写字体协议（Yellowtail 为 Apache 2.0）；无 preview.md 的模板从 design.md 的 Signature Treatments/Moves/Elements 一节提取标志性手法（最多 5 条，16 个均有）；中文提示词引用中文按钮名「下载素材包（.zip）」。`npm test` 666 通过。
 - 下一步：发 v0.2.0（dev → main PR，含提示词修订、自托管拉丁字体、M4）；之后 M5 贡献流程，或自托管字体第二步（CJK 裁剪）。
 
 ### 编排经验

@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The prompt asks the agent to list any legibility deviations from design.md.
 - Prompt now drafts missing content itself instead of leaving placeholders, and lists every drafted item in the final reply.
 - When design.md contradicts itself, the prompt tells the agent to follow the stricter rule.
+- On the published site the usage steps are now "copy the prompt, paste it into your coding agent (it downloads the pack), answer its questions". Copy prompt is the primary button and the zip download is an offline fallback.
+- The pack README lists font licenses per family (Yellowtail is Apache 2.0).
+- Collection prompts include signature moves taken from design.md.
+- The Chinese prompt names the Chinese download button.
 - The CJK font-weight rule in the prompt now overrides design.md.
 - QR codes and links are only used when the user supplied a real link.
 - Section numbers must match page numbers.
