@@ -126,20 +126,21 @@ button.chip[aria-pressed="true"] .n { color: inherit; opacity: 0.7; }
 .frame16x9.scaled iframe { inset: auto; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: translate(var(--x, 0px), var(--y, 0px)) scale(var(--s, 1)); }
 .frame16x9:fullscreen { border: 0; border-radius: 0; background: #000; }
 
-.controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.controls { display: flex; align-items: center; gap: 8px 10px; margin-top: 10px; flex-wrap: wrap; min-width: 0; }
+.controls > * { min-width: 0; }
 .controls button, .controls .ctl { font: inherit; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; line-height: 1.4; }
 .controls button:hover:not(:disabled), .controls .ctl:hover { border-color: var(--muted); }
 .controls button:disabled { opacity: 0.45; cursor: default; }
 .controls [hidden] { display: none; }
 .controls .view { margin-left: auto; display: inline-flex; gap: 8px; flex-wrap: wrap; }
 .controls .open-tab { border-color: var(--btn); font-weight: 600; }
-#counter { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+#counter { min-width: min(4.5em, 100%); white-space: nowrap; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
 .hint { font-size: 0.85rem; color: var(--muted); margin: 6px 0 0; }
 
 .actions { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 14px; position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow: auto; }
 .actions h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.btn { font: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--btn); background: transparent; color: var(--ink); cursor: pointer; text-decoration: none; flex: 1 1 auto; }
+.btn { min-width: 0; max-width: 100%; text-align: center; font: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--btn); background: transparent; color: var(--ink); cursor: pointer; text-decoration: none; flex: 1 1 auto; }
 .btn.primary { background: var(--btn); color: var(--btn-ink); }
 .btn:hover { opacity: 0.88; }
 .help { font-size: 0.82rem; margin: 8px 0 0; color: var(--muted); }
@@ -157,10 +158,11 @@ pre.prompt { white-space: pre-wrap; word-break: break-word; max-height: min(420p
 .tag { display: inline-block; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.85rem; margin: 0 2px 4px 0; }
 
 .swatches { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 10px 18px; }
-.swatches li { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+.swatches li { min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
 .sw { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(127, 127, 127, 0.35); flex: none; }
 .typo { list-style: none; padding: 0; margin: 0.5rem 0; }
-.typo .k { display: inline-block; min-width: 6em; color: var(--muted); }
+.typo { overflow-wrap: anywhere; }
+.typo .k { display: inline-block; min-width: min(6em, 40%); color: var(--muted); }
 
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
 .shots img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); }
@@ -169,6 +171,9 @@ pre.prompt { white-space: pre-wrap; word-break: break-word; max-height: min(420p
 
 /* --- credits --------------------------------------------------------------- */
 .credit { max-width: 860px; }
+.hero .by, .attribution, .credit, .source-note, .meta dd, .help, .hint { overflow-wrap: anywhere; }
+.meta { min-width: 0; }
+.meta > * { min-width: 0; }
 
 /* --- narrow screens -------------------------------------------------------- */
 @media (max-width: 1000px) {
