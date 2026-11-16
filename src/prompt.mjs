@@ -1,3 +1,5 @@
+import { downloadLabel } from './pages.mjs';
+
 // Prompt + pack README generation.
 //
 // The same English text is used for the detail page "Copy prompt" button and for
@@ -325,7 +327,7 @@ function locateLocalZh(slug, zip) {
   return `- 如果当前目录里有 ${code('design.md')} 和 ${code('template.html')}，说明你已经在素材包内。
 - 否则，在当前目录查找名为 ${code(slug + '/')} 的文件夹，或查找 ${code(zip)} 并解压。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
 ${extractStepsZh(zip, '  ')}
-- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "Download assets (.zip)" 下载），并等待回复。`;
+- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 下载），并等待回复。`;
 }
 
 function locateDownloadZh(slug, zip, url) {
@@ -340,7 +342,7 @@ ${extractStepsZh(zip, '   ')}
    3. Windows PowerShell：${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
 
    然后按第 2 种情况的方法解压 ${code(zip)}。
-4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "Download assets (.zip)" 把素材包下载到这个目录，并等待回复。
+4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 把素材包下载到这个目录，并等待回复。
 
 素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。`;
 }
@@ -486,7 +488,7 @@ ${netZh}
 // credits: [{what, author, project, license, licenseFile, url}]
 export function packReadme(ctx, credits, siteName) {
   const lines = credits.map((c) =>
-    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}${c.licenseFile ? `; see ${code(c.licenseFile)}` : ''}).`);
+    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
   return `# ${ctx.name}: slide template pack
 
 ${ctx.tagline}

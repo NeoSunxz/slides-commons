@@ -36,7 +36,7 @@ import { thumbnail } from './png-thumb.mjs';
 import { createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, dataUrl, relativeUrl } from './fonts.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
-import { indexPage, detailPage, creditsPage, setSources, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
+import { indexPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -536,6 +536,32 @@ function previewIngredients(md) {
   return out;
 }
 
+// Signature moves for templates without a preview card: the top-level bullets of the first
+// "Signature Treatments / Moves / Elements" heading in design.md (up to 5, each cut to its
+// first sentence when long). Empty when design.md has no such section.
+function designSignatureMoves(md) {
+  const lines = md.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^#{2,4}\s+signature\s+(treatments?|moves?|elements?)\b/i.test(l));
+  if (start < 0) return [];
+  const level = lines[start].match(/^#+/)[0].length;
+  const out = [];
+  let cur = null;
+  for (const l of lines.slice(start + 1)) {
+    const h = l.match(/^(#+)\s/);
+    if (h && h[1].length <= level) break;
+    const b = l.match(/^[-*]\s+(.*\S)\s*$/);
+    if (b) { if (cur) out.push(cur); cur = b[1]; }
+    else if (cur && /^\s+\S/.test(l)) cur += ' ' + l.trim();
+    else if (cur && !l.trim()) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  return out.slice(0, 5).map((m) => {
+    if (m.length <= 220) return m;
+    const sent = m.match(/^.{40,220}?[.!?](?=\s|$)/);
+    return sent ? sent[0] : m.slice(0, 217).replace(/\s+\S*$/, '') + '…';
+  });
+}
+
 // Resolve design-token references like {colors.paper} / {components.frame} in prose.
 function resolveTokens(text, colors) {
   return text.replace(/`?\{([a-z0-9_-]+)\.([a-z0-9_.-]+)\}`?/gi, (_, group, key) => {
@@ -648,7 +674,7 @@ function buildContext(t) {
     remoteFontLinks: fontLinks(html).filter((u) => new URL(u).hostname !== 'fonts.googleapis.com'),
     localFonts: fontPlan.faces.length > 0,
     cjkFontLinks: cjkOnlyLinks(fontLinks(cjkSection(designMd))),
-    signatureMoves: preview.moves.map((m) => resolveTokens(m, colorMap)),
+    signatureMoves: (preview.moves.length ? preview.moves : designSignatureMoves(designMd)).map((m) => resolveTokens(m, colorMap)),
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
     // Detected from the template itself, never from slugs:
     systemFontsOnly: fontLinks(html).length === 0 && !/@font-face/i.test(html),
@@ -889,14 +915,37 @@ function copyFontLicense(f) {
   const lic = path.join(dir, fontLicenseName(f));
   if (f.license && !exists(lic)) { fs.mkdirSync(dir, { recursive: true }); fs.copyFileSync(f.license, lic); }
 }
-const fontLicenseName = (f) => (/SIL OPEN FONT LICENSE/i.test(read(f.license)) ? 'OFL.txt' : 'LICENSE.txt');
+// What a font's license file actually is (read from the file, never assumed).
+const fontLicenseKind = (f) => {
+  const txt = f.license ? read(f.license) : '';
+  if (/SIL OPEN FONT LICENSE/i.test(txt)) return { short: 'SIL OFL 1.1', long: 'SIL Open Font License 1.1', file: 'OFL.txt' };
+  if (/Apache License/i.test(txt)) return { short: 'Apache 2.0', long: 'Apache License 2.0', file: 'LICENSE.txt' };
+  if (/Permission is hereby granted, free of charge/i.test(txt)) return { short: 'MIT', long: 'MIT License', file: 'LICENSE.txt' };
+  return { short: 'see its license file', long: 'see its license file', file: 'LICENSE.txt' };
+};
+const fontLicenseName = (f) => fontLicenseKind(f).file;
+// One summary for a template's fonts: "SIL OFL 1.1" or "SIL Open Font License 1.1: Inter, Roboto; Apache License 2.0: Yellowtail".
+function fontLicenseSummary(faces) {
+  const groups = new Map();
+  for (const f of faces) {
+    const k = fontLicenseKind(f);
+    if (!groups.has(k.long)) groups.set(k.long, { ...k, families: new Set(), files: new Set() });
+    const g = groups.get(k.long);
+    g.families.add(f.family);
+    if (f.license) g.files.add(`fonts/<family>/${k.file}`);
+  }
+  const list = [...groups.values()];
+  const names = list.map((g) => (list.length > 1 ? `${g.long}: ${[...g.families].sort().join(', ')}` : g.long)).join('; ');
+  const files = [...new Set(list.flatMap((g) => [...g.files]))].join(', ');
+  return { license: names, licenseFile: files || null, short: [...new Set(list.map((g) => g.short))].join(' / ') };
+}
 
 // fonts/ inside the pack: the woff2 files this template needs, one license per family, and
 // fonts.css with ready-made @font-face rules (relative URLs) for the agent to embed.
 function packFontEntries(z, faces) {
   if (!faces.length) return [];
   const seen = new Set();
-  const out = [{ name: z + 'fonts/fonts.css', data: Buffer.from(`/* Self-hosted Latin fonts for this template (from Fontsource, SIL OFL; licenses next to the files).\n   Embed the rules you use in your deck with the url() replaced by a base64 data: URI. */\n${fontFaceCss(faces, relativeUrl(''))}\n`, 'utf8') }];
+  const out = [{ name: z + 'fonts/fonts.css', data: Buffer.from(`/* Self-hosted Latin fonts for this template (from Fontsource; each family's license is next to its files).\n   Embed the rules you use in your deck with the url() replaced by a base64 data: URI. */\n${fontFaceCss(faces, relativeUrl(''))}\n`, 'utf8') }];
   for (const f of faces) {
     if (!seen.has(f.file)) { seen.add(f.file); out.push({ name: z + 'fonts/' + f.file, data: fs.readFileSync(f.src) }); }
     const lic = `${f.id}/${fontLicenseName(f)}`;
@@ -923,6 +972,7 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'gallery.js'), path.join(SITE, 'assets', 'gallery.js'));
 
   setSources(sources.filter((s) => templates.some((t) => t.source === s.id)));
+  setAutoDownload(Boolean(siteUrl));
 
   const pageData = [];
   for (const t of templates) {
@@ -1009,8 +1059,8 @@ function main() {
         what: 'Latin web fonts in `fonts/` (the families `template.html` requests from Google Fonts)',
         author: 'their respective authors (named in each font license)',
         project: 'Fontsource',
-        license: 'SIL Open Font License 1.1',
-        licenseFile: 'fonts/<family>/OFL.txt',
+        license: fontLicenseSummary(faces).license,
+        licenseFile: fontLicenseSummary(faces).licenseFile,
         url: 'https://fontsource.org',
       });
     }

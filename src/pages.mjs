@@ -42,6 +42,8 @@ const STRINGS = {
     langLabel: 'Language',
     tagline: 'Open HTML slide templates with prompts, for coding agents.',
     intro: 'Preview a template, download its asset pack, and hand the prompt to your coding agent to build your own deck.',
+    introAuto: 'Preview a template, copy its prompt, and your coding agent fetches the pack and builds the deck.',
+    stepsAuto: ['<strong>Preview</strong> a template and page through it.', '<strong>Copy the prompt</strong> and paste it into your coding agent, ideally in an empty folder. It downloads the template pack itself.', '<strong>Answer its questions</strong>; it builds your deck.'],
     steps: ['<strong>Preview</strong> a template and page through it.', '<strong>Download</strong> the asset pack and unzip it.', '<strong>Paste the prompt</strong> into your coding agent in that folder.'],
     indexTitle: `${SITE_NAME}: HTML slide templates for coding agents`,
     filters: {
@@ -62,6 +64,8 @@ const STRINGS = {
     openTab: 'Open in new tab ↗',
     hint: 'Click into the preview and use the arrow keys to page; Esc leaves fullscreen.',
     useHeading: 'Use this template',
+    useStepsAuto: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'],
+    offlineNote: 'Offline or restricted network? Download the pack (.zip), unzip it in your working folder, then paste the prompt.',
     useSteps: ['Download the pack and unzip it.', 'Open your coding agent (Claude Code, Codex, Cursor, …) in that folder.', 'Paste the prompt and answer its questions.'],
     download: 'Download assets (.zip)',
     copy: 'Copy prompt',
@@ -105,6 +109,8 @@ const STRINGS = {
     langLabel: '语言',
     tagline: '开放的 HTML 幻灯片模板，附带给 coding agent 的提示词。',
     intro: '在线预览模板，下载素材包，把提示词交给你的 coding agent，生成你自己的幻灯片。',
+    introAuto: '在线预览模板，复制它的提示词，你的 coding agent 会自己获取素材包并生成幻灯片。',
+    stepsAuto: ['<strong>预览</strong>模板并翻页查看。', '<strong>复制提示词</strong>，粘贴给你的 coding agent（最好在空文件夹中）。它会自己下载模板素材包。', '<strong>回答它的问题</strong>，它会生成你的幻灯片。'],
     steps: ['<strong>预览</strong>模板并翻页查看。', '<strong>下载</strong>素材包并解压。', '在该文件夹中把<strong>提示词</strong>粘贴给你的 coding agent。'],
     indexTitle: `${SITE_NAME}：给 coding agent 用的 HTML 幻灯片模板`,
     filters: {
@@ -125,6 +131,8 @@ const STRINGS = {
     openTab: '在新标签页打开 ↗',
     hint: '点击预览区后可用方向键翻页；按 Esc 退出全屏。',
     useHeading: '使用此模板',
+    useStepsAuto: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'],
+    offlineNote: '处于离线或受限网络？请下载素材包（.zip），在工作文件夹中解压，再粘贴提示词。',
     useSteps: ['下载素材包并解压。', '在该文件夹中打开你的 coding agent（Claude Code、Codex、Cursor 等）。', '粘贴提示词，回答它的问题。'],
     download: '下载素材包（.zip）',
     copy: '复制提示词',
@@ -174,7 +182,15 @@ const STRINGS = {
 let footerSources = [];
 
 // Sources shown in the footer of every page (set once by the build).
+// Label of the pack download button on detail pages (the prompt quotes it).
+export const downloadLabel = (lang) => STRINGS[lang].download;
+
 export function setSources(sources) { footerSources = sources; }
+
+// True when the build has a site URL: the prompt then downloads the pack itself, so the
+// usage steps start with copying the prompt and the zip becomes the offline fallback.
+let autoDownload = false;
+export function setAutoDownload(v) { autoDownload = Boolean(v); }
 
 /** Site-relative output path of a page, e.g. "zh/t/neo-grid-bold/index.html". */
 export function pagePath(lang, page) {
@@ -298,9 +314,9 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
 
   const body = `<section class="intro">
   <h1>${esc(S.tagline)}</h1>
-  <p class="lead">${esc(S.intro)}</p>
+  <p class="lead">${esc(autoDownload ? S.introAuto : S.intro)}</p>
   <ol class="steps">
-    ${S.steps.map((s) => `<li>${s}</li>`).join('\n    ')}
+    ${(autoDownload ? S.stepsAuto : S.steps).map((s) => `<li>${s}</li>`).join('\n    ')}
   </ol>
 </section>
 <section class="filters" id="filters" aria-label="${F.label}" hidden>
@@ -370,14 +386,15 @@ export function detailPage(t, lang) {
   <aside class="actions">
     <h2>${S.useHeading}</h2>
     <ol class="steps small">
-      ${S.useSteps.map((s) => `<li>${s}</li>`).join('\n      ')}
+      ${(autoDownload ? S.useStepsAuto : S.useSteps).map((s) => `<li>${s}</li>`).join('\n      ')}
     </ol>
-    <div class="btn-row">
-      <a class="btn primary" href="${root}zip/${esc(t.slug)}.zip" download>${S.download}</a>
-    </div>
-    <div class="btn-row">
-      <button type="button" class="btn" data-copy="${promptId}">${S.copy}</button>
-    </div>
+${(() => {
+    const dl = `<a class="btn${autoDownload ? '' : ' primary'}" href="${root}zip/${esc(t.slug)}.zip" download>${S.download}</a>`;
+    const cp = `<button type="button" class="btn${autoDownload ? ' primary' : ''}" data-copy="${promptId}">${S.copy}</button>`;
+    return autoDownload
+      ? `    <div class="btn-row">${cp}</div>\n    <p class="help offline">${S.offlineNote}</p>\n    <div class="btn-row">${dl}</div>`
+      : `    <div class="btn-row">${dl}</div>\n    <div class="btn-row">${cp}</div>`;
+  })()}
     <p class="help">${S.copyHelp}</p>
     <p class="copy-status" role="status" aria-live="polite"></p>
     <details>
