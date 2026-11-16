@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
 ### Added
 
 - Style Presets collection (16 templates): 12 based on frontend-slides STYLE_PRESETS.md by Zara Zhang, and 4 original white-background business templates (consulting-report, boardroom-quarterly, minimal-pitch, tech-blue-business).
@@ -69,5 +71,6 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0
