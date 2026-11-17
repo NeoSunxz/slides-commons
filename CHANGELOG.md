@@ -17,12 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `site/manifest.json` listing the built templates.
 - Fontshare fonts are allowed for neon-cyber.
 - Chinese translations for all new templates.
+- Community collection for contributed templates, with per-template authors and license.
+- `npm run new-template` scaffolds a new template.
+- Strict checks for collection templates.
+- CI guard job for pull requests.
+- Issue and PR templates, and CONTRIBUTING.md (EN/中文).
 - Latin web fonts are now self-hosted (Fontsource, SIL OFL 1.1): previews no longer need Google Fonts for Latin text.
 - Each pack ships `fonts/` (woff2 files, `OFL.txt`, `fonts.css`).
 - The prompt asks the agent to embed Latin fonts as base64 so decks work offline. CJK fonts still come from Google Fonts.
 
 ### Changed
 
+- Gallery cards have equal heights, two-line taglines and a one-line credit.
+- Own templates are credited as "slides-commons".
+- Detail pages wrap cleanly on narrow screens.
 - Pages check counts templates from the manifest instead of a hard-coded number.
 - The raw-grid prompt quotes its Noto Sans SC link for CJK text.
 - The prompt quotes a CJK-only Google Fonts link.

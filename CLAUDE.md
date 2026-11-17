@@ -188,7 +188,9 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-13/14：M4 完成。新来源 `style-presets`（`collections/style-presets/`，本仓库内，`sources.json` 带 `repoPath`、`collection: true`、`packLicenseName: LICENSE`、`derivedFrom.slugs`）共 16 个模板：12 个改编自 frontend-slides `STYLE_PRESETS.md`（详情页/卡片/README 注明 "based on … by Zara Zhang"，并声明原作者未参与或背书），4 个原创白底商务模板（consulting-report、boardroom-quarterly、minimal-pitch、tech-blue-business，维护者要求加做并并入此集合，不带改编署名）。每模板 11–12 页，design.md 完整；截图用 `npm run screenshots` 生成后提交（只处理本仓库集合）。zip 带 LICENSE + LICENSE-skill（viewport-base.css 来自 frontend-slides）+ fonts/。neon-cyber 用 Fontshare（api/cdn.fontshare.com 白名单，不打包）。Yellowtail 字体是 Apache 2.0（其余 OFL）。Pages 自检改为对照 `site/manifest.json`，不再写死 34。zh.json 覆盖全部 50 个模板。raw-grid 提示词改为引用其 design.md 的 Noto Sans SC 链接。`npm test` 643 通过（`/tmp` 是 4.9GB tmpfs，满了会 ENOSPC，可设 `TMPDIR`）。
   - 新增 `template-designer` 子 agent（只写 `collections/`）。
 - 2026-11-17：使用说明改为「复制提示词 → 粘贴给 coding agent（agent 自己下载素材包）→ 回答问题」（仅设置站点网址时；本地构建保留先下载的说明），复制提示词为主按钮、下载为次要并附离线说明；素材包 README 按实际协议文件写字体协议（Yellowtail 为 Apache 2.0）；无 preview.md 的模板从 design.md 的 Signature Treatments/Moves/Elements 一节提取标志性手法（最多 5 条，16 个均有）；中文提示词引用中文按钮名「下载素材包（.zip）」。`npm test` 666 通过。
-- 下一步：发 v0.2.0（dev → main PR，含提示词修订、自托管拉丁字体、M4）；之后 M5 贡献流程，或自托管字体第二步（CJK 裁剪）。
+- 2026-11-17：M5 完成（随 v0.2.0 发布）：新来源 `community`（`collections/community/`，`perTemplateLicense: true`，每个模板自带 LICENSE 与 authors，允许 MIT / Apache-2.0 / CC-BY-4.0 / CC0-1.0）；`scripts/collection-checks.mjs` 对所有 `collection: true` 模板做严格校验（协议、作者链接、design.md 必要章节、无位图、3 张 1920×1080 截图、体积上限、无 TODO、derivedFrom 目标存在）；`npm run new-template -- <slug> [--collection X]` 脚手架；改编投稿的 zip 带 `LICENSE-original-<slug>`；CI 新增 `guard` 作业（非仓库所有者的 PR 改 `upstream/` 或 `.gitmodules` 即失败，改其他集合模板给警告）；`.github/` PR 模板与 3 个 Issue 表单；`CONTRIBUTING.md`（中英）。卡片：作者署名统一 `slides-commons`，卡片等高、简介最多两行、标签与署名一行；详情页署名 `by slides-commons · based on a style preset by Zara Zhang`；16 个集合模板简介缩短。窄屏下详情页各行可换行（CI 上 zh monochrome 曾溢出 3px）。`npm test` 775 通过。
+  - 待办：`guard` 在 GitHub 跑通后加入 main 分支保护的必过检查。
+- 下一步：合并 v0.2.0（PR #2）→ 打标签发 Release → 线上模拟验收（只给提示词，用一个商务模板）；之后自托管字体第二步（CJK 裁剪）或 M6。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`
