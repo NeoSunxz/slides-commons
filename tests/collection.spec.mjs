@@ -54,16 +54,22 @@ for (const lang of ['en', 'zh']) {
       const html = read(SITE, ...ZH[lang].rel(slug));
       const r = await parseDetail(page, html);
       const derived = DERIVED_SLUGS.includes(slug);
-      // Author line: collection author, linked to the directory in this repo.
-      if (!r.byText.includes('NeoSunxz and slides-commons contributors')) bad.push(`${slug}: author line lacks the collection author: ${r.byText}`);
-      if (!r.byLinks.includes(REPO_DIR(slug))) bad.push(`${slug}: author line does not link ${REPO_DIR(slug)} (links: ${r.byLinks})`);
+      // Author line: the collection (slides-commons), linked to the template directory in this repo.
+      const who = 'slides-commons';
+      if (derived) {
+        const want = lang === 'en' ? `by ${who} · based on a style preset by Zara Zhang` : `${who} 出品 · 基于 Zara Zhang 的风格预设`;
+        if (r.byText !== want) bad.push(`${slug}: byline is "${r.byText}", expected "${want}"`);
+        if (r.byLinks.length !== 3) bad.push(`${slug}: derived byline should have 3 links (repo dir, STYLE_PRESETS.md, Zara profile), got ${r.byLinks}`);
+      } else {
+        const want = lang === 'en' ? `by ${who}` : `${who} 出品`;
+        if (r.byText !== want) bad.push(`${slug}: byline is "${r.byText}", expected "${want}"`);
+      }
+      if (r.byLinks[0] !== REPO_DIR(slug)) bad.push(`${slug}: first byline link is ${r.byLinks[0]}, expected ${REPO_DIR(slug)}`);
       if (!r.attrLinks.includes(REPO_DIR(slug))) bad.push(`${slug}: attribution section does not link ${REPO_DIR(slug)}`);
       if (r.byLinks.concat(r.attrLinks).some((h) => /zarazhangrui\/beautiful-html-templates/.test(h))) bad.push(`${slug}: links to beautiful-html-templates although it is not from there`);
       if (derived) {
-        if (!r.byText.includes('Zara Zhang')) bad.push(`${slug}: byline lacks "Zara Zhang"`);
         if (!r.byLinks.includes(STYLE_PRESETS_MD)) bad.push(`${slug}: byline does not link STYLE_PRESETS.md`);
         if (!r.byLinks.includes('https://github.com/zarazhangrui')) bad.push(`${slug}: byline does not link the author`);
-        if (!(lang === 'en' ? /based on/ : /基于/).test(r.byText)) bad.push(`${slug}: byline lacks the "based on" wording: ${r.byText}`);
         if (!r.attrLinks.includes(STYLE_PRESETS_MD)) bad.push(`${slug}: attribution lacks the STYLE_PRESETS.md link`);
         if (!r.attrText.includes('Zara Zhang')) bad.push(`${slug}: attribution lacks Zara Zhang`);
         if (!(lang === 'en' ? /did not make, review or endorse/ : /并未制作、审阅或认可/).test(r.attrText)) bad.push(`${slug}: attribution lacks the not-endorsed sentence`);
@@ -84,7 +90,7 @@ for (const lang of ['en', 'zh']) {
 }
 
 for (const lang of ['en', 'zh']) {
-  test(`[${lang}] gallery cards: "based on" credit exactly on derived templates`, async ({ page }) => {
+  test(`[${lang}] gallery cards: short "by slides-commons" credit on every collection card`, async ({ page }) => {
     await page.goto(lang === 'en' ? 'index.html' : 'zh/index.html');
     const cards = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => ({
       slug: li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''),
@@ -96,9 +102,10 @@ for (const lang of ['en', 'zh']) {
       const c = cards.find((x) => x.slug === slug);
       if (!c) { bad.push(`${slug}: no card`); continue; }
       if (c.source !== COLLECTION.id) bad.push(`${slug}: data-source=${c.source}`);
-      if (!c.by.includes('NeoSunxz and slides-commons contributors')) bad.push(`${slug}: card lacks the author: ${c.by}`);
-      const mentions = lang === 'en' ? /based on frontend-slides STYLE_PRESETS\.md by Zara Zhang/ : /基于 Zara Zhang 的 frontend-slides STYLE_PRESETS\.md/;
-      if (DERIVED_SLUGS.includes(slug) !== mentions.test(c.by)) bad.push(`${slug}: card credit ${mentions.test(c.by) ? 'present' : 'missing'} but derived=${DERIVED_SLUGS.includes(slug)}: ${c.by}`);
+      // Cards carry the short credit only; the derivation is stated on the detail and credits pages.
+      const want = lang === 'en' ? 'by slides-commons' : 'slides-commons 出品';
+      if (!c.by.endsWith(want)) bad.push(`${slug}: card credit is "${c.by}", expected it to end with "${want}"`);
+      if (/STYLE_PRESETS|Zara|based on|基于/.test(c.by)) bad.push(`${slug}: card credit should not carry the derivation: ${c.by}`);
     }
     // Upstream cards stay free of the credit.
     for (const c of cards.filter((x) => x.source !== COLLECTION.id)) if (/STYLE_PRESETS|Zara Zhang.*based/.test(c.by) || /基于/.test(c.by)) bad.push(`${c.slug}: upstream card has derivative wording: ${c.by}`);

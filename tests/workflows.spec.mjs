@@ -44,16 +44,28 @@ test.describe('GitHub Actions workflows', () => {
     expect(files.some((f) => /uses:/.test(read(f)))).toBe(true);
   });
 
-  test('every checkout has submodules: recursive and persist-credentials: false', () => {
+  // Name of the job a character offset belongs to (jobs are the 2-space-indented keys under `jobs:`).
+  const jobAt = (t, idx) => {
+    const head = t.slice(0, idx);
+    const jobsAt = head.search(/^jobs\s*:/m);
+    if (jobsAt < 0) return null;
+    const keys = [...head.slice(jobsAt).matchAll(/^ {2}([A-Za-z0-9_-]+)\s*:\s*$/gm)];
+    return keys.length ? keys[keys.length - 1][1] : null;
+  };
+  // Jobs that only read git history and run no repo code need no submodules (the guard job).
+  const NO_SUBMODULE_JOBS = new Set(['guard']);
+
+  test('every checkout has persist-credentials: false; submodules: recursive except in the guard job', () => {
     const bad = [];
     let seen = 0;
     for (const f of files) {
       const t = read(f);
       for (const m of t.matchAll(/uses:\s*actions\/checkout@[^\n]*\n((?:[ \t]+.*\n?){0,10})/g)) {
         seen++;
+        const job = jobAt(t, m.index);
         const w = m[1].split(/\n\s*-\s+(?:name|uses|run)\b/)[0]; // this step's with: block only
-        if (!/submodules:\s*['"]?recursive['"]?/.test(w)) bad.push(`${f}: checkout without submodules: recursive`);
-        if (!/persist-credentials:\s*['"]?false['"]?/.test(w)) bad.push(`${f}: checkout without persist-credentials: false`);
+        if (!NO_SUBMODULE_JOBS.has(job) && !/submodules:\s*['"]?recursive['"]?/.test(w)) bad.push(`${f} job ${job}: checkout without submodules: recursive`);
+        if (!/persist-credentials:\s*['"]?false['"]?/.test(w)) bad.push(`${f} job ${job}: checkout without persist-credentials: false`);
       }
     }
     expect(seen, 'checkout steps found').toBeGreaterThan(0);

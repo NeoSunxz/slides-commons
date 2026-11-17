@@ -127,7 +127,8 @@ for (const [lang, L] of Object.entries(LANGS)) {
     });
 
     test('source group lists every source with its count and filters cards', async ({ page }) => {
-      const ids = SOURCES_JSON.sources.map((x) => x.id);
+      // Sources without templates (the empty community source) get no chip.
+      const ids = SOURCES_JSON.sources.map((x) => x.id).filter((id) => CATALOG.some((t) => t.source === id));
       expect(ids.length).toBeGreaterThan(1);
       await expect(page.locator('button.chip[data-group="source"]')).toHaveCount(ids.length);
       for (const id of ids) {
