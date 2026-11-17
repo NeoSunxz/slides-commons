@@ -1,5 +1,5 @@
-/* slides-commons gallery filters: search, source, scheme and mood.
- * State lives in the URL hash (#q=…&scheme=dark&mood=warm,bold&source=id) so a filtered
+/* slides-commons gallery filters: search, author, scheme and mood.
+ * State lives in the URL hash (#q=…&scheme=dark&mood=warm,bold&author=Name) so a filtered
  * view can be linked; it works from file:// too. Without JS every card stays visible. */
 (function () {
   'use strict';
@@ -14,9 +14,9 @@
   var noneEl = document.getElementById('fnone');
   var cards = Array.prototype.slice.call(grid.children);
   var chips = Array.prototype.slice.call(panel.querySelectorAll('button.chip'));
-  var GROUPS = ['source', 'scheme', 'mood'];
+  var GROUPS = ['author', 'scheme', 'mood'];
 
-  function emptyState() { return { q: '', source: [], scheme: [], mood: [] }; }
+  function emptyState() { return { q: '', author: [], scheme: [], mood: [] }; }
 
   function parseHash() {
     var st = emptyState();
@@ -25,9 +25,10 @@
     var params;
     try { params = new URLSearchParams(h); } catch (e) { return st; }
     st.q = params.get('q') || '';
+    // Old links used source=<id>; it no longer matches any chip, so ignore it quietly.
     GROUPS.forEach(function (g) {
       var v = params.get(g);
-      st[g] = v ? v.split(',').filter(Boolean) : [];
+      st[g] = v ? v.split(g === 'author' ? '|' : ',').filter(Boolean) : [];
     });
     return st;
   }
@@ -35,14 +36,17 @@
   function toHash(st) {
     var params = new URLSearchParams();
     if (st.q) params.set('q', st.q);
-    GROUPS.forEach(function (g) { if (st[g].length) params.set(g, st[g].join(',')); });
+    GROUPS.forEach(function (g) { if (st[g].length) params.set(g, st[g].join(g === 'author' ? '|' : ',')); });
     var s = params.toString().replace(/%2C/gi, ',');
     return s ? '#' + s : '';
   }
 
   // Within a group any selected value matches (OR); the groups and the text combine with AND.
   function matches(card, st, tokens) {
-    if (st.source.length && st.source.indexOf(card.getAttribute('data-source')) < 0) return false;
+    if (st.author.length) {
+      var authors = card.getAttribute('data-author').split('|');
+      if (!st.author.some(function (a) { return authors.indexOf(a) >= 0; })) return false;
+    }
     if (st.scheme.length && st.scheme.indexOf(card.getAttribute('data-scheme')) < 0) return false;
     if (st.mood.length) {
       var moods = card.getAttribute('data-mood').split('|');
@@ -70,7 +74,7 @@
     if (input.value !== state.q) input.value = state.q;
     var total = Number(countEl.getAttribute('data-total'));
     countEl.textContent = countEl.getAttribute('data-template').replace('{n}', shown).replace('{total}', total);
-    var active = Boolean(state.q || state.source.length || state.scheme.length || state.mood.length);
+    var active = Boolean(state.q || state.author.length || state.scheme.length || state.mood.length);
     clearBtn.hidden = !active;
     noneEl.hidden = shown !== 0;
     // A chip hidden inside a closed "more" list must not hide an active filter.

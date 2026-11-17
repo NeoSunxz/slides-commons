@@ -47,7 +47,7 @@ const STRINGS = {
     steps: ['<strong>Preview</strong> a template and page through it.', '<strong>Download</strong> the asset pack and unzip it.', '<strong>Paste the prompt</strong> into your coding agent in that folder.'],
     indexTitle: `${SITE_NAME}: HTML slide templates for coding agents`,
     filters: {
-      label: 'Filter templates', search: 'Search', searchPlaceholder: 'Name, mood, tone, use…', source: 'Source', scheme: 'Scheme', mood: 'Mood',
+      label: 'Filter templates', search: 'Search', searchPlaceholder: 'Name, mood, tone, use…', author: 'Author', scheme: 'Scheme', mood: 'Mood',
       moreMoods: 'More moods', clear: 'Clear filters', count: '{n} of {total} templates', none: 'No template matches these filters.',
     },
     schemeNames: { light: 'Light', dark: 'Dark', mixed: 'Mixed' },
@@ -66,7 +66,8 @@ const STRINGS = {
     hint: 'Click into the preview and use the arrow keys to page; Esc leaves fullscreen.',
     useHeading: 'Use this template',
     useStepsAuto: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'],
-    offlineNote: 'Offline or restricted network? Download the pack (.zip), unzip it in your working folder, then paste the prompt.',
+    downloadLink: 'Offline? Download the pack (.zip)',
+    offlineNote: 'Unzip it in your working folder, then paste the prompt.',
     useSteps: ['Download the pack and unzip it.', 'Open your coding agent (Claude Code, Codex, Cursor, …) in that folder.', 'Paste the prompt and answer its questions.'],
     download: 'Download assets (.zip)',
     copy: 'Copy prompt',
@@ -115,7 +116,7 @@ const STRINGS = {
     steps: ['<strong>预览</strong>模板并翻页查看。', '<strong>下载</strong>素材包并解压。', '在该文件夹中把<strong>提示词</strong>粘贴给你的 coding agent。'],
     indexTitle: `${SITE_NAME}：给 coding agent 用的 HTML 幻灯片模板`,
     filters: {
-      label: '筛选模板', search: '搜索', searchPlaceholder: '名称、情绪、语气、用途……', source: '来源', scheme: '配色方案', mood: '情绪',
+      label: '筛选模板', search: '搜索', searchPlaceholder: '名称、情绪、语气、用途……', author: '作者', scheme: '配色方案', mood: '情绪',
       moreMoods: '更多情绪', clear: '清除筛选', count: '共 {total} 个模板，显示 {n} 个', none: '没有符合筛选条件的模板。',
     },
     schemeNames: { light: '浅色', dark: '深色', mixed: '混合' },
@@ -134,7 +135,8 @@ const STRINGS = {
     hint: '点击预览区后可用方向键翻页；按 Esc 退出全屏。',
     useHeading: '使用此模板',
     useStepsAuto: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'],
-    offlineNote: '处于离线或受限网络？请下载素材包（.zip），在工作文件夹中解压，再粘贴提示词。',
+    downloadLink: '离线？下载素材包（.zip）',
+    offlineNote: '在工作文件夹中解压，再粘贴提示词。',
     useSteps: ['下载素材包并解压。', '在该文件夹中打开你的 coding agent（Claude Code、Codex、Cursor 等）。', '粘贴提示词，回答它的问题。'],
     download: '下载素材包（.zip）',
     copy: '复制提示词',
@@ -185,7 +187,7 @@ let footerSources = [];
 
 // Sources shown in the footer of every page (set once by the build).
 // Label of the pack download button on detail pages (the prompt quotes it).
-export const downloadLabel = (lang) => STRINGS[lang].download;
+export const downloadLabel = (lang) => (autoDownload ? STRINGS[lang].downloadLink : STRINGS[lang].download);
 
 export function setSources(sources) { footerSources = sources; }
 
@@ -284,7 +286,7 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug,
       ...(z ? [z.tagline, z.best_for, ...z.mood, ...z.tone] : [])].filter(Boolean).join(' ').toLowerCase();
     const taglineZh = z?.tagline;
-    return `<li data-source="${esc(t.source)}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
+    return `<li data-source="${esc(t.source)}" data-author="${esc(t.authors.map((a) => a.name).join('|'))}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
     ${img}
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
@@ -303,9 +305,11 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     return `<button type="button" class="chip" data-group="${group}" data-value="${esc(value)}" aria-pressed="false"${attr}>${esc(zhLabel || label)} <span class="n">${n}</span></button>`;
   };
 
-  const sources = footerSources.filter((s) => templates.some((t) => t.source === s.id));
-  const sourceGroup = sources.length > 1
-    ? `<div class="fgroup" role="group" aria-label="${F.source}"><span class="flabel">${F.source}</span>${sources.map((s) => chip('source', s.id, s.name, templates.filter((t) => t.source === s.id).length)).join('')}</div>`
+  const authorMap = new Map();
+  for (const t of templates) for (const a of t.authors) authorMap.set(a.name, (authorMap.get(a.name) ?? 0) + 1);
+  const authorChips = [...authorMap].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const sourceGroup = authorChips.length > 1
+    ? `<div class="fgroup" role="group" aria-label="${F.author}"><span class="flabel">${F.author}</span>${authorChips.map(([name, n]) => chip('author', name, name, n)).join('')}</div>`
     : '';
   const schemes = count((t) => [t.scheme]);
   const schemeGroup = `<div class="fgroup" role="group" aria-label="${F.scheme}"><span class="flabel">${F.scheme}</span>${['light', 'dark', 'mixed'].filter((v) => schemes.has(v)).map((v) => chip('scheme', v, S.schemeNames[v], schemes.get(v))).join('')}</div>`;
@@ -391,10 +395,11 @@ export function detailPage(t, lang) {
       ${(autoDownload ? S.useStepsAuto : S.useSteps).map((s) => `<li>${s}</li>`).join('\n      ')}
     </ol>
 ${(() => {
-    const dl = `<a class="btn${autoDownload ? '' : ' primary'}" href="${root}zip/${esc(t.slug)}.zip" download>${S.download}</a>`;
+    const zipHref = `${root}zip/${esc(t.slug)}.zip`;
+    const dl = `<a class="btn primary" href="${zipHref}" download>${S.download}</a>`;
     const cp = `<button type="button" class="btn${autoDownload ? ' primary' : ''}" data-copy="${promptId}">${S.copy}</button>`;
     return autoDownload
-      ? `    <div class="btn-row">${cp}</div>\n    <p class="help offline">${S.offlineNote}</p>\n    <div class="btn-row">${dl}</div>`
+      ? `    <div class="btn-row">${cp}</div>\n    <p class="help offline"><a href="${zipHref}" download>${S.downloadLink}</a><br>${S.offlineNote}</p>`
       : `    <div class="btn-row">${dl}</div>\n    <div class="btn-row">${cp}</div>`;
   })()}
     <p class="help">${S.copyHelp}</p>

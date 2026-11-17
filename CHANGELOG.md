@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The prompt asks the agent to embed Latin fonts as base64 so decks work offline. CJK fonts still come from Google Fonts.
 
 ### Changed
+- Gallery filter is now by author (Zara Zhang, slides-commons, contributors) instead of by source; the hash key is `author=`.
+- On the published site the zip download is a small "Offline? Download the pack (.zip)" link under Copy prompt; prompts quote the label the page shows.
+- Prompts give each template's concrete `--slide-bg` value from its design.md (41 of 50; the rest keep the generic rule).
+- Swiss Modern cover: the lone red circle is replaced by a top-right quarter circle with a black square.
 
 - Gallery cards have equal heights, two-line taglines and a one-line credit.
 - Own templates are credited as "slides-commons".

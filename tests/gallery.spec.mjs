@@ -6,6 +6,13 @@ const META = ALL_SLUGS.map((slug) => ({ slug, ...upstreamMeta(slug) }));
 const searchText = (t) => [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
 const bySlugs = (list) => list.map((t) => t.slug).sort();
 const SCHEMES = ['light', 'dark', 'mixed'];
+const authorsOf = (slug) => {
+  const t = CATALOG.find((x) => x.slug === slug);
+  const meta = upstreamMeta(slug);
+  return meta.authors?.length ? meta.authors.map((x) => x.name) : [SOURCES_JSON.sources.find((x) => x.id === t.source).author];
+};
+const AUTHORS = new Map();
+for (const slug of ALL_SLUGS) for (const n of authorsOf(slug)) AUTHORS.set(n, [...(AUTHORS.get(n) ?? []), slug]);
 const count = (fn) => META.filter(fn).length;
 
 const LANGS = {
@@ -126,24 +133,69 @@ for (const [lang, L] of Object.entries(LANGS)) {
       expect(await visibleSlugs(page), 'after language switch').toEqual(before);
     });
 
-    test('source group lists every source with its count and filters cards', async ({ page }) => {
-      // Sources without templates (the empty community source) get no chip.
-      const ids = SOURCES_JSON.sources.map((x) => x.id).filter((id) => CATALOG.some((t) => t.source === id));
-      expect(ids.length).toBeGreaterThan(1);
-      await expect(page.locator('button.chip[data-group="source"]')).toHaveCount(ids.length);
-      for (const id of ids) {
-        const mine = CATALOG.filter((t) => t.source === id).map((t) => t.slug).sort();
-        await expect(chip(page, 'source', id).locator('.n'), `${id} chip number`).toHaveText(String(mine.length));
-        await chip(page, 'source', id).click();
-        expect(await visibleSlugs(page), `source ${id}`).toEqual(mine);
-        await expect(page.locator('#fcount')).toHaveText(L.countRe(mine.length));
-        expect(new URL(page.url()).hash).toContain(`source=${id}`);
-        await chip(page, 'source', id).click();
+    test('author group lists each resolved author with its count and filters cards (hash round-trip)', async ({ page }) => {
+      expect(AUTHORS.size).toBeGreaterThan(1);
+      await expect(page.locator('button.chip[data-group="source"]'), 'no source chips any more').toHaveCount(0);
+      await expect(page.locator('button.chip[data-group="author"]')).toHaveCount(AUTHORS.size);
+      for (const [name, slugs] of AUTHORS) {
+        await expect(chip(page, 'author', name).locator('.n'), `${name} chip number`).toHaveText(String(slugs.length));
+        await chip(page, 'author', name).click();
+        expect(await visibleSlugs(page), `author ${name}`).toEqual([...slugs].sort());
+        await expect(page.locator('#fcount')).toHaveText(L.countRe(slugs.length));
+        const hash = new URL(page.url()).hash;
+        expect(hash).toMatch(/^#author=/);
+        expect(hash).not.toMatch(/source=/);
+        await page.reload();
+        await expect(chip(page, 'author', name)).toHaveAttribute('aria-pressed', 'true');
+        expect(await visibleSlugs(page), `author ${name} after reload`).toEqual([...slugs].sort());
+        await chip(page, 'author', name).click();
+        expect(new URL(page.url()).hash).toBe('');
       }
-      // Source ANDs with scheme.
-      await chip(page, 'source', COLLECTION_SOURCE_ID).click();
+      // Several authors are ORed; the author group ANDs with scheme.
+      const names = [...AUTHORS.keys()];
+      for (const n of names) await chip(page, 'author', n).click();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
+      expect(new URL(page.url()).hash).toContain('author=');
+      await page.reload();
+      for (const n of names) await expect(chip(page, 'author', n)).toHaveAttribute('aria-pressed', 'true');
+      for (const n of names.slice(1)) await chip(page, 'author', n).click();
       await chip(page, 'scheme', 'dark').click();
-      expect(await visibleSlugs(page)).toEqual(bySlugs(META.filter((t) => COLLECTION_SLUGS.includes(t.slug) && t.scheme === 'dark')));
+      expect(await visibleSlugs(page)).toEqual(bySlugs(META.filter((t) => t.scheme === 'dark' && AUTHORS.get(names[0]).includes(t.slug))));
+    });
+
+    test('cards carry data-author (and data-source)', async ({ page }) => {
+      const got = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => [li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''), li.getAttribute('data-author'), li.getAttribute('data-source')]));
+      expect(got.length).toBe(META.length);
+      for (const [slug, author, source] of got) {
+        expect(author, slug).toBe(authorsOf(slug).join('|'));
+        expect(source, slug).toBe(CATALOG.find((t) => t.slug === slug).source);
+      }
+    });
+
+    test('old #source=<id> hash is ignored: page loads unfiltered, no chip pressed, no errors', async ({ page }) => {
+      const log = monitor(page);
+      await page.goto(`${L.url}#source=${COLLECTION_SOURCE_ID}`);
+      await expect(page.locator('#filters')).toBeVisible();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
+      await expect(page.locator('button.chip[aria-pressed="true"]')).toHaveCount(0);
+      await expect(page.locator('#fclear')).toBeHidden();
+      await expect(page.locator('#fcount')).toHaveText(L.countRe(META.length));
+      // A real filter still works afterwards.
+      const [name, slugs] = [...AUTHORS][0];
+      await chip(page, 'author', name).click();
+      expect(await visibleSlugs(page)).toEqual([...slugs].sort());
+      expect(log.consoleErrors).toEqual([]);
+    });
+
+    test('author hash from a link applies on load; unknown author shows nothing and Clear recovers', async ({ page }) => {
+      const [name, slugs] = [...AUTHORS][0];
+      await page.goto(`${L.url}#author=${encodeURIComponent(name)}`);
+      expect(await visibleSlugs(page)).toEqual([...slugs].sort());
+      await page.goto(`${L.url}#author=Nobody+Atall`);
+      await page.reload();
+      expect(await visibleSlugs(page)).toEqual([]);
+      await page.locator('#fclear').click();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
     });
 
     test('thumbnails load for every card after scrolling; no console errors', async ({ page }) => {

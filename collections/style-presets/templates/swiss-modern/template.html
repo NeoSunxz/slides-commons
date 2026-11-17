@@ -290,9 +290,14 @@ svg {
 .s-cover .meta p:last-child { font-family: var(--font-body); font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 22px; color: var(--text-2); margin-top: 8px; }
 .s-cover .title { grid-column: 1 / span 8; grid-row: 2 / span 5; }
 .s-cover .title .lede { margin-top: 44px; max-width: 900px; }
-.s-cover .disc { grid-column: 9 / span 4; grid-row: 1 / span 4; height: 100%; width: auto; justify-self: end; }
-.s-cover .bar { grid-column: 9 / span 4; grid-row: 6; align-self: end; height: 24px; }
-.s-cover .sq { grid-column: 9; grid-row: 5; align-self: end; width: 100%; }
+/* Cover mark, cols 10-12, top-right: a red quarter circle (radius = 3 columns, 408px) whose square
+   corner sits in the top-right corner of the frame, curve facing down-left, and one black
+   one-column square hanging flush under its right edge (col 12). The lower right stays empty.
+   Never a lone full red circle on white: it reads as a national flag. */
+.s-cover .mark { grid-column: 10 / span 3; grid-row: 1 / span 5; position: relative; }
+.s-cover .mark > * { position: absolute; top: 0; right: 0; }
+.s-cover .mark .qc { width: 100%; aspect-ratio: 1; border-radius: 0 0 0 100%; transform-origin: top right; }
+.s-cover .mark .sq { top: 408px; /* = 3 columns, the quarter's radius */ width: calc((100% - 2 * var(--gutter)) / 3); aspect-ratio: 1; transform-origin: top right; }
 
 /* ===========================================
    SLIDE 2 — AGENDA
@@ -461,9 +466,10 @@ th:first-child { width: 22%; padding-left: 0; }
                 <h1 class="d t-mega reveal" style="--i:2">Linea</h1>
                 <p class="lede reveal" style="--i:3">One wayfinding system for 74 stations, 6 lines and 410,000 riders a day.</p>
             </div>
-            <div class="circle f-red disc pop" style="--i:1" aria-hidden="true"></div>
-            <div class="square f-black sq pop" style="--i:3" aria-hidden="true"></div>
-            <div class="f-black bar wipe" style="--i:4" aria-hidden="true"></div>
+            <div class="mark" aria-hidden="true">
+                <div class="f-red qc pop" style="--i:1"></div>
+                <div class="f-black sq pop" style="--i:3"></div>
+            </div>
         </div>
         <footer class="foot" data-chrome><span class="c1">Studio Achse for Kessling Metro</span><span class="c2">Draft for discussion</span></footer>
     </section>

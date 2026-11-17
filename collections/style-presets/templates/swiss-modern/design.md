@@ -138,7 +138,7 @@ components:
   rule-heavy:
     description: "4px black rule on top of list blocks, stat blocks and table heads; 2px under the header; 1px {colors.hair} between rows."
   shapes:
-    description: "Flat, borderless, pure black, pure red or grey: circle (border-radius 50%), square, triangle (clip-path), half circle (2:1, top corners round), quarter circle (one corner 100%). Sized to grid cells; never rotated except by 90/180 degrees; no outlines, no shadows."
+    description: "Flat, borderless, pure black, pure red or grey: circle (border-radius 50%), square, triangle (clip-path), half circle (2:1, top corners round), quarter circle (one corner 100%). Sized to grid cells; never rotated except by 90/180 degrees; no outlines, no shadows. A red circle is never used alone on a white field (it reads as a national flag): red round shapes are quarter or half circles, or a circle tied into a construction with black shapes and rules."
   slab:
     description: "Solid black grid block (divider) with white label at the top and a white Archivo 800 numeral at the bottom, overflow clip."
   field:
@@ -184,7 +184,7 @@ Swiss Modern is a **grid you can see**. Every slide is a white page with its 12 
 - White page, black type, red used once per slide (plus the small red square and section number in the header).
 - The grid is visible: both edges of every column, full height, 7% black.
 - Asymmetric layouts: big type or one big shape on one side, a structured block (list, table, stats) on the other. Staircases and offsets, never mirror symmetry.
-- Flat shapes only: circle, square, triangle, half circle, quarter circle. Black, red or grey. No outlines, no shadows, no gradients, no rounded rectangles.
+- Flat shapes only: circle, square, triangle, half circle, quarter circle. Black, red or grey. No outlines, no shadows, no gradients, no rounded rectangles. Big red shapes are cut (quarter, half) and locked to a black square or bar, never a lone red disc.
 - Archivo 800 everywhere type must be strong (headlines, numbers, labels); Nunito 400 for reading text.
 
 **Density philosophy: medium.** A Swiss slide is ordered, not empty: header, footer and grid are always present, so a single statement already feels complete, and a full option table still feels calm. Split when a block would break the grid.
@@ -268,8 +268,8 @@ Minimum on-slide text 18px; running text never below 22px.
 
 | Span | Width | Used for |
 |---|---|---|
-| 3 columns | 408px | One principle, a stat block, contact |
-| 4 columns | 555px | Side title column, cover circle |
+| 3 columns | 408px | One principle, a stat block, contact, cover quarter circle (radius) |
+| 4 columns | 555px | Side title column |
 | 5 columns | 701px | Divider slab, "before" field |
 | 7 columns | 995px | List, chart, "after" panel, hero number |
 | 12 columns | 1728px | Title bands, tables, timelines |
@@ -278,7 +278,8 @@ Minimum on-slide text 18px; running text never below 22px.
 
 - **Asymmetry.** Give one side the weight (big type, a slab, a large shape) and the other the structure. Leave whole columns empty on purpose.
 - **Staircase.** Repeated items (principles, milestones) step down by half a row (56px) per item instead of sitting in a flat row of equal cards.
-- **Shapes sit on the grid.** A shape's width is a whole number of columns (or its height a whole number of rows); its edge aligns to a column line. Shapes may touch but not overlap text.
+- **Shapes sit on the grid.** A shape's width is a whole number of columns (or its height a whole number of rows); its edge aligns to a column line. Shapes may touch or lock into each other (a black square flush under the straight edge of a red quarter circle) but never overlap text.
+- **Constructions, not emblems.** A shape group is anchored to a column line and a frame edge and reads as a construction. A single full red circle on white, or any centred, isolated red disc, reads as a national flag: cut it to a quarter or half and lock it to black shapes instead.
 - **Titles at the bottom of their band** (`justify-content: flex-end`), list and stat blocks start with a 4px black rule.
 
 ## Depth and Elevation
@@ -300,7 +301,7 @@ See the `components` tokens above for exact specs.
 
 The demo deck implements each of these. Coordinates are grid spans inside `.frame`.
 
-1. **Cover** — row 1, cols 1–7: three label/value meta pairs. Cols 1–8 bottom: `mega` word + lede. Cols 9–12: red circle (rows 1–4), black square (col 9, row 5), black bar (row 6).
+1. **Cover** — row 1, cols 1–7: three label/value meta pairs. Cols 1–8 bottom: `mega` word + lede. Top right, cols 10–12 (`.mark`, one small group): a red quarter circle with radius = 3 columns (408px), its square corner in the top-right corner of the frame (just under the header rule, flush with the right margin), curve facing down-left (`border-radius: 0 0 0 100%`); one black one-column square (114.67px) hanging flush under the quarter's right edge in col 12. Cols 9–12 below the mark stay empty white so the `mega` word and lede breathe; no other shapes or bars.
 2. **Agenda** — cols 1–4: red label, `display` "Agenda", one sentence. Cols 6–12: agenda list.
 3. **Section divider** — slab cols 1–5 full height with `section-num`; cols 7–12: red square, red label, `display` title, body.
 4. **Statement** — cols 1–10 rows 2–6: red label, `statement` with one red phrase, grey source. Black quarter circle cols 11–12 rows 1–2, tucked into the top-right corner.
@@ -337,6 +338,7 @@ Other layouts: a team slide is a staircase of names with shapes as avatars (no p
 - Don't centre text or compositions, and don't build rows of identical cards.
 - Don't use outlines, shadows, rounded rectangles, gradients or glass effects; don't use illustrations or icons — only the five shapes.
 - Don't put white text on red.
+- Never place a lone full red circle on a white field (and never a centred or isolated red disc): it reads as the Japanese flag. Use a quarter or half circle locked to black shapes and the grid.
 - Don't use Inter, Roboto, Arial or system fonts as the display face, purple gradients or `#6366f1` (frontend-slides "DO NOT USE").
 - Don't negate CSS functions directly: `-clamp(...)` / `-min(...)` are silently ignored — use `calc(-1 * ...)`.
 

@@ -189,7 +189,9 @@ zip（以 `<slug>/` 为根）：
   - 新增 `template-designer` 子 agent（只写 `collections/`）。
 - 2026-11-17：使用说明改为「复制提示词 → 粘贴给 coding agent（agent 自己下载素材包）→ 回答问题」（仅设置站点网址时；本地构建保留先下载的说明），复制提示词为主按钮、下载为次要并附离线说明；素材包 README 按实际协议文件写字体协议（Yellowtail 为 Apache 2.0）；无 preview.md 的模板从 design.md 的 Signature Treatments/Moves/Elements 一节提取标志性手法（最多 5 条，16 个均有）；中文提示词引用中文按钮名「下载素材包（.zip）」。`npm test` 666 通过。
 - 2026-11-17：M5 完成（随 v0.2.0 发布）：新来源 `community`（`collections/community/`，`perTemplateLicense: true`，每个模板自带 LICENSE 与 authors，允许 MIT / Apache-2.0 / CC-BY-4.0 / CC0-1.0）；`scripts/collection-checks.mjs` 对所有 `collection: true` 模板做严格校验（协议、作者链接、design.md 必要章节、无位图、3 张 1920×1080 截图、体积上限、无 TODO、derivedFrom 目标存在）；`npm run new-template -- <slug> [--collection X]` 脚手架；改编投稿的 zip 带 `LICENSE-original-<slug>`；CI 新增 `guard` 作业（非仓库所有者的 PR 改 `upstream/` 或 `.gitmodules` 即失败，改其他集合模板给警告）；`.github/` PR 模板与 3 个 Issue 表单；`CONTRIBUTING.md`（中英）。卡片：作者署名统一 `slides-commons`，卡片等高、简介最多两行、标签与署名一行；详情页署名 `by slides-commons · based on a style preset by Zara Zhang`；16 个集合模板简介缩短。窄屏下详情页各行可换行（CI 上 zh monochrome 曾溢出 3px）。`npm test` 775 通过。
-  - 待办：`guard` 在 GitHub 跑通后加入 main 分支保护的必过检查。
+  - `guard` 已在 GitHub 跑通；加入 main 必过检查需维护者操作（自动模式拦截了 agent 改分支保护）。
+- 2026-11-17：v0.2.0 收尾：画廊筛选改为按作者（`author=`）；线上版下载改为复制按钮下的一行小字链接；提示词按模板写出 `--slide-bg` 具体色值（41/50，其余 9 个多底色或渐变保留通用说明，`deriveSlideBg()`）；swiss-modern 封面改为右上角红色四分之一圆 + 黑方块（避免像日本国旗）。
+  - 待办：中文字体按需嵌入（方案：本站托管 Fontsource 中文分片 + 素材包内零依赖 Node 脚本按用到的字挑分片并 base64 嵌入，下载失败回退 jsDelivr / Google 链接；有 fonttools 时再精确裁剪）。维护者 2026-11-17 决定延后。
 - 下一步：合并 v0.2.0（PR #2）→ 打标签发 Release → 线上模拟验收（只给提示词，用一个商务模板）；之后自托管字体第二步（CJK 裁剪）或 M6。
 
 ### 编排经验

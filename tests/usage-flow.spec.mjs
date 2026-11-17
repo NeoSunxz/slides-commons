@@ -33,8 +33,8 @@ const olItems = (html, cls) => {
 
 const SAMPLE = ['neo-grid-bold', 'creative-voltage', 'bold-signal'].filter((s) => ALL_SLUGS.includes(s));
 const AUTO = {
-  en: { steps: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'], offline: 'Offline or restricted network? Download the pack (.zip)', copy: 'Copy prompt', dl: 'Download assets (.zip)' },
-  zh: { steps: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'], offline: '处于离线或受限网络？请下载素材包（.zip）', copy: '复制提示词', dl: '下载素材包（.zip）' },
+  en: { steps: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'], offline: 'Offline? Download the pack (.zip)', note: 'Unzip it in your working folder, then paste the prompt.', copy: 'Copy prompt', dl: 'Download assets (.zip)' },
+  zh: { steps: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'], offline: '离线？下载素材包（.zip）', note: '在工作文件夹中解压，再粘贴提示词。', copy: '复制提示词', dl: '下载素材包（.zip）' },
 };
 
 function buttons(html) {
@@ -49,18 +49,22 @@ function buttons(html) {
 test.describe('1. usage steps and button order', () => {
   for (const lang of ['en', 'zh']) {
     for (const slug of SAMPLE) {
-      test(`[site URL] ${lang} ${slug}: auto-download steps, Copy first and primary, Download secondary, offline note`, () => {
+      test(`[site URL] ${lang} ${slug}: auto-download steps, Copy is the only button, Download is a text link under it`, () => {
         const { aside, list } = buttons(detail(urlOut, lang, slug));
         expect(olItems(aside, 'steps small')).toEqual(AUTO[lang].steps);
-        expect(list.map((b) => b.kind)).toEqual(['copy', 'download']);
-        expect(list.map((b) => b.primary)).toEqual([true, false]);
+        expect(list.map((b) => b.kind)).toEqual(['copy']);
+        expect(list[0].primary).toBe(true);
         expect(list[0].text).toBe(AUTO[lang].copy);
-        expect(list[1].text).toBe(AUTO[lang].dl);
-        expect(aside).toContain('class="help offline"');
-        expect(strip(aside)).toContain(AUTO[lang].offline);
-        // Note sits between the two buttons (Download is the offline fallback).
+        const off = aside.match(/<p class="help offline">([\s\S]*?)<\/p>/);
+        expect(off, 'offline paragraph').not.toBeNull();
+        const link = off[1].match(/<a href="([^"]+)" download>([\s\S]*?)<\/a>/);
+        expect(link, 'download text link').not.toBeNull();
+        expect(link[1]).toBe(`../../${lang === 'zh' ? '../' : ''}zip/${slug}.zip`);
+        expect(strip(link[2])).toBe(AUTO[lang].offline);
+        expect(strip(off[1].replace(link[0], ''))).toBe(AUTO[lang].note);
+        // The link sits after the Copy button and is not a .btn.
         expect(aside.indexOf('data-copy')).toBeLessThan(aside.indexOf('help offline'));
-        expect(aside.indexOf('help offline')).toBeLessThan(aside.indexOf('download>'));
+        expect(link[0]).not.toContain('class="btn');
       });
       test(`[local build] ${lang} ${slug}: download-first steps, Download primary first, no offline note`, () => {
         const { aside, list } = buttons(detail(SITE, lang, slug));
@@ -227,21 +231,26 @@ test.describe('3. Signature moves in prompts', () => {
 });
 
 // ---------------------------------------------------------------------------
-test.describe('4. ZH prompt quotes the ZH download button label', () => {
-  test('quoted label equals the zh page button text exactly; no English label in ZH prompts', () => {
+test.describe('4. Prompts quote the download label the page shows in that mode', () => {
+  const label = (root, lang, slug) => {
+    const html = detail(root, lang, slug);
+    if (root === urlOut) return strip(html.match(/<p class="help offline"><a [^>]*download>([\s\S]*?)<\/a>/)[1]);
+    return buttons(html).list.find((b) => b.kind === 'download').text;
+  };
+  test('quoted label equals the page label exactly (EN and ZH, local and site-URL); no English label in ZH prompts', () => {
     const bad = [];
     for (const root of [SITE, urlOut]) for (const slug of ALL_SLUGS) {
-      const btn = buttons(detail(root, 'zh', slug)).list.find((b) => b.kind === 'download').text;
-      const zh = zipText(root, slug, 'PROMPT.zh.md');
-      if (btn !== '下载素材包（.zip）') bad.push(`${slug}: zh button text is "${btn}"`);
-      const quotes = [...zh.matchAll(/点击 "([^"]+)"/g)].map((m) => m[1]);
-      if (!quotes.length) bad.push(`${slug}: ZH prompt quotes no button`);
-      for (const q of quotes) if (q !== btn) bad.push(`${slug}: quotes "${q}" but button is "${btn}"`);
-      if (/Download assets/.test(zh)) bad.push(`${slug}: ZH prompt still names the English button`);
-      // EN prompt still quotes the EN button.
-      const en = zipText(root, slug, 'PROMPT.md');
-      const enBtn = buttons(detail(root, 'en', slug)).list.find((b) => b.kind === 'download').text;
-      if (!en.includes(`"${enBtn}"`)) bad.push(`${slug}: EN prompt does not quote "${enBtn}"`);
+      const want = { en: root === SITE ? 'Download assets (.zip)' : 'Offline? Download the pack (.zip)', zh: root === SITE ? '下载素材包（.zip）' : '离线？下载素材包（.zip）' };
+      for (const [lang, file, re] of [['en', 'PROMPT.md', /"([^"\n]*\(\.zip\))"/g], ['zh', 'PROMPT.zh.md', /点击 "([^"]+)"/g]]) {
+        const btn = label(root, lang, slug);
+        if (btn !== want[lang]) bad.push(`${slug} ${lang}: page label is "${btn}"`);
+        const txt = zipText(root, slug, file);
+        const quotes = [...txt.matchAll(re)].map((m) => m[1]).filter((q) => /zip/.test(q));
+        if (!quotes.length) bad.push(`${slug} ${lang}: prompt quotes no download label`);
+        for (const q of quotes) if (q !== btn) bad.push(`${slug} ${lang}: quotes "${q}" but page shows "${btn}"`);
+      }
+      if (/Download assets/.test(zipText(root, slug, 'PROMPT.zh.md'))) bad.push(`${slug}: ZH prompt names the English label`);
+      if (root === urlOut && /Download assets/.test(zipText(root, slug, 'PROMPT.md'))) bad.push(`${slug}: URL-mode EN prompt quotes the old button`);
     }
     expect(bad).toEqual([]);
   });

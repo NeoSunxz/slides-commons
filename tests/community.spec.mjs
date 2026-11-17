@@ -201,12 +201,12 @@ test.describe('empty community source', () => {
         fs.mkdirSync(path.join(root, 'empty-col', 'templates'), { recursive: true });
         fs.writeFileSync(path.join(root, 'empty-col', 'templates', '.gitkeep'), '');
       } else fs.mkdirSync(path.join(root, 'empty-col'), { recursive: true });
-      // Two non-empty sources so that the source filter would be shown.
+      // Two non-empty sources with distinct authors so that the author filter is shown.
       const a = collectionSource(root, { id: 'fxa', dir: 'col-a' }); a.name = 'Fixture A';
       const bsrc = collectionSource(root, { id: 'fxb', dir: 'col-b' }); bsrc.name = 'Fixture B';
       const sf = writeSources(root, [a, bsrc, empty]);
-      scaffoldGood(root, sf, { slug: 'fx-a', id: 'fxa', dir: 'col-a' });
-      scaffoldGood(root, sf, { slug: 'fx-b', id: 'fxb', dir: 'col-b' });
+      scaffoldGood(root, sf, { slug: 'fx-a', id: 'fxa', dir: 'col-a', meta: { authors: [{ name: 'Fixture A', url: 'https://github.com/fixture-a' }] } });
+      scaffoldGood(root, sf, { slug: 'fx-b', id: 'fxb', dir: 'col-b', meta: { authors: [{ name: 'Fixture B', url: 'https://github.com/fixture-b' }] } });
 
       const out = path.join(root, 'site');
       const r = run(SCRIPTS.build, ['--sources', sf, '--out', out]);
@@ -215,8 +215,9 @@ test.describe('empty community source', () => {
 
       for (const [lang, idx, cred] of [['en', 'index.html', 'credits.html'], ['zh', path.join('zh', 'index.html'), path.join('zh', 'credits.html')]]) {
         const gallery = readText(out, idx);
-        expect(gallery, `${lang}: chip for the non-empty source A`).toMatch(/data-group="source" data-value="fxa"/);
-        expect(gallery, `${lang}: chip for the non-empty source B`).toMatch(/data-group="source" data-value="fxb"/);
+        expect(gallery, `${lang}: chip for the non-empty source A's author`).toMatch(/data-group="author" data-value="Fixture A"/);
+        expect(gallery, `${lang}: chip for the non-empty source B's author`).toMatch(/data-group="author" data-value="Fixture B"/);
+        expect(gallery, `${lang}: no source chips`).not.toMatch(/data-group="source"/);
         expect(gallery, `${lang}: no chip for the empty source`).not.toMatch(/data-value="emptyc"/);
         expect(gallery).not.toContain('Empty Fixture Community');
         const credits = readText(out, cred);

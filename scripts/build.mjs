@@ -595,6 +595,32 @@ function cjkSection(md) {
 
 const isHexish = (v) => typeof v === 'string' && /^(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/.test(v.trim());
 
+
+// Default slide canvas color, read from design.md. Returns {name, value, how} only when a
+// statement is explicit and unambiguous; otherwise null and the prompt keeps its generic wording.
+function deriveSlideBg(designMd, colorMap) {
+  const hit = (name, how) => (name && Object.hasOwn(colorMap, name) && /^#[0-9a-f]{3,8}$/i.test(colorMap[name]) ? { name, value: colorMap[name], how } : null);
+  const alias = designMd.match(/^\s*slide-bg:\s*["']?([\w-]+)["']?\s*$/m);
+  const a = alias && hit(alias[1], 'front matter alias `slide-bg`');
+  if (a) return a;
+  const lines = designMd.split(/\r?\n/).filter((l) => !/frontend-slides/i.test(l));
+  for (const l of lines) {
+    const m = l.match(/\*\*Default (?:(?:slide|page|surface|canvas)\s+)*(?:background|surface|canvas)[:\s]*\*\*[:\s\u2014-]*`?\{colors\.([\w-]+)\}`?(.*)$/i)
+      ?? l.match(/^\s*default-background:\s*"\{colors\.([\w-]+)\}"()/i);
+    if (!m) continue;
+    // Two tokens each qualified with "for ..." (e.g. desktop vs window body) is not a single default.
+    if (/^`?\s*for\b/.test(m[2]) && /\{colors\.[\w-]+\}`?\s+for\b/.test(m[2])) continue;
+    const r = hit(m[1], 'design.md "Default ... background/surface" line');
+    if (r) return r;
+  }
+  for (const l of lines) {
+    const m = l.match(/^\s*[-*]\s+\*\*[^*]+\*\*\s*\(`\{colors\.([\w-]+)\}`[^)]*\):.*\b(?:default (?:slide )?background|universal (?:slide )?background)/i);
+    const r = m && hit(m[1], 'color bullet described as the default/universal slide background');
+    if (r) return r;
+  }
+  return null;
+}
+
 function buildContext(t) {
   const { src } = t;
   const L = src.layout;
@@ -638,6 +664,9 @@ function buildContext(t) {
   const colorMap = Object.fromEntries(colors.map((c) => [c.name, c.value]));
   const stageKey = Object.keys(colorMap).find((k) => /^stage[-_]?bg$/i.test(k));
 
+  const slideBg = deriveSlideBg(designMd, colorMap);
+  if (process.env.SC_DEBUG_SLIDEBG) console.log(`SLIDEBG\t${t.slug}\t${slideBg ? `${slideBg.name}\t${slideBg.value}\t${slideBg.how}` : '-\t-\t(generic wording)'}`);
+
   const typography = Object.entries(t.typography).filter(([k]) => k !== 'style').map(([role, family]) => ({ role, family }));
 
   // Sibling assets shipped with template.html (never the meta / design files).
@@ -680,6 +709,7 @@ function buildContext(t) {
     localFonts: fontPlan.faces.length > 0,
     cjkFontLinks: cjkOnlyLinks(fontLinks(cjkSection(designMd))),
     signatureMoves: (preview.moves.length ? preview.moves : designSignatureMoves(designMd)).map((m) => resolveTokens(m, colorMap)),
+    slideBg,
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
     // Detected from the template itself, never from slugs:
     systemFontsOnly: fontLinks(html).length === 0 && !/@font-face/i.test(html),

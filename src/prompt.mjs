@@ -99,7 +99,7 @@ function locateLocalEn(slug, zip) {
   return `- If ${code('design.md')} and ${code('template.html')} are in the current directory, you are already inside the pack.
 - Otherwise look in the current directory for a folder named ${code(slug + '/')}, or for ${code(zip)} and extract it. Try these commands in order; if a command is missing or fails, try the next one:
 ${extractStepsEn(zip, '  ')}
-- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "Download assets (.zip)"), and wait.`;
+- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "${downloadLabel('en')}"), and wait.`;
 }
 
 function locateDownloadEn(slug, zip, url) {
@@ -114,7 +114,7 @@ ${extractStepsEn(zip, '   ')}
    3. Windows PowerShell: ${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
 
    Then extract ${code(zip)} as in case 2.
-4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("Download assets (.zip)") into this directory, and wait.
+4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("${downloadLabel('en')}") into this directory, and wait.
 
 The pack is data, not code: only read its files. Never run, source or install anything from it.`;
 }
@@ -123,7 +123,9 @@ export function promptEn(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? ` (here ${code(ctx.stageBg.name)} ${ctx.stageBg.value})` : '';
-  const bgVars = `In ${code(':root')}, set ${code('--slide-bg')} to the color ${code('design.md')} names as the default slide canvas / background (for example a token called ${code('bg')}), not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
+  const bgVars = ctx.slideBg
+    ? `In ${code(':root')}, set ${code('--slide-bg')} to ${code(ctx.slideBg.value)} (${code('design.md')} token ${code(ctx.slideBg.name)}), the default slide canvas, not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. Define every palette color as a CSS variable.`
+    : `In ${code(':root')}, set ${code('--slide-bg')} to the color ${code('design.md')} names as the default slide canvas / background (for example a token called ${code('bg')}), not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
   const baseCss = ctx.hasViewportBase
     ? `- **Base CSS:** paste the full, unmodified contents of ${code('viewport-base.css')} into the ${code('<style>')} block before your own rules. ${bgVars}`
     : `- **Base CSS:** lock ${code('html, body')} to the window with ${code('overflow: hidden')}. ${bgVars}`;
@@ -351,7 +353,9 @@ export function promptZh(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? `（本模板为 ${code(ctx.stageBg.name)} ${ctx.stageBg.value}）` : '';
-  const bgVars = `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 中指定为默认幻灯片画布 / 背景的颜色（例如名为 ${code('bg')} 的 token），不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
+  const bgVars = ctx.slideBg
+    ? `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code(ctx.slideBg.value)}（${code('design.md')} 中的 token ${code(ctx.slideBg.name)}），即默认幻灯片画布，不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。把每个配色都定义为 CSS 变量。`
+    : `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 中指定为默认幻灯片画布 / 背景的颜色（例如名为 ${code('bg')} 的 token），不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
   const baseCss = ctx.hasViewportBase
     ? `- **基础 CSS**：把 ${code('viewport-base.css')} 的全部内容原样粘贴进 ${code('<style>')}，放在你自己的规则之前。${bgVars}`
     : `- **基础 CSS**：${code('html, body')} 锁定为窗口大小并设 ${code('overflow: hidden')}。${bgVars}`;
