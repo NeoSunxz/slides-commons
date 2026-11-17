@@ -53,8 +53,9 @@ const STRINGS = {
     schemeNames: { light: 'Light', dark: 'Dark', mixed: 'Mixed' },
     by: (who) => `by ${who}`,
     byFrom: (who, from) => `by ${who} · from ${from}`,
-    byDerived: (who, d) => `by ${who} · based on ${derivedLink(d)} by ${derivedAuthor(d)}`,
-    byDerivedPlain: (d) => `based on ${d.name} by ${d.author}`,
+    byOriginal: (who) => `by ${who}`,
+    byDerived: (who, d) => `by ${who} · based on ${link(d.url, d.shortName ?? d.name)} by ${derivedAuthor(d)}`,
+    byCard: (who) => `by ${who}`,
     allTemplates: '← All templates',
     livePreview: 'Live preview',
     previewTitle: (name) => `${name} live preview`,
@@ -120,8 +121,9 @@ const STRINGS = {
     schemeNames: { light: '浅色', dark: '深色', mixed: '混合' },
     by: (who) => `作者：${who}`,
     byFrom: (who, from) => `作者：${who} · 来源：${from}`,
-    byDerived: (who, d) => `作者：${who} · 基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}`,
-    byDerivedPlain: (d) => `基于 ${d.author} 的 ${d.name}`,
+    byOriginal: (who) => `${who} 出品`,
+    byDerived: (who, d) => `${who} 出品 · 基于 ${derivedAuthor(d)} 的${link(d.url, d.shortNameZh ?? d.name)}`,
+    byCard: (who) => `${who} 出品`,
     allTemplates: '← 全部模板',
     livePreview: '实时预览',
     previewTitle: (name) => `${name} 实时预览`,
@@ -286,8 +288,8 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     ${img}
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
-      <p${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
-      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}${t.sourceDerived ? ` · ${esc(S.byDerivedPlain(t.sourceDerived))}` : ''}</p>
+      <p class="tag-line" title="${esc(taglineZh || t.tagline)}"${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
+      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span><span class="credit-line">${esc(S.byCard(t.authors.map((a) => a.name).join(', ')))}</span></p>
     </div>
   </a></li>`;
   }).join('\n');
@@ -363,7 +365,7 @@ export function detailPage(t, lang) {
 <section class="hero">
   <h1${en}>${esc(t.name)}</h1>
   <p class="tagline"${tagline.a}>${esc(tagline.v)}</p>
-  <p class="by">${t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', ')), t.sourceDerived) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
+  <p class="by">${t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', ')), t.sourceDerived) : t.src?.collection ? S.byOriginal(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', '))) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
 
 <div class="detail">
@@ -447,7 +449,7 @@ export function creditsPage({ sources, templates, lang }) {
   const page = 'credits.html';
   const blocks = sources.map((s) => {
     const list = templates.filter((t) => t.source === s.id)
-      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${esc(t.license)}</li>`).join('\n');
+      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${authorList(t.authors)} · ${esc(t.license)}</li>`).join('\n');
     return `<section class="credit">
   <h2>${esc(s.name)}</h2>
   <p>${S.creditsSource(s)}</p>

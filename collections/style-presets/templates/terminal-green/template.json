@@ -1,7 +1,7 @@
 {
   "slug": "terminal-green",
   "name": "Terminal Green",
-  "tagline": "A terminal session on GitHub-dark: JetBrains Mono only, green prompt and cursor, scan lines, diff panes and a tmux status bar. Adapted from the Terminal Green preset in frontend-slides.",
+  "tagline": "A terminal session on GitHub-dark: JetBrains Mono only, green prompt, scan lines, diff panes and a tmux bar.",
   "mood": [
     "technical",
     "hacker",

@@ -43,6 +43,8 @@ npm run validate   # check template metadata, licenses and links
 npm test           # Playwright tests (run `npx playwright install chromium` first)
 ```
 
+Want to add a template or report a prompt problem? See [CONTRIBUTING.md](CONTRIBUTING.md) (中文：文末「贡献指南」).
+
 Upstream templates live in read-only git submodules under `upstream/`. Development happens on the `dev` branch; `main` holds released versions and is deployed to GitHub Pages.
 
 ## License

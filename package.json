@@ -14,7 +14,8 @@
     "test": "playwright test -c tests",
     "validate": "node scripts/validate.mjs",
     "i18n:sync": "node scripts/i18n-sync.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "new-template": "node scripts/new-template.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/bodoni-moda": "^5.3.0",

@@ -35,8 +35,8 @@
     {
       "id": "style-presets",
       "name": "Style Presets",
-      "author": "NeoSunxz and slides-commons contributors",
-      "authorUrl": "https://github.com/NeoSunxz",
+      "author": "slides-commons",
+      "authorUrl": "https://github.com/NeoSunxz/slides-commons",
       "license": "MIT",
       "repo": "https://github.com/NeoSunxz/slides-commons",
       "branch": "main",
@@ -45,6 +45,8 @@
       "packLicenseName": "LICENSE",
       "derivedFrom": {
         "name": "frontend-slides STYLE_PRESETS.md",
+        "shortName": "a style preset",
+        "shortNameZh": "风格预设",
         "author": "Zara Zhang",
         "authorUrl": "https://github.com/zarazhangrui",
         "url": "https://github.com/zarazhangrui/frontend-slides/blob/main/STYLE_PRESETS.md",
@@ -91,6 +93,45 @@
         ]
       },
       "collection": true
+    },
+    {
+      "id": "community",
+      "name": "Community",
+      "author": "Community contributors",
+      "license": "per template",
+      "repo": "https://github.com/NeoSunxz/slides-commons",
+      "branch": "main",
+      "path": "collections/community",
+      "repoPath": "collections/community",
+      "packLicenseName": "LICENSE",
+      "layout": {
+        "templatesDir": "templates",
+        "metaFile": "template.json",
+        "htmlFile": "template.html",
+        "designFile": "design.md",
+        "screenshotsDir": "screenshots",
+        "licenseFile": "LICENSE"
+      },
+      "companion": {
+        "id": "frontend-slides",
+        "name": "Frontend Slides",
+        "author": "Zara Zhang",
+        "license": "MIT",
+        "repo": "https://github.com/zarazhangrui/frontend-slides",
+        "branch": "main",
+        "path": "upstream/skill",
+        "licenseFile": "LICENSE",
+        "viewportBase": "viewport-base.css"
+      },
+      "screenshots": {
+        "slides": [
+          1,
+          "middle",
+          "last"
+        ]
+      },
+      "collection": true,
+      "perTemplateLicense": true
     }
   ]
 }

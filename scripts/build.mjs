@@ -34,6 +34,7 @@ import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
 import { createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, dataUrl, relativeUrl } from './fonts.mjs';
+import { checkCollectionTemplate } from './collection-checks.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
@@ -463,7 +464,7 @@ function loadTemplates(sources, schema, problems = null) {
         report(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)})`);
         continue;
       }
-      const t = { ...record, dir, src };
+      const t = { ...record, dir, src, metaExplicit: { authors: meta.authors != null, license: meta.license != null }, metaPath };
       bySlug.set(t.slug, t);
       all.push(t);
     }
@@ -640,12 +641,16 @@ function buildContext(t) {
   const typography = Object.entries(t.typography).filter(([k]) => k !== 'style').map(([role, family]) => ({ role, family }));
 
   // Sibling assets shipped with template.html (never the meta / design files).
-  const skip = new Set([L.metaFile, L.htmlFile, L.designFile].map((f) => path.normalize(f)));
+  const skip = new Set([L.metaFile, L.htmlFile, L.designFile, ...(src.perTemplateLicense ? [L.licenseFile] : [])].map((f) => path.normalize(f)));
   const assets = walk(t.dir).filter((f) => !skip.has(path.normalize(f)) && !/(^|[\\/])\.[^\\/]+$/.test(f)).map(toPosix);
 
-  const srcLicense = path.join(src.dir, L.licenseFile);
-  if (!exists(srcLicense)) fail(`source ${src.id}: license file ${rel(srcLicense)} not found`);
-  const licenses = [{ file: src.packLicenseName ?? 'LICENSE-templates', path: srcLicense }];
+  // perTemplateLicense: every template directory carries its own LICENSE (community contributions).
+  const srcLicense = src.perTemplateLicense ? path.join(t.dir, L.licenseFile) : path.join(src.dir, L.licenseFile);
+  if (!exists(srcLicense)) {
+    if (src.perTemplateLicense) fail(`${t.slug}: ${rel(srcLicense)} is missing. Fix: add the full text of the ${t.license ?? 'chosen'} license as ${path.basename(srcLicense)} in the template directory.`);
+    fail(`source ${src.id}: license file ${rel(srcLicense)} not found`);
+  }
+  const licenses = [{ file: src.packLicenseName ?? (src.perTemplateLicense ? 'LICENSE' : 'LICENSE-templates'), path: srcLicense }];
   if (comp) {
     const p = path.join(comp.dir, comp.licenseFile ?? 'LICENSE');
     if (!exists(p)) fail(`companion ${comp.id}: license file ${rel(p)} not found`);
@@ -749,7 +754,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
     const expected = templateDirUrl(t.src, t.slug);
     if (!/^https:\/\/.+\/tree\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
 
-    if (!screenshotsFor(t.src, t.slug).length) {
+    if (!t.src.collection && !screenshotsFor(t.src, t.slug).length) { // collections get the stricter check below
       const msg = `${at} no screenshot in ${rel(path.join(t.src.dir, ...L.screenshotsDir.split('/')))} named ${t.slug}-<n>.png`;
       if (strictScreenshots) problems.push(msg); else warn(msg);
     }
@@ -762,6 +767,28 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
     for (const e of info.fontPlan.errors) problems.push(`${at} local font: ${e} (run npm ci; or add the package to devDependencies)`);
     items.push({ t, description: info.ctx.description });
     if (!info.ctx.description) problems.push(`${at} ${rel(info.designPath)} has no front matter "description"`);
+
+    // derivedFrom must point at a template of this gallery.
+    if (t.derivedFrom) {
+      const o = templates.find((x) => x.slug === t.derivedFrom.slug);
+      if (!o) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.slug "${t.derivedFrom.slug}" is not a template in this gallery. Fix: use the slug of an existing template.`);
+      else if (o.source !== t.derivedFrom.source) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.source "${t.derivedFrom.source}" does not match the source of "${o.slug}" ("${o.source}").`);
+    }
+
+    // Stricter rules for templates that live in this repository.
+    if (t.src.collection) {
+      problems.push(...checkCollectionTemplate({
+        t, rel,
+        metaPath: t.metaPath, metaExplicit: t.metaExplicit,
+        html: info.html, htmlPath: info.htmlPath,
+        designMd: read(info.designPath), designPath: info.designPath,
+        screenshots: screenshotsFor(t.src, t.slug),
+        screenshotsDir: path.join(t.src.dir, ...L.screenshotsDir.split('/')),
+        assets: info.assets,
+        perTemplateLicense: Boolean(t.src.perTemplateLicense),
+        licensePath: path.join(t.dir, L.licenseFile),
+      }));
+    }
 
     // Static host scan of the template and its sibling stylesheets.
     const texts = [[L.htmlFile, info.html]];
@@ -1064,11 +1091,34 @@ function main() {
         url: 'https://fontsource.org',
       });
     }
+    // Template-level derivedFrom: the original's LICENSE travels with the pack.
+    const extraLicenses = [];
+    if (t.derivedFrom) {
+      const o = bySlug.get(t.derivedFrom.slug);
+      const osrc = sources.find((s) => s.id === t.derivedFrom.source);
+      if (o && osrc) {
+        const lp = osrc.perTemplateLicense ? path.join(o.dir, osrc.layout.licenseFile) : path.join(osrc.dir, osrc.layout.licenseFile);
+        if (!info.licenses.some((l) => l.path === lp) && exists(lp)) {
+          const file = `LICENSE-original-${o.slug}`;
+          extraLicenses.push({ file, path: lp });
+          credits.push({
+            what: `Original template "${o.name}", which this template adapts`,
+            author: o.authors.map((a) => a.name).join(', '),
+            project: o.name,
+            license: o.license,
+            licenseFile: file,
+            url: templateDirUrl(osrc, o.slug),
+          });
+        }
+      }
+    }
     const readme = packReadme({
       ...ctx,
       packClosing: t.src.collection
         ? (srcDerived
           ? `${SITE_NAME} is an independent community gallery. This template is a derivative work of the project credited above (visual direction), written for ${SITE_NAME}; the original author did not make or endorse it. Files are licensed as listed above.`
+          : t.derivedFrom
+          ? `This template adapts the template credited above; the original author did not make or endorse this version. Files are licensed as listed above. ${SITE_NAME} is an independent community gallery.`
           : `This template is original work, written for ${SITE_NAME}. \`viewport-base.css\` is the only file taken from another project (see the credits above). ${SITE_NAME} is an independent community gallery and is not affiliated with or endorsed by the author of that file.`)
         : undefined,
     }, credits, SITE_NAME);
@@ -1081,7 +1131,7 @@ function main() {
       { name: z + 'design.md', data: fs.readFileSync(info.designPath) },
       ...(info.viewportBasePath ? [{ name: z + 'viewport-base.css', data: fs.readFileSync(info.viewportBasePath) }] : []),
       ...packFontEntries(z, faces),
-      ...info.licenses.map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
+      ...[...info.licenses, ...extraLicenses].map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
       { name: z + 'PROMPT.md', data: Buffer.from(en, 'utf8') },
       { name: z + 'PROMPT.zh.md', data: Buffer.from(zh, 'utf8') },
       { name: z + 'README.md', data: Buffer.from(readme, 'utf8') },
@@ -1135,7 +1185,7 @@ function main() {
 
   for (const lang of LANGS) {
     writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, zhTerm: (m) => zhTerm(zhData, m) }));
-    writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources, templates: pageData, lang }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources: sources.filter((s) => templates.some((t) => t.source === s.id)), templates: pageData, lang }));
   }
 
   // Machine-readable list of what was built (the Pages workflow checks the zip count against it).

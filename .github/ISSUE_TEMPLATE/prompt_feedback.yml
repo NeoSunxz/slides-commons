@@ -1,0 +1,42 @@
+name: Prompt or agent-output feedback
+description: A prompt did not work well with your coding agent, or the deck it produced was off
+title: "prompt: "
+labels: ["prompt"]
+body:
+  - type: input
+    id: slug
+    attributes:
+      label: Template slug
+      placeholder: neo-grid-bold
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and model used
+      placeholder: Claude Code (Sonnet), Codex, Cursor ...
+    validations:
+      required: true
+  - type: dropdown
+    id: lang
+    attributes:
+      label: Prompt language
+      options: [English, Chinese]
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What did the agent do wrong or skip? Which instruction was ignored or unclear?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: deck
+    attributes:
+      label: Attach the deck
+      description: Drag the generated HTML file or a screenshot into this box (zip HTML files if GitHub refuses them). Remove private content first.

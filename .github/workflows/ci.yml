@@ -18,6 +18,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fast guard for pull requests: upstream/ is read-only third-party content, and templates of
+  # other sources are not edited by outside contributors. Reads git history only; nothing from
+  # the PR is executed.
+  guard:
+    name: guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out (full history, no submodules)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Protect upstream/ and other sources
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -eu
+          changed="$(git diff --name-only "origin/${BASE_REF}...HEAD")"
+
+          upstream="$(printf '%s\n' "$changed" | grep -E '^(upstream(/|$)|\.gitmodules$)' || true)"
+          if [ -n "$upstream" ] && [ "$PR_AUTHOR" != "$OWNER" ]; then
+            echo "::error::This PR changes upstream/ or .gitmodules (read-only third-party content, bumped only by the maintainer): $(echo $upstream | tr '\n' ' ')"
+            exit 1
+          fi
+
+          # Existing templates outside collections/community: allowed, but flagged for the reviewer.
+          others="$(printf '%s\n' "$changed" | grep -E '^collections/' | grep -vE '^collections/community/' || true)"
+          {
+            echo "### Guard"
+            if [ -n "$others" ]; then
+              echo "Files under other sources' templates were modified (reviewer: check this is intended):"
+              printf '%s\n' "$others" | sed 's/^/- `/; s/$/`/'
+            else
+              echo "No changes to upstream/ or to other sources' templates."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$others" ]; then
+            echo "::warning::This PR modifies templates outside collections/community/. See the job summary."
+          fi
+
   test:
     name: validate + test
     runs-on: ubuntu-latest

@@ -31,6 +31,7 @@
         "include": { "type": "array", "items": { "$ref": "#/$defs/str" } },
         "packLicenseName": { "description": "File name of the source license inside the zip (default LICENSE-templates).", "$ref": "#/$defs/str" },
         "collection": { "description": "Own-work collection living inside this repo: pack README says so instead of 'unmodified copies of the originals'.", "type": "boolean" },
+        "perTemplateLicense": { "description": "Every template directory holds its own LICENSE file and must set `authors` and `license` in template.json (community contributions). The pack ships that file as LICENSE; the source-level `author` / `license` are only a label.", "type": "boolean" },
         "derivedFrom": {
           "description": "This source (or the templates listed in `slugs`) is a derivative work of something else; those pages credit both. Templates not listed are original work and get no such credit.",
           "type": "object",
@@ -42,6 +43,8 @@
             "authorUrl": { "$ref": "#/$defs/url" },
             "url": { "$ref": "#/$defs/url" },
             "license": { "$ref": "#/$defs/str" },
+            "shortName": { "description": "Short link text for the detail-page credit line (English), e.g. 'a style preset'. Default: name.", "$ref": "#/$defs/str" },
+            "shortNameZh": { "description": "Same, for the Chinese pages. Default: name.", "$ref": "#/$defs/str" },
             "slugs": { "description": "Only these template slugs are derived. Omit = every template of the source.", "type": "array", "items": { "$ref": "#/$defs/str" }, "uniqueItems": true }
           }
         },
