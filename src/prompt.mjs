@@ -1,3 +1,5 @@
+import { downloadLabel } from './pages.mjs';
+
 // Prompt + pack README generation.
 //
 // The same English text is used for the detail page "Copy prompt" button and for
@@ -13,6 +15,8 @@
 //   paletteNote,               // template.json palette.description (may be '')
 //   typography: [{role, family}], typographyStyle,
 //   fontLinks: [url],          // stylesheet URLs (Google Fonts / Fontshare) found in template.html
+//   remoteFontLinks: [url],    // font stylesheets that cannot be self-hosted (Fontshare); kept as links
+//   localFonts: boolean,       // the pack has fonts/ (self-hosted Latin fonts + fonts.css)
 //   zh: { description, palette_description, typography_style } | null,  // Chinese translations (zh prompt only)
 //   cjkFontLinks: [url],       // the same, found in design.md's CJK section (may be empty)
 //   signatureMoves: [string],  // preview card "Preview Ingredients", tokens resolved
@@ -43,6 +47,9 @@ function filesEn(ctx) {
       rows.push([code(a), 'A file `template.html` uses. Reference only.']);
     }
   }
+  if (ctx.localFonts) {
+    rows.push([code('fonts/'), 'The template\'s Latin fonts as woff2 files (one folder per family, each with its license), and `fonts/fonts.css` with ready-made `@font-face` rules for exactly the families and weights this template uses. Embed them in your deck (see “Fonts” in section 4).']);
+  }
   rows.push([`${code('PROMPT.md')}, ${code('PROMPT.zh.md')}`, 'These instructions (English / Chinese).']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join(', '), 'Attribution and licenses. Leave them as they are.']);
   return ['| File | Purpose |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -60,7 +67,11 @@ function glanceEn(ctx) {
     L.push(`- **Typography:** ${t}${ctx.typographyStyle ? ` — ${ctx.typographyStyle}` : ''}.`);
   }
   if (ctx.systemFontsOnly) {
-    L.push('- **Font loading:** none. The original uses the system font stack; system fonts are the design, so add no web fonts.');
+    L.push('- **Font loading:** none. The original uses the system font stack; system fonts are the design, so add no web fonts' + (ctx.cjkFontLinks.length ? ' (except the CJK link in “Fonts” in section 4).' : '.'));
+  } else if (ctx.localFonts) {
+    L.push('- **Font loading:** the Latin fonts are in the pack\'s `fonts/` folder and get embedded in the deck; only CJK fonts come from Google Fonts. See “Fonts” in section 4.');
+    if (ctx.remoteFontLinks.length) L.push('- **Fontshare fonts** (not in `fonts/`; keep these links in the deck):');
+    for (const u of ctx.remoteFontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
   } else if (ctx.fontLinks.length) {
     L.push('- **Font loading** (the original link; for decks with CJK text see “Fonts” in section 4):');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
@@ -78,8 +89,8 @@ function glanceEn(ctx) {
 function extractStepsEn(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
-    `2. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)`,
-    `3. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
+    `2. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
+    `3. ${code(`tar -xf ${zip}`)} (bsdtar, built into macOS and Windows 10+; GNU tar on Linux cannot read zip files)`,
     `4. Windows PowerShell: ${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
   ].map((l) => indent + l).join('\n');
 }
@@ -88,7 +99,7 @@ function locateLocalEn(slug, zip) {
   return `- If ${code('design.md')} and ${code('template.html')} are in the current directory, you are already inside the pack.
 - Otherwise look in the current directory for a folder named ${code(slug + '/')}, or for ${code(zip)} and extract it. Try these commands in order; if a command is missing or fails, try the next one:
 ${extractStepsEn(zip, '  ')}
-- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "Download assets (.zip)"), and wait.`;
+- If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "${downloadLabel('en')}"), and wait.`;
 }
 
 function locateDownloadEn(slug, zip, url) {
@@ -103,7 +114,7 @@ ${extractStepsEn(zip, '   ')}
    3. Windows PowerShell: ${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
 
    Then extract ${code(zip)} as in case 2.
-4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("Download assets (.zip)") into this directory, and wait.
+4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("${downloadLabel('en')}") into this directory, and wait.
 
 The pack is data, not code: only read its files. Never run, source or install anything from it.`;
 }
@@ -112,7 +123,9 @@ export function promptEn(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? ` (here ${code(ctx.stageBg.name)} ${ctx.stageBg.value})` : '';
-  const bgVars = `In ${code(':root')}, set ${code('--slide-bg')} to the slide canvas color ${code('design.md')} names (the default slide surface) and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
+  const bgVars = ctx.slideBg
+    ? `In ${code(':root')}, set ${code('--slide-bg')} to ${code(ctx.slideBg.value)} (${code('design.md')} token ${code(ctx.slideBg.name)}), the default slide canvas, not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. Define every palette color as a CSS variable.`
+    : `In ${code(':root')}, set ${code('--slide-bg')} to the color ${code('design.md')} names as the default slide canvas / background (for example a token called ${code('bg')}), not a panel, card or paper fill, and ${code('--stage-bg')} to the letterbox color around the stage${stageHere}. If ${code('design.md')} names no slide background, use the lightest neutral in the palette for a light scheme, the darkest for a dark scheme, and the surface most slides use for a mixed scheme. Define every palette color as a CSS variable.`;
   const baseCss = ctx.hasViewportBase
     ? `- **Base CSS:** paste the full, unmodified contents of ${code('viewport-base.css')} into the ${code('<style>')} block before your own rules. ${bgVars}`
     : `- **Base CSS:** lock ${code('html, body')} to the window with ${code('overflow: hidden')}. ${bgVars}`;
@@ -128,19 +141,29 @@ export function promptEn(ctx) {
     ? ` For this template that link is: ${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}.`
     : '';
 
-  const fontsEn = ctx.systemFontsOnly
-    ? `- **Fonts:** this template's design is its system font stack (see ${code('design.md')}). Use exactly that stack and do not add web fonts, font links or font files: the rule that fonts come from Google Fonts or Fontshare does not apply to this template. For CJK text, rely on the system CJK fonts the stack falls back to.`
+  const localEn = `- **Fonts:** the Latin fonts are in the pack's ${code('fonts/')} folder; embed them in the deck. Only CJK fonts (if the deck has CJK text) are loaded from Google Fonts. Never link Google Fonts for the Latin families and never reference files in ${code('fonts/')} from the deck: it must stay a single file that works offline.
+  - Latin: ${code('fonts/fonts.css')} holds ready-made ${code('@font-face')} rules for exactly the families and weights this template uses (each split by ${code('unicode-range')} into latin and latin-ext). Copy the rules for the weights and styles your deck actually uses into your ${code('<style>')}, with each ${code('url(...)')} replaced by a base64 data URI (${code('data:font/woff2;base64,…')}). Generate the base64 with a small Node or Python script rather than by hand. Embed both the latin and the latin-ext rules for every face you use, so characters such as → or accented letters added in later edits do not silently fall back. Keep the family names, ${code('font-display')} and ${code('unicode-range')} unchanged. Leaving out unused weights applies to per-weight static files; a variable font file covers all its weights, so embed it once. Where ${code('design.md')} says the Latin fonts load from Google Fonts (e.g. under “Known Gaps”), the pack's ${code('fonts/')} supersedes it.
+  - Deck without CJK text: no font request at all.
+  - Deck with Chinese, Japanese or Korean text: add one Google Fonts ${code('<link>')} for the CJK family only. Take the combined link from the CJK section of ${code('design.md')} and remove its Latin families (they are embedded).${cjkLink} If ${code('design.md')} gives no combined link, request the CJK family it recommends, at the weights it specifies.
+  - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight.`;
+  const remoteLinks = ctx.remoteFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ');
+  const remoteEn = ctx.localFonts && ctx.remoteFontLinks.length
+    ? `\n  - Fontshare families: these are not in ${code('fonts/')} (Fontshare fonts cannot be self-hosted here). Keep the template's Fontshare link in the deck, exactly as it is: ${remoteLinks}. This is the one exception to "embed everything"; do not swap these families for another font.`
+    : '';
+  const fontsEn = ctx.localFonts ? localEn + remoteEn : ctx.systemFontsOnly
+    ? `- **Fonts:** this template's design is its system font stack (see ${code('design.md')}). Use exactly that stack and do not add web fonts, font links or font files: the rule that fonts come from Google Fonts or Fontshare does not apply to this template. ${ctx.cjkFontLinks.length ? `For CJK text, ${code('design.md')} allows one exception to the no-web-fonts rule: if the deck contains Chinese, Japanese or Korean text, add this one link and append the CJK family it loads after the Latin stack in every font-family: ${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}. A deck without CJK text makes no font request at all.` : 'For CJK text, rely on the system CJK fonts the stack falls back to.'}`
     : `- **Fonts:** load them only from Google Fonts or Fontshare, with the exact families and weights from ${code('design.md')}, with one ${code('<link>')} per font service (a single Google Fonts link, not several).
   - Deck without CJK text: use the original link from section 2.
   - Deck with Chinese, Japanese or Korean text: use the combined link from the CJK section of ${code('design.md')} instead of the original one.${cjkLink} If ${code('design.md')} gives no combined link, add the CJK family it recommends, at the weights it specifies, to the original link as one more ${code('family=')} parameter.
   - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
-  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there.`;
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight.`;
   const netEn = `- **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed user-supplied images as data URIs, downscaled to the size they are shown at.${ctx.cdnScripts.length ? `\n- **Charts:** the original ${code('template.html')} loads a script from a CDN (${ctx.cdnScripts.map(code).join(', ')}). Do not copy that. Charts are welcome, but draw them with inline SVG (the default) or canvas code written in the file. Inline a pinned copy of the chart library only if the user explicitly asks for it.` : ''}`;
 
   const fontCheckEn = ctx.systemFontsOnly
-    ? '- the type renders in the stack from `design.md`, and no web fonts or font requests are present;'
+    ? '- the type renders in the stack from `design.md`, and no web fonts or font requests are present' + (ctx.cjkFontLinks.length ? ' (other than the CJK link, for CJK text);' : ';')
     : `- the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: it returns true even when a face failed to load. Instead wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare the rendered text width against a fallback font. If a font request fails with a network error, retry or reload before concluding anything; change the import only if the URL itself is wrong;`;
-  const netCheckEn = ctx.systemFontsOnly ? 'no network requests at all' : 'no network requests beyond the font hosts';
+  const netCheckEn = ctx.systemFontsOnly ? (ctx.cjkFontLinks.length ? 'no network requests at all (or, for CJK text, only the one CJK Google Fonts request)' : 'no network requests at all') : ctx.localFonts ? `no network requests at all (or, for CJK text, only the Google Fonts request${ctx.remoteFontLinks.length ? ' and the Fontshare font request' : ''})` : 'no network requests beyond the font hosts';
 
   return `# Build a slide deck with the ${name} design system
 
@@ -167,7 +190,7 @@ ${glanceEn(ctx)}
 1. **Ask before building.** In one message, ask the user:
    1. Purpose and audience: what is the deck for (pitch, conference talk, internal review, teaching, …) and who will see it?
    2. Length: roughly how many slides (5–10, 10–20, 20+)?
-   3. Content: ask them to paste or point to their material (notes, outline, document, data, images), or to confirm that you should draft it from a topic. Also ask for anything that should appear as deck chrome: speaker name, date, organisation, and a link or URL for the closing slide. Leave out whatever they don't give you; never invent it.
+   3. Content: ask them to paste or point to their material (notes, outline, document, data, images), or to confirm that you should draft it from a topic. Also ask for anything that should appear as deck chrome: speaker name, date, organisation, and a link or URL for the closing slide. Leave out whatever deck chrome they don't give you; never invent it.
    4. Density: speaker-led (low density: one idea per slide, large type, few words) or reading-first (high density: self-contained slides with more detail)?
 
    Skip any question the user has already answered. Then stop and wait for the reply.
@@ -191,13 +214,16 @@ ${netEn}
 ## 5. Hard constraints
 
 - **Keep the fonts:** the exact families, weights, letter-spacing, line-heights and text-transforms from ${code('design.md')}. Never substitute. If a font does not load, find out why (section 6) instead of replacing it.
+- **When ${code('design.md')} contradicts itself** (for example it says the accent color is never a text color, yet an ${code('<em>')} rule colors text with it), follow the stricter rule and tell the user in your final reply.
 - **Keep the palette:** only the colors listed above. No new accent, no recoloring, no gradients or shadows unless ${code('design.md')} uses them.
 - **Keep the decorative vocabulary:** the marks, rules, stamps, textures and ornaments ${code('design.md')} describes are part of the identity, not optional decoration.
 - **Keep the spacing rhythm:** insets, grid, gaps and paddings from ${code('design.md')}.
 - **Keep the component grammar:** build with the system's own components and their internal structure (cards, stat blocks, tables, page-number tags, …).
 - **Never mix templates.** Do not borrow layouts, colors or type from other templates, presets or generic presentation styles.
 - **Missing layout? Design it inside the same system**, with the same fonts, palette, decoration, spacing and chrome, so it would look at home between two original slides. Don't switch styles or drop the content.
-- **Real content only.** Use the user's material. Never reuse demo text, numbers, names or logos from ${code('template.html')}. Don't invent facts or statistics; if you need placeholders, mark them clearly and list them for the user.
+- **Real content, drafted when missing.** Use the user's material. Never reuse demo text, numbers, names or logos from ${code('template.html')}. When the user names a topic but gives no content (for example "two pieces of user feedback", "thanks", "goals"), draft that content yourself; never put placeholders such as "TBD" on a slide. Keep drafts plausible and modest. Every drafted item (including any example quote, name or number you made up) must be listed in your final reply (section 6) so the user can review or replace it.
+- **Only real links and codes.** Decorations that look functional (QR codes, links, URLs, email addresses) are used only when the user gave a real one; otherwise omit them.
+- **Numbers must agree:** section numbers and labels shown on slides must match the slide's page number (the cover is page 1), so they never disagree with the page counter.
 - **No internal labels on slides.** Never show the template name (${name} / ${slug}), the words "template" or "preview", file names, paths, or notes about the user's requirements. Visible chrome is real deck content only: title, sections, date, author, page numbers.
 - **The user's density choice wins** over any density guidance in ${code('design.md')}. For low density, keep the system's grid and panel vocabulary but use fewer, larger panels and one idea per slide; fill any spare panels with the system's own ornaments, never invented ones. If content does not fit, split it across more slides; never shrink text below the sizes in ${code('design.md')} and never let it overflow.
 - **Minimum text size for speaker-led decks:** the smallest label tokens in ${code('design.md')} (often 14–16px at 1920×1080) shrink to about 9–10px on a 1280px-wide screen and are unreadable when projected. For speaker-led (low-density) decks, raise any text below 20px (at the 1920×1080 stage) to at least 20px, keeping the token's other properties (font, tracking, case). For reading-first decks keep the ${code('design.md')} sizes. This is the one place where the user's density choice overrides the sizes in ${code('design.md')}.
@@ -225,7 +251,7 @@ ${netEn}
    - Windows: ${code('start "" "<file>.html"')} in cmd, or ${code('Start-Process "<file>.html"')} in PowerShell
 
    If the command is not available or there is no display (for example a remote or headless session), skip this step and give the user the file's absolute path.
-6. Report the file's full path, the slide count, how to navigate, and any placeholders or open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
+6. Report the file's full path, the slide count, how to navigate, every item you drafted (slide number and text, including any made-up example quotes, names or numbers), any contradictions you resolved in ${code('design.md')}, every place where a legibility rule (contrast or minimum size) made you deviate from its colors or sizes (what changed, from what to what), and open questions. For later changes, edit the same file, keep every constraint above, and run the self-check again.
 `;
 }
 
@@ -247,6 +273,9 @@ function filesZh(ctx) {
     } else {
       rows.push([code(a), '`template.html` 用到的文件。仅作参考。']);
     }
+  }
+  if (ctx.localFonts) {
+    rows.push([code('fonts/'), '本模板的拉丁字体 woff2 文件（每个字体族一个文件夹，附许可证），以及 `fonts/fonts.css`：恰好覆盖本模板所用字体族和字重的现成 `@font-face` 规则。把它们嵌入你的幻灯片（见第 4 节“字体”）。']);
   }
   rows.push([`${code('PROMPT.md')}、${code('PROMPT.zh.md')}`, '本说明（英文 / 中文）。']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join('、'), '署名与许可证。保持原样。']);
@@ -270,7 +299,11 @@ function glanceZh(ctx) {
     L.push(`- **字体**：${t}${style}。`);
   }
   if (ctx.systemFontsOnly) {
-    L.push('- **字体加载**：无。原模板使用系统字体栈；系统字体就是设计本身，不要添加网页字体。');
+    L.push('- **字体加载**：无。原模板使用系统字体栈；系统字体就是设计本身，不要添加网页字体' + (ctx.cjkFontLinks.length ? '（第 4 节“字体”中的 CJK 链接除外）。' : '。'));
+  } else if (ctx.localFonts) {
+    L.push('- **字体加载**：拉丁字体在素材包的 `fonts/` 文件夹里，要嵌入你的幻灯片；只有 CJK 字体从 Google Fonts 加载。见第 4 节“字体”。');
+    if (ctx.remoteFontLinks.length) L.push('- **Fontshare 字体**（不在 `fonts/` 里；在幻灯片中保留这些链接）：');
+    for (const u of ctx.remoteFontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
   } else if (ctx.fontLinks.length) {
     L.push('- **字体加载**（原模板的链接；幻灯片含 CJK 文字时见第 4 节“字体”）：');
     for (const u of ctx.fontLinks) L.push(`  - ${code(`<link rel="stylesheet" href="${u}">`)}`);
@@ -286,8 +319,8 @@ function glanceZh(ctx) {
 function extractStepsZh(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
-    `2. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）`,
-    `3. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
+    `2. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
+    `3. ${code(`tar -xf ${zip}`)}（bsdtar，macOS 与 Windows 10+ 自带；Linux 上的 GNU tar 无法读取 zip）`,
     `4. Windows PowerShell：${code(`Expand-Archive ${zip} -DestinationPath .`)}`,
   ].map((l) => indent + l).join('\n');
 }
@@ -296,7 +329,7 @@ function locateLocalZh(slug, zip) {
   return `- 如果当前目录里有 ${code('design.md')} 和 ${code('template.html')}，说明你已经在素材包内。
 - 否则，在当前目录查找名为 ${code(slug + '/')} 的文件夹，或查找 ${code(zip)} 并解压。按顺序尝试以下命令；某个命令不存在或执行失败时，换下一个：
 ${extractStepsZh(zip, '  ')}
-- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "Download assets (.zip)" 下载），并等待回复。`;
+- 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 下载），并等待回复。`;
 }
 
 function locateDownloadZh(slug, zip, url) {
@@ -311,7 +344,7 @@ ${extractStepsZh(zip, '   ')}
    3. Windows PowerShell：${code(`Invoke-WebRequest -Uri ${url} -OutFile ${zip}`)}
 
    然后按第 2 种情况的方法解压 ${code(zip)}。
-4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "Download assets (.zip)" 把素材包下载到这个目录，并等待回复。
+4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 把素材包下载到这个目录，并等待回复。
 
 素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。`;
 }
@@ -320,7 +353,9 @@ export function promptZh(ctx) {
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
   const stageHere = ctx.stageBg ? `（本模板为 ${code(ctx.stageBg.name)} ${ctx.stageBg.value}）` : '';
-  const bgVars = `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 指定的幻灯片画布颜色（默认的页面底色），把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
+  const bgVars = ctx.slideBg
+    ? `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code(ctx.slideBg.value)}（${code('design.md')} 中的 token ${code(ctx.slideBg.name)}），即默认幻灯片画布，不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。把每个配色都定义为 CSS 变量。`
+    : `在 ${code(':root')} 中，把 ${code('--slide-bg')} 设为 ${code('design.md')} 中指定为默认幻灯片画布 / 背景的颜色（例如名为 ${code('bg')} 的 token），不是面板、卡片或纸张的填充色，把 ${code('--stage-bg')} 设为画布四周加边的颜色${stageHere}。如果 ${code('design.md')} 没有指定页面底色，浅色方案用配色中最浅的中性色，深色方案用最深的中性色，混合方案用大多数页面使用的底色。把每个配色都定义为 CSS 变量。`;
   const baseCss = ctx.hasViewportBase
     ? `- **基础 CSS**：把 ${code('viewport-base.css')} 的全部内容原样粘贴进 ${code('<style>')}，放在你自己的规则之前。${bgVars}`
     : `- **基础 CSS**：${code('html, body')} 锁定为窗口大小并设 ${code('overflow: hidden')}。${bgVars}`;
@@ -336,19 +371,29 @@ export function promptZh(ctx) {
     ? `本模板的这条链接是：${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}。`
     : '';
 
-  const fontsZh = ctx.systemFontsOnly
-    ? `- **字体**：本模板的设计就是系统字体栈（见 ${code('design.md')}）。严格使用该字体栈，不要添加网页字体、字体链接或字体文件：“字体只从 Google Fonts 或 Fontshare 加载”这条规则不适用于本模板。CJK 文字依靠该字体栈回退到的系统 CJK 字体。`
+  const localZh = `- **字体**：拉丁字体在素材包的 ${code('fonts/')} 文件夹里，要嵌入幻灯片；只有 CJK 字体（幻灯片含 CJK 文字时）从 Google Fonts 加载。不要为拉丁字体链接 Google Fonts，也不要在幻灯片里引用 ${code('fonts/')} 中的文件：它必须保持为单个、可离线使用的文件。
+  - 拉丁字体：${code('fonts/fonts.css')} 里是恰好覆盖本模板所用字体族和字重的现成 ${code('@font-face')} 规则（按 ${code('unicode-range')} 拆成 latin 与 latin-ext）。把幻灯片实际用到的字重和字形对应的规则复制进你的 ${code('<style>')}，并把每个 ${code('url(...)')} 换成 base64 data URI（${code('data:font/woff2;base64,…')}）。base64 用一个小的 Node 或 Python 脚本生成，不要手工处理。每个用到的字体都要同时嵌入 latin 与 latin-ext 两组规则，这样之后编辑时加入 → 或带重音的字母也不会悄悄回退。字体族名、${code('font-display')} 和 ${code('unicode-range')} 保持不变。“没用到的字重不要放进去”只适用于按字重分开的静态文件；可变字体文件已覆盖所有字重，只嵌入一次。${code('design.md')} 中说拉丁字体从 Google Fonts 加载的地方（如“Known Gaps”），以素材包的 ${code('fonts/')} 为准。
+  - 幻灯片不含 CJK 文字：完全不发起字体请求。
+  - 幻灯片含中文、日文或韩文：添加一条只含 CJK 字体族的 Google Fonts ${code('<link>')}。取 ${code('design.md')} CJK 一节给出的合并链接，去掉其中的拉丁字体族（它们已嵌入）。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就按它推荐的 CJK 字体和规定字重请求。
+  - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。`;
+  const remoteLinks = ctx.remoteFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ');
+  const remoteZh = ctx.localFonts && ctx.remoteFontLinks.length
+    ? `\n  - Fontshare 字体：这些字体不在 ${code('fonts/')} 里（Fontshare 的字体无法在此自托管）。在幻灯片中原样保留模板里的 Fontshare 链接：${remoteLinks}。这是“全部嵌入”规则的唯一例外；不要把这些字体换成别的字体。`
+    : '';
+  const fontsZh = ctx.localFonts ? localZh + remoteZh : ctx.systemFontsOnly
+    ? `- **字体**：本模板的设计就是系统字体栈（见 ${code('design.md')}）。严格使用该字体栈，不要添加网页字体、字体链接或字体文件：“字体只从 Google Fonts 或 Fontshare 加载”这条规则不适用于本模板。${ctx.cjkFontLinks.length ? `CJK 文字是 ${code('design.md')} 允许的唯一例外：幻灯片含中文、日文或韩文时，添加下面这一条链接，并把它加载的 CJK 字体族放在每个 font-family 的拉丁字体栈之后：${ctx.cjkFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ')}。不含 CJK 文字的幻灯片完全不发起字体请求。` : 'CJK 文字依靠该字体栈回退到的系统 CJK 字体。'}`
     : `- **字体**：只从 Google Fonts 或 Fontshare 加载，字体族和字重与 ${code('design.md')} 完全一致，每个字体服务只用一个 ${code('<link>')}（Google Fonts 只用一条链接，不要多条）。
   - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
   - 幻灯片含中文、日文或韩文：改用 ${code('design.md')} CJK 一节给出的合并链接，代替原模板的链接。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就把它推荐的 CJK 字体按规定字重作为一个新的 ${code('family=')} 参数加到原链接上。
   - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
-  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。`;
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。`;
   const netZh = `- **不发起其他网络请求**：不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。${ctx.cdnScripts.length ? `\n- **图表**：原版 ${code('template.html')} 从 CDN 加载了脚本（${ctx.cdnScripts.map(code).join('、')}）。不要照搬。图表可以做，但要用内联 SVG（默认）或写在文件里的 canvas 代码绘制。只有用户明确要求时，才内联一份固定版本的图表库。` : ''}`;
 
   const fontCheckZh = ctx.systemFontsOnly
-    ? '- 文字按 `design.md` 的字体栈渲染，页面中没有网页字体或字体请求；'
+    ? '- 文字按 `design.md` 的字体栈渲染，页面中没有网页字体或字体请求' + (ctx.cjkFontLinks.length ? '（含 CJK 文字时的那条 CJK 链接除外）；' : '；')
     : `- 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：即使字体加载失败它也会返回 true。应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；只有 URL 本身有误时才修改引入方式；`;
-  const netCheckZh = ctx.systemFontsOnly ? '完全没有网络请求' : '除字体服务外没有其他网络请求';
+  const netCheckZh = ctx.systemFontsOnly ? (ctx.cjkFontLinks.length ? '完全没有网络请求（含 CJK 文字时只允许那条 CJK 字体的 Google Fonts 请求）' : '完全没有网络请求') : ctx.localFonts ? `完全没有网络请求（含 CJK 文字时只允许那条 Google Fonts 请求${ctx.remoteFontLinks.length ? '，以及 Fontshare 字体请求' : ''}）` : '除字体服务外没有其他网络请求';
 
   return `# 用 ${name} 设计系统制作幻灯片
 
@@ -375,7 +420,7 @@ ${glanceZh(ctx)}
 1. **先问再做。** 用一条消息向用户提问：
    1. 用途与受众：这份幻灯片做什么用（融资路演、大会演讲、内部评审、教学……），给谁看？
    2. 篇幅：大约多少页（5–10、10–20、20 以上）？
-   3. 内容：请用户粘贴或指明素材（笔记、提纲、文档、数据、图片），或确认由你根据主题起草。同时询问需要出现在页面框架里的信息：演讲者姓名、日期、机构，以及结尾页的链接或网址。用户没提供的就省略，绝不编造。
+   3. 内容：请用户粘贴或指明素材（笔记、提纲、文档、数据、图片），或确认由你根据主题起草。同时询问需要出现在页面框架里的信息：演讲者姓名、日期、机构，以及结尾页的链接或网址。页面框架信息用户没提供的就省略，绝不编造。
    4. 密度：演讲型（低密度：一页一个观点，大字号，少文字）还是阅读型（高密度：每页自成一体，信息更多）？
 
    用户已经回答过的问题就跳过。问完后停下，等待回复。
@@ -399,13 +444,16 @@ ${netZh}
 ## 5. 硬性约束
 
 - **不换字体**：字体族、字重、字间距、行高和大小写转换都与 ${code('design.md')} 完全一致。绝不替换。字体加载失败时先查明原因（见第 6 节），不要换字体。
+- **${code('design.md')} 自相矛盾时**（例如它说强调色绝不用作文字颜色，却有一条 ${code('<em>')} 规则把文字染成该颜色），遵循更严格的规则，并在最终回复里告诉用户。
 - **不改配色**：只用上面列出的颜色。不加新强调色，不改色，除非 ${code('design.md')} 本身使用，否则不加渐变或阴影。
 - **保留装饰语汇**：${code('design.md')} 描述的标记、线条、印章、纹理和装饰是风格本身的一部分，不是可有可无的点缀。
 - **保持间距节奏**：内边距、网格、间隙和留白都按 ${code('design.md')}。
 - **保持组件语法**：使用设计系统自己的组件及其内部结构（卡片、数据块、表格、页码标签……）。
 - **绝不混用模板。** 不借用其他模板、预设或通用演示风格的版式、配色或字体。
 - **缺少某种版式？在同一系统内设计它**，使用相同的字体、配色、装饰、间距和页面框架元素，让它放在两张原版页面之间也毫不违和。不要换风格，也不要删掉内容。
-- **只用真实内容。** 使用用户的素材。绝不复用 ${code('template.html')} 中的示例文字、数字、人名或标志。不编造事实或数据；需要占位时明确标出，并列给用户。
+- **内容真实；缺失时自行起草。** 使用用户的素材。绝不复用 ${code('template.html')} 中的示例文字、数字、人名或标志。用户只给了主题而没给内容时（例如“两条用户反馈”“致谢”“目标”），由你自己起草这些内容；页面上绝不放“待补充”之类的占位符。起草的内容要合理、克制。每一条起草的内容（包括你编造的示例引语、人名或数字）都必须列在最终回复里（第 6 节），方便用户审阅或替换。
+- **只用真实的链接和码。** 看起来有功能的装饰（二维码、链接、网址、邮箱）只有在用户提供了真实内容时才使用；否则省略。
+- **编号必须一致**：页面上显示的章节编号和标签必须与该页的页码一致（封面为第 1 页），不能与页码计数矛盾。
 - **页面上不出现内部标签。** 绝不显示模板名（${name} / ${slug}）、"template"/"模板"或"preview"/"预览"字样、文件名、路径，或关于用户需求的备注。页面上可见的框架文字只能是真实内容：标题、章节、日期、作者、页码。
 - **以用户选择的密度为准**，它优先于 ${code('design.md')} 中任何关于密度的说法。低密度时保留设计系统的网格和面板语汇，但使用更少、更大的面板，一页一个观点；空余面板用设计系统自己的装饰填充，绝不自创装饰。内容放不下就拆成更多页；字号不得小于 ${code('design.md')} 的规定，也绝不允许溢出。
 - **演讲型幻灯片的最小字号**：${code('design.md')} 中最小的标签 token（通常在 1920×1080 下为 14–16px）在 1280px 宽的屏幕上只有约 9–10px，投影时根本看不清。演讲型（低密度）幻灯片中，凡是在 1920×1080 画布上小于 20px 的文字，一律提高到至少 20px，保留该 token 的其他属性（字体、字距、大小写）。阅读型幻灯片保持 ${code('design.md')} 的字号。这是用户的密度选择唯一优先于 ${code('design.md')} 字号的地方。
@@ -433,7 +481,7 @@ ${netZh}
    - Windows：cmd 中用 ${code('start "" "<file>.html"')}，PowerShell 中用 ${code('Start-Process "<file>.html"')}
 
    如果该命令不可用，或者没有图形界面（例如远程或无头环境），跳过这一步，直接把文件的绝对路径告诉用户。
-6. 汇报文件的完整路径、页数、翻页方式，以及所有占位内容或待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
+6. 汇报文件的完整路径、页数、翻页方式，你起草的每一条内容（页码和文字，包括任何编造的示例引语、人名或数字）、你处理过的 ${code('design.md')} 内部矛盾、因可读性规则（对比度或最小字号）而偏离其配色或字号的每一处（改了什么，从什么改成什么），以及待确认的问题。之后修改时，编辑同一个文件，遵守以上全部约束，并重新自检。
 `;
 }
 
@@ -444,7 +492,7 @@ ${netZh}
 // credits: [{what, author, project, license, licenseFile, url}]
 export function packReadme(ctx, credits, siteName) {
   const lines = credits.map((c) =>
-    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}; see ${code(c.licenseFile)}).`);
+    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
   return `# ${ctx.name}: slide template pack
 
 ${ctx.tagline}
@@ -462,6 +510,6 @@ ${ctx.zipUrl ? `\nThis pack can also be downloaded from ${ctx.zipUrl}.\n` : ''}
 ${lines.join('\n')}
 - ${code('PROMPT.md')}, ${code('PROMPT.zh.md')} and this README: written by ${siteName}.
 
-The template and design files are unmodified copies of the originals. ${siteName} is an independent community gallery that repackages openly licensed templates; it is not affiliated with or endorsed by the original authors.
+${ctx.packClosing ?? `The template and design files are unmodified copies of the originals. ${siteName} is an independent community gallery that repackages openly licensed templates; it is not affiliated with or endorsed by the original authors.`}
 `;
 }

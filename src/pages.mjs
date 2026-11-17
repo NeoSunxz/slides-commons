@@ -27,6 +27,9 @@ const link = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
 const authorList = (authors) => authors.map((a) => (a.url ? link(a.url, a.name) : esc(a.name))).join(', ');
 const authorLink = (s) => (s.authorUrl ? link(s.authorUrl, s.author) : esc(s.author));
 const bare = (url) => url.replace(/^https?:\/\//, '');
+// The original a derivative source is based on: { name, author, authorUrl?, url, license }.
+const derivedLink = (d) => link(d.url, d.name);
+const derivedAuthor = (d) => (d.authorUrl ? link(d.authorUrl, d.author) : esc(d.author));
 
 // ---------------------------------------------------------------------------
 // UI strings
@@ -39,15 +42,20 @@ const STRINGS = {
     langLabel: 'Language',
     tagline: 'Open HTML slide templates with prompts, for coding agents.',
     intro: 'Preview a template, download its asset pack, and hand the prompt to your coding agent to build your own deck.',
+    introAuto: 'Preview a template, copy its prompt, and your coding agent fetches the pack and builds the deck.',
+    stepsAuto: ['<strong>Preview</strong> a template and page through it.', '<strong>Copy the prompt</strong> and paste it into your coding agent, ideally in an empty folder. It downloads the template pack itself.', '<strong>Answer its questions</strong>; it builds your deck.'],
     steps: ['<strong>Preview</strong> a template and page through it.', '<strong>Download</strong> the asset pack and unzip it.', '<strong>Paste the prompt</strong> into your coding agent in that folder.'],
     indexTitle: `${SITE_NAME}: HTML slide templates for coding agents`,
     filters: {
-      label: 'Filter templates', search: 'Search', searchPlaceholder: 'Name, mood, tone, use…', source: 'Source', scheme: 'Scheme', mood: 'Mood',
+      label: 'Filter templates', search: 'Search', searchPlaceholder: 'Name, mood, tone, use…', author: 'Author', scheme: 'Scheme', mood: 'Mood',
       moreMoods: 'More moods', clear: 'Clear filters', count: '{n} of {total} templates', none: 'No template matches these filters.',
     },
     schemeNames: { light: 'Light', dark: 'Dark', mixed: 'Mixed' },
     by: (who) => `by ${who}`,
     byFrom: (who, from) => `by ${who} · from ${from}`,
+    byOriginal: (who) => `by ${who}`,
+    byDerived: (who, d) => `by ${who} · based on ${link(d.url, d.shortName ?? d.name)} by ${derivedAuthor(d)}`,
+    byCard: (who) => `by ${who}`,
     allTemplates: '← All templates',
     livePreview: 'Live preview',
     previewTitle: (name) => `${name} live preview`,
@@ -57,6 +65,9 @@ const STRINGS = {
     openTab: 'Open in new tab ↗',
     hint: 'Click into the preview and use the arrow keys to page; Esc leaves fullscreen.',
     useHeading: 'Use this template',
+    useStepsAuto: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'],
+    downloadLink: 'Offline? Download the pack (.zip)',
+    offlineNote: 'Unzip it in your working folder, then paste the prompt.',
     useSteps: ['Download the pack and unzip it.', 'Open your coding agent (Claude Code, Codex, Cursor, …) in that folder.', 'Paste the prompt and answer its questions.'],
     download: 'Download assets (.zip)',
     copy: 'Copy prompt',
@@ -75,10 +86,13 @@ const STRINGS = {
     attribution: 'Attribution',
     attrMain: (t) => `<strong>${esc(t.name)}</strong> was created by ${authorList(t.authors)} and is published in ${link(t.sourceRepoUrl, t.sourceRepoName)} under the ${esc(t.license)} license. Original files: ${link(t.sourceDirUrl, bare(t.sourceDirUrl))}.`,
     attrDerived: (d) => `Adapted from ${link(d.url, d.name)} by ${authorList(d.authors)} (${esc(d.license)}).`,
-    attrCompanion: (c) => `The design notes (<code>design.md</code>, fixed-stage edition) and <code>viewport-base.css</code> in the pack come from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}).`,
+    attrCompanion: (c) => (c.providesDesign
+      ? `The design notes (<code>design.md</code>, fixed-stage edition) and <code>viewport-base.css</code> in the pack come from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}).`
+      : `<code>viewport-base.css</code> in the pack comes from ${link(c.dirUrl, c.repoName)} by ${esc(c.author)} (${esc(c.license)}); its license ships as <code>LICENSE-skill</code>.`),
+    attrDerivedSource: (d, t) => `<strong>${esc(t.name)}</strong> is a derivative work. Its visual direction (fonts, colors, signature elements) is based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}); the layouts, demo content and design system were written by ${authorList(t.authors)}. ${derivedAuthor(d)} did not make, review or endorse this template.`,
     attrNotOfficial: `${SITE_NAME} only previews and repackages these openly licensed files; the download includes the original license files. This is not the author's official site.`,
     attrTranslation: '',
-    footerBy: (s, links) => `Templates by ${authorLink(s)} (${esc(s.license)}): ${links}`,
+    footerBy: (s, links) => `Templates by ${authorLink(s)} (${esc(s.license)}): ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? 'some are ' : ''}based on ${derivedLink(s.derivedFrom)} by ${derivedAuthor(s.derivedFrom)}, who did not make or endorse them` : ''}`,
     footerIndependent: `${SITE_NAME} is an independent community gallery, not affiliated with the original authors.`,
     footerCredits: 'Credits &amp; licenses',
     creditsTitle: `Credits: ${SITE_NAME}`,
@@ -86,8 +100,9 @@ const STRINGS = {
     creditsHeading: 'Credits',
     creditsIntro: `${SITE_NAME} is an independent community gallery. Every template belongs to its author and is used under its open license. Nothing here is an official project of the original authors.`,
     creditsTranslation: '',
-    creditsSource: (s) => `${link(s.repo, bare(s.repo))} by ${authorLink(s)} (${esc(s.license)}). Its license ships in every pack as <code>LICENSE-templates</code>.`,
-    creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its fixed-stage <code>design.md</code> edition and <code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
+    creditsSource: (s) => `${link(s.repo, bare(s.repo))} by ${authorLink(s)} (${esc(s.license)}). Its license ships in every pack as <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>.`,
+    creditsDerived: (d, s) => `${d.slugs ? 'Some of these templates are derivative works (the rest are original): their' : 'These templates are derivative works: their'} visual direction (fonts, colors, signature elements) is based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}). The layouts, demo content and design systems were written by ${esc(s.author)}. ${derivedAuthor(d)} did not make, review or endorse them.`,
+    creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its ${c.designOverride ? 'fixed-stage <code>design.md</code> edition and ' : ''}<code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
     creditsOriginal: 'original',
   },
   zh: {
@@ -96,15 +111,20 @@ const STRINGS = {
     langLabel: '语言',
     tagline: '开放的 HTML 幻灯片模板，附带给 coding agent 的提示词。',
     intro: '在线预览模板，下载素材包，把提示词交给你的 coding agent，生成你自己的幻灯片。',
+    introAuto: '在线预览模板，复制它的提示词，你的 coding agent 会自己获取素材包并生成幻灯片。',
+    stepsAuto: ['<strong>预览</strong>模板并翻页查看。', '<strong>复制提示词</strong>，粘贴给你的 coding agent（最好在空文件夹中）。它会自己下载模板素材包。', '<strong>回答它的问题</strong>，它会生成你的幻灯片。'],
     steps: ['<strong>预览</strong>模板并翻页查看。', '<strong>下载</strong>素材包并解压。', '在该文件夹中把<strong>提示词</strong>粘贴给你的 coding agent。'],
     indexTitle: `${SITE_NAME}：给 coding agent 用的 HTML 幻灯片模板`,
     filters: {
-      label: '筛选模板', search: '搜索', searchPlaceholder: '名称、情绪、语气、用途……', source: '来源', scheme: '配色方案', mood: '情绪',
+      label: '筛选模板', search: '搜索', searchPlaceholder: '名称、情绪、语气、用途……', author: '作者', scheme: '配色方案', mood: '情绪',
       moreMoods: '更多情绪', clear: '清除筛选', count: '共 {total} 个模板，显示 {n} 个', none: '没有符合筛选条件的模板。',
     },
     schemeNames: { light: '浅色', dark: '深色', mixed: '混合' },
     by: (who) => `作者：${who}`,
     byFrom: (who, from) => `作者：${who} · 来源：${from}`,
+    byOriginal: (who) => `${who} 出品`,
+    byDerived: (who, d) => `${who} 出品 · 基于 ${derivedAuthor(d)} 的${link(d.url, d.shortNameZh ?? d.name)}`,
+    byCard: (who) => `${who} 出品`,
     allTemplates: '← 全部模板',
     livePreview: '实时预览',
     previewTitle: (name) => `${name} 实时预览`,
@@ -114,6 +134,9 @@ const STRINGS = {
     openTab: '在新标签页打开 ↗',
     hint: '点击预览区后可用方向键翻页；按 Esc 退出全屏。',
     useHeading: '使用此模板',
+    useStepsAuto: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'],
+    downloadLink: '离线？下载素材包（.zip）',
+    offlineNote: '在工作文件夹中解压，再粘贴提示词。',
     useSteps: ['下载素材包并解压。', '在该文件夹中打开你的 coding agent（Claude Code、Codex、Cursor 等）。', '粘贴提示词，回答它的问题。'],
     download: '下载素材包（.zip）',
     copy: '复制提示词',
@@ -135,10 +158,13 @@ const STRINGS = {
     attribution: '署名',
     attrMain: (t) => `<strong>${esc(t.name)}</strong> 由 ${authorList(t.authors)} 创作，发布于 ${link(t.sourceRepoUrl, t.sourceRepoName)}，采用 ${esc(t.license)} 许可证。原始文件：${link(t.sourceDirUrl, bare(t.sourceDirUrl))}。`,
     attrDerived: (d) => `改编自 ${authorList(d.authors)} 的 ${link(d.url, d.name)}（${esc(d.license)}）。`,
-    attrCompanion: (c) => `素材包中的设计说明（<code>design.md</code>，固定画布版）和 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}）。`,
+    attrCompanion: (c) => (c.providesDesign
+      ? `素材包中的设计说明（<code>design.md</code>，固定画布版）和 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}）。`
+      : `素材包中的 <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.dirUrl, c.repoName)}（${esc(c.license)}），许可证文件为 <code>LICENSE-skill</code>。`),
+    attrDerivedSource: (d, t) => `<strong>${esc(t.name)}</strong> 是衍生作品。它的视觉方向（字体、配色、标志性元素）基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）；版式、演示内容和设计系统由 ${authorList(t.authors)} 编写。${derivedAuthor(d)} 并未制作、审阅或认可此模板。`,
     attrNotOfficial: `${SITE_NAME} 仅预览并重新打包上述开源文件，下载的素材包内附原许可证文件。本站不是原作者的官方站点。`,
     attrTranslation: `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 MIT 许可）；译文由本项目提供，以英文原文为准。`,
-    footerBy: (s, links) => `模板来自 ${authorLink(s)}（${esc(s.license)}）：${links}`,
+    footerBy: (s, links) => `模板来自 ${authorLink(s)}（${esc(s.license)}）：${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? '其中部分' : ''}基于 ${derivedAuthor(s.derivedFrom)} 的 ${derivedLink(s.derivedFrom)}（其作者并未制作或认可这些模板）` : ''}`,
     footerIndependent: `${SITE_NAME} 是独立的社区画廊，与原作者无关联。`,
     footerCredits: '致谢与许可证',
     creditsTitle: `致谢：${SITE_NAME}`,
@@ -146,8 +172,9 @@ const STRINGS = {
     creditsHeading: '致谢',
     creditsIntro: `${SITE_NAME} 是独立的社区画廊。所有模板版权归原作者所有，按其开源许可证使用；本站内容均不是原作者的官方项目。`,
     creditsTranslation: `本站中文页面上的模板介绍（简介、设计说明、适用场景、情绪与语气标签等）由 ${SITE_NAME} 翻译自上游的英文文本；上游文本为 MIT 许可，译文由本项目提供，以英文原文为准。模板名称、字体名称和色值保持原样。`,
-    creditsSource: (s) => `${link(s.repo, bare(s.repo))}，作者 ${authorLink(s)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>LICENSE-templates</code>。`,
-    creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其固定画布版 <code>design.md</code> 和 <code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
+    creditsSource: (s) => `${link(s.repo, bare(s.repo))}，作者 ${authorLink(s)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>。`,
+    creditsDerived: (d, s) => `${d.slugs ? '其中部分模板是衍生作品（其余为原创）：' : '这些模板是衍生作品：'}视觉方向（字体、配色、标志性元素）基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）；版式、演示内容和设计系统由 ${esc(s.author)} 编写。${derivedAuthor(d)} 并未制作、审阅或认可这些模板。`,
+    creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其${c.designOverride ? '固定画布版 <code>design.md</code> 和 ' : ''}<code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
     creditsOriginal: '原始文件',
   },
 };
@@ -159,7 +186,15 @@ const STRINGS = {
 let footerSources = [];
 
 // Sources shown in the footer of every page (set once by the build).
+// Label of the pack download button on detail pages (the prompt quotes it).
+export const downloadLabel = (lang) => (autoDownload ? STRINGS[lang].downloadLink : STRINGS[lang].download);
+
 export function setSources(sources) { footerSources = sources; }
+
+// True when the build has a site URL: the prompt then downloads the pack itself, so the
+// usage steps start with copying the prompt and the zip becomes the offline fallback.
+let autoDownload = false;
+export function setAutoDownload(v) { autoDownload = Boolean(v); }
 
 /** Site-relative output path of a page, e.g. "zh/t/neo-grid-bold/index.html". */
 export function pagePath(lang, page) {
@@ -251,12 +286,12 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug,
       ...(z ? [z.tagline, z.best_for, ...z.mood, ...z.tone] : [])].filter(Boolean).join(' ').toLowerCase();
     const taglineZh = z?.tagline;
-    return `<li data-source="${esc(t.source)}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
+    return `<li data-source="${esc(t.source)}" data-author="${esc(t.authors.map((a) => a.name).join('|'))}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.mood.map((m) => m.toLowerCase()).join('|'))}" data-search="${esc(search)}"><a class="card" href="t/${esc(t.slug)}/">
     ${img}
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
-      <p${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
-      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span> ${esc(S.by(t.authors.map((a) => a.name).join(', ')))}</p>
+      <p class="tag-line" title="${esc(taglineZh || t.tagline)}"${taglineZh ? '' : en}>${esc(taglineZh || t.tagline)}</p>
+      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span><span class="credit-line">${esc(S.byCard(t.authors.map((a) => a.name).join(', ')))}</span></p>
     </div>
   </a></li>`;
   }).join('\n');
@@ -270,9 +305,11 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
     return `<button type="button" class="chip" data-group="${group}" data-value="${esc(value)}" aria-pressed="false"${attr}>${esc(zhLabel || label)} <span class="n">${n}</span></button>`;
   };
 
-  const sources = footerSources.filter((s) => templates.some((t) => t.source === s.id));
-  const sourceGroup = sources.length > 1
-    ? `<div class="fgroup" role="group" aria-label="${F.source}"><span class="flabel">${F.source}</span>${sources.map((s) => chip('source', s.id, s.name, templates.filter((t) => t.source === s.id).length)).join('')}</div>`
+  const authorMap = new Map();
+  for (const t of templates) for (const a of t.authors) authorMap.set(a.name, (authorMap.get(a.name) ?? 0) + 1);
+  const authorChips = [...authorMap].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const sourceGroup = authorChips.length > 1
+    ? `<div class="fgroup" role="group" aria-label="${F.author}"><span class="flabel">${F.author}</span>${authorChips.map(([name, n]) => chip('author', name, name, n)).join('')}</div>`
     : '';
   const schemes = count((t) => [t.scheme]);
   const schemeGroup = `<div class="fgroup" role="group" aria-label="${F.scheme}"><span class="flabel">${F.scheme}</span>${['light', 'dark', 'mixed'].filter((v) => schemes.has(v)).map((v) => chip('scheme', v, S.schemeNames[v], schemes.get(v))).join('')}</div>`;
@@ -283,9 +320,9 @@ export function indexPage({ templates, lang, zhTerm = () => null }) {
 
   const body = `<section class="intro">
   <h1>${esc(S.tagline)}</h1>
-  <p class="lead">${esc(S.intro)}</p>
+  <p class="lead">${esc(autoDownload ? S.introAuto : S.intro)}</p>
   <ol class="steps">
-    ${S.steps.map((s) => `<li>${s}</li>`).join('\n    ')}
+    ${(autoDownload ? S.stepsAuto : S.steps).map((s) => `<li>${s}</li>`).join('\n    ')}
   </ol>
 </section>
 <section class="filters" id="filters" aria-label="${F.label}" hidden>
@@ -332,7 +369,7 @@ export function detailPage(t, lang) {
 <section class="hero">
   <h1${en}>${esc(t.name)}</h1>
   <p class="tagline"${tagline.a}>${esc(tagline.v)}</p>
-  <p class="by">${S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
+  <p class="by">${t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', ')), t.sourceDerived) : t.src?.collection ? S.byOriginal(link(t.sourceDirUrl, t.authors.map((a) => a.name).join(', '))) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
 
 <div class="detail">
@@ -355,14 +392,16 @@ export function detailPage(t, lang) {
   <aside class="actions">
     <h2>${S.useHeading}</h2>
     <ol class="steps small">
-      ${S.useSteps.map((s) => `<li>${s}</li>`).join('\n      ')}
+      ${(autoDownload ? S.useStepsAuto : S.useSteps).map((s) => `<li>${s}</li>`).join('\n      ')}
     </ol>
-    <div class="btn-row">
-      <a class="btn primary" href="${root}zip/${esc(t.slug)}.zip" download>${S.download}</a>
-    </div>
-    <div class="btn-row">
-      <button type="button" class="btn" data-copy="${promptId}">${S.copy}</button>
-    </div>
+${(() => {
+    const zipHref = `${root}zip/${esc(t.slug)}.zip`;
+    const dl = `<a class="btn primary" href="${zipHref}" download>${S.download}</a>`;
+    const cp = `<button type="button" class="btn${autoDownload ? ' primary' : ''}" data-copy="${promptId}">${S.copy}</button>`;
+    return autoDownload
+      ? `    <div class="btn-row">${cp}</div>\n    <p class="help offline"><a href="${zipHref}" download>${S.downloadLink}</a><br>${S.offlineNote}</p>`
+      : `    <div class="btn-row">${dl}</div>\n    <div class="btn-row">${cp}</div>`;
+  })()}
     <p class="help">${S.copyHelp}</p>
     <p class="copy-status" role="status" aria-live="polite"></p>
     <details>
@@ -399,6 +438,7 @@ export function detailPage(t, lang) {
   <h2>${S.attribution}</h2>
   <p>${S.attrMain(t)}</p>
   ${t.derived ? `<p>${S.attrDerived(t.derived)}</p>` : ''}
+  ${t.sourceDerived ? `<p>${S.attrDerivedSource(t.sourceDerived, t)}</p>` : ''}
   ${t.companionInfo ? `<p>${S.attrCompanion(t.companionInfo)}</p>` : ''}
   <p>${S.attrNotOfficial}</p>
   ${S.attrTranslation ? `<p>${S.attrTranslation}</p>` : ''}
@@ -414,10 +454,11 @@ export function creditsPage({ sources, templates, lang }) {
   const page = 'credits.html';
   const blocks = sources.map((s) => {
     const list = templates.filter((t) => t.source === s.id)
-      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${esc(t.license)}</li>`).join('\n');
+      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a>: ${link(t.sourceDirUrl, S.creditsOriginal)} · ${authorList(t.authors)} · ${esc(t.license)}</li>`).join('\n');
     return `<section class="credit">
   <h2>${esc(s.name)}</h2>
   <p>${S.creditsSource(s)}</p>
+  ${s.derivedFrom ? `<p>${S.creditsDerived(s.derivedFrom, s)}</p>` : ''}
   ${s.companion ? `<p>${S.creditsCompanion(s.companion)}</p>` : ''}
   <ul>
 ${list}

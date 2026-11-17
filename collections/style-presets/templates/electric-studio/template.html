@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<!--
+  Electric Studio — slides-commons style-preset template.
+  A slides-commons derivative of the "Electric Studio" preset in frontend-slides'
+  STYLE_PRESETS.md (MIT, (c) 2025 Zara Zhang). Not an official frontend-slides file.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electric Studio — Calder City Transit Wayfinding Proposal</title>
+
+<!-- Font: Manrope only (display 800, body 400/500, labels 700) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   The five preset colors come first; the rest are derived from them.
+   =========================================== */
+:root {
+    /* Preset colors (Electric Studio) */
+    --bg-dark: #0a0a0a;
+    --bg-white: #ffffff;
+    --accent-blue: #4361ee;
+    --text-dark: #0a0a0a;
+    --text-light: #ffffff;
+
+    /* Derived tokens (transparencies of the preset colors, no new hues) */
+    --muted-on-white: rgba(10, 10, 10, 0.62);   /* body copy on white */
+    --faint-on-white: rgba(10, 10, 10, 0.40);   /* chrome, axis labels on white */
+    --rule-on-white: rgba(10, 10, 10, 0.14);    /* hairlines on white */
+    --track-on-white: rgba(10, 10, 10, 0.14);   /* neutral chart bars */
+    --muted-on-color: rgba(255, 255, 255, 0.78); /* body copy on blue / dark */
+    --faint-on-color: rgba(255, 255, 255, 0.56); /* chrome on blue / dark */
+    --rule-on-color: rgba(255, 255, 255, 0.28);  /* hairlines on blue / dark */
+    --blue-tint: rgba(67, 97, 238, 0.08);        /* highlighted table column */
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #050505;
+    --slide-bg: var(--bg-white);
+
+    /* Typography (authored at 1920x1080) */
+    --font: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Layout (authored at 1920x1080) */
+    --pad-x: 120px;
+    --chrome-y: 56px;
+    --pane-top: 152px;     /* first content line in a top pane, clears the corner marks */
+    --pane-bottom: 128px;  /* last content line in a bottom pane, clears the corner marks */
+    --edge-bar: 16px;
+
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur: 0.7s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   White by default; panels split it into two flat color fields.
+   =========================================== */
+.slide {
+    background: var(--bg-white);
+    color: var(--text-dark);
+    font-family: var(--font);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+.d { font-family: var(--font); font-weight: 800; letter-spacing: -0.04em; }
+
+/* ===========================================
+   PANELS: the two-panel split.
+   .split-h: top / bottom, seam at --seam (px from the top).
+   .split-v: left / right, seam at --seam (px from the left).
+   =========================================== */
+.pane { position: absolute; display: flex; flex-direction: column; min-width: 0; }
+.pane.white { background: var(--bg-white); color: var(--text-dark); }
+.pane.blue  { background: var(--accent-blue); color: var(--text-light); }
+.pane.dark  { background: var(--bg-dark); color: var(--text-light); }
+
+.split-h .pane.top    { left: 0; right: 0; top: 0; height: var(--seam); padding: var(--pane-top) var(--pad-x) 72px; justify-content: flex-end; }
+.split-h .pane.bottom { left: 0; right: 0; top: var(--seam); bottom: 0; padding: 72px var(--pad-x) var(--pane-bottom); }
+.split-v .pane.left   { top: 0; bottom: 0; left: 0; width: var(--seam); padding: var(--pane-top) 96px var(--pane-bottom) var(--pad-x); }
+.split-v .pane.right  { top: 0; bottom: 0; left: var(--seam); right: 0; padding: var(--pane-top) var(--pad-x) var(--pane-bottom) 96px; }
+
+/* The accent bar sits on the panel edge (the seam), in the third color */
+.edge-bar { position: absolute; z-index: 2; background: var(--bg-dark); }
+.split-h .edge-bar { left: var(--pad-x); top: calc(var(--seam) - var(--edge-bar) / 2); width: 240px; height: var(--edge-bar); }
+.split-v .edge-bar { left: calc(var(--seam) - var(--edge-bar) / 2); top: 0; width: var(--edge-bar); height: 240px; }
+.edge-bar.blue  { background: var(--accent-blue); }
+.edge-bar.white { background: var(--bg-white); }
+
+/* Text color helpers inside panes */
+.pane.white .label, .pane.white .body, .pane.white .small { color: var(--muted-on-white); }
+.pane.blue .label, .pane.blue .body, .pane.blue .small,
+.pane.dark .label, .pane.dark .body, .pane.dark .small { color: var(--muted-on-color); }
+
+/* ===========================================
+   CORNER MARKS: brand top-left, document id top-right,
+   section bottom-left, page number bottom-right. Every slide.
+   =========================================== */
+.corner {
+    position: absolute;
+    z-index: 3;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.corner.inv { color: var(--text-light); }
+.corner.tl { top: var(--chrome-y); left: var(--pad-x); }
+.corner.tr { top: var(--chrome-y); right: var(--pad-x); opacity: 0.6; }
+.corner.bl { bottom: 52px; left: var(--pad-x); opacity: 0.6; }
+.corner.br { bottom: 52px; right: var(--pad-x); font-variant-numeric: tabular-nums; }
+.corner.br span { opacity: 0.5; }
+.brand-mark { position: relative; width: 32px; height: 32px; background: var(--accent-blue); flex: none; }
+.brand-mark::after { content: ""; position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; background: var(--bg-dark); }
+.corner.inv .brand-mark { background: var(--bg-white); }
+.corner.inv .brand-mark::after { background: var(--bg-dark); }
+.pane.dark ~ .corner.inv .brand-mark::after { background: var(--accent-blue); }
+
+/* ===========================================
+   TYPE SCALE
+   =========================================== */
+.label {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.t-hero    { font-size: 168px; line-height: 0.92; }
+.t-display { font-size: 128px; line-height: 0.94; }
+.t-stmt    { font-size: 104px; line-height: 1.04; letter-spacing: -0.035em; }
+.t-title   { font-size: 80px;  line-height: 1.0;  letter-spacing: -0.035em; }
+.t-sub     { font-size: 56px;  line-height: 1.04; letter-spacing: -0.03em; }
+.h3        { font-size: 36px;  line-height: 1.15; font-weight: 700; letter-spacing: -0.015em; }
+.lede      { font-size: 34px;  line-height: 1.4; }
+.body      { font-size: 28px;  line-height: 1.45; }
+.small     { font-size: 22px;  line-height: 1.45; }
+.label + .d { margin-top: 28px; }
+.d + .body, .d + .lede { margin-top: 32px; }
+.blue-ink { color: var(--accent-blue); }
+
+/* ===========================================
+   SLIDE 1 — COVER
+   =========================================== */
+.s-cover .pane.top .lede { margin-top: 36px; max-width: 980px; color: var(--muted-on-white); }
+.meta-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 64px; }
+.meta-row dt { margin-bottom: 14px; }
+.meta-row dd { font-size: 34px; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; }
+
+/* ===========================================
+   SLIDE 2 — AGENDA
+   =========================================== */
+.s-agenda .pane.left { justify-content: flex-end; }
+.agenda { list-style: none; display: grid; grid-template-rows: repeat(5, 1fr); height: 100%; border-top: 1px solid var(--rule-on-white); }
+.agenda li { display: grid; grid-template-columns: 112px 1fr auto; align-items: center; border-bottom: 1px solid var(--rule-on-white); }
+.agenda .n { font-weight: 800; font-size: 44px; letter-spacing: -0.04em; color: var(--accent-blue); }
+.agenda p { margin-top: 6px; }
+.agenda .label { color: var(--faint-on-white); }
+
+/* ===========================================
+   SLIDE 3 — SECTION DIVIDER
+   =========================================== */
+.s-divider .pane.top { padding-bottom: 64px; flex-direction: row; justify-content: space-between; align-items: flex-end; }
+.bignum { font-weight: 800; font-size: 520px; line-height: 0.72; letter-spacing: -0.06em; margin-left: -24px; }
+.s-divider .pane.top .label { color: var(--muted-on-color); padding-bottom: 12px; }
+.s-divider .pane.bottom { flex-direction: row; align-items: center; gap: 96px; padding-top: 48px; padding-bottom: 104px; }
+.s-divider .pane.bottom .d { flex: none; }
+.s-divider .pane.bottom .body { max-width: 760px; }
+
+/* ===========================================
+   SLIDE 4 — STATEMENT
+   =========================================== */
+.s-statement .pane.top { justify-content: center; padding-bottom: 40px; }
+.s-statement h2 { max-width: 1560px; margin-top: 36px; }
+.s-statement .pane.bottom { padding-top: 56px; }
+
+/* ===========================================
+   SLIDE 5 — LIST (four principles in columns)
+   =========================================== */
+.s-list .pane.top { flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 96px; }
+.s-list .pane.top .body { max-width: 640px; }
+.cols4 { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); height: 100%; }
+.cols4 li { padding: 0 40px; border-left: 1px solid var(--rule-on-color); display: flex; flex-direction: column; }
+.cols4 li:first-child { padding-left: 0; border-left: 0; }
+.cols4 .n { font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: -0.04em; margin-bottom: auto; }
+.cols4 .h3 { margin-top: 28px; }
+.cols4 .small { margin-top: 12px; }
+
+/* ===========================================
+   SLIDE 6 — TWO COLUMNS (today / proposed)
+   =========================================== */
+.s-two .pane { justify-content: flex-end; }
+.s-two .pane .t-sub { margin-top: 24px; }
+.ticks { list-style: none; margin-top: 48px; border-top: 2px solid currentColor; }
+.ticks li { display: grid; grid-template-columns: 44px 1fr; align-items: baseline; font-size: 28px; line-height: 1.4; padding: 24px 0; border-bottom: 1px solid var(--rule-on-white); }
+.pane.dark .ticks li { border-bottom-color: var(--rule-on-color); }
+.ticks li::before { content: ""; width: 20px; height: 4px; background: currentColor; opacity: 0.4; transform: translateY(-8px); }
+.pane.dark .ticks li::before { width: 16px; height: 16px; opacity: 1; background: var(--accent-blue); transform: translateY(-2px); }
+.pane.white .ticks li { color: var(--muted-on-white); }
+
+/* ===========================================
+   SLIDE 7 — BIG NUMBER + STATS
+   =========================================== */
+.s-stats .pane.left { justify-content: space-between; }
+.stat-xl { font-weight: 800; font-size: 280px; line-height: 0.84; letter-spacing: -0.06em; margin-left: -12px; }
+.s-stats .pane.left .lede { margin-top: 32px; max-width: 820px; }
+.stat-rows { display: grid; grid-template-rows: repeat(3, 1fr); height: 100%; border-top: 1px solid var(--rule-on-white); }
+.stat-row { display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid var(--rule-on-white); }
+.stat-row .num { font-weight: 800; font-size: 104px; line-height: 0.95; letter-spacing: -0.05em; color: var(--accent-blue); }
+.stat-row p { font-size: 24px; line-height: 1.4; color: var(--muted-on-white); margin-top: 12px; }
+.stat-row p strong { color: var(--text-dark); font-weight: 700; }
+
+/* ===========================================
+   SLIDE 8 — HORIZONTAL BAR CHART (pure CSS)
+   =========================================== */
+.s-chart .pane.top { flex-direction: row; align-items: stretch; gap: 112px; padding-bottom: 64px; }
+.s-chart .intro { width: 520px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.hchart { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
+.hchart .axis-head { display: grid; grid-template-columns: 240px 1fr 120px; color: var(--faint-on-white); padding-bottom: 16px; border-bottom: 2px solid var(--text-dark); }
+.hchart .axis-head span:last-child { text-align: right; }
+.hrow { display: grid; grid-template-columns: 240px 1fr 120px; align-items: center; height: 76px; border-bottom: 1px solid var(--rule-on-white); }
+.hrow .name { font-size: 24px; font-weight: 500; }
+.hrow .track { height: 36px; position: relative; }
+.hrow .bar { height: 100%; width: var(--w); background: var(--track-on-white); transform-origin: left; }
+.hrow .val { text-align: right; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.hrow.hi .name { font-weight: 800; }
+.hrow.hi .bar { background: var(--accent-blue); }
+.hrow.hi .val { color: var(--accent-blue); font-size: 40px; font-weight: 800; }
+.s-chart .pane.bottom { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 96px; padding-top: 48px; }
+.s-chart .pane.bottom .t-sub { font-size: 44px; max-width: 1180px; }
+.s-chart .pane.bottom .small { max-width: 420px; text-align: right; }
+
+/* ===========================================
+   SLIDE 9 — COMPARISON TABLE
+   =========================================== */
+.s-compare .pane.top { flex-direction: row; justify-content: space-between; align-items: flex-end; padding-bottom: 56px; }
+.legend { display: flex; gap: 36px; color: var(--muted-on-color); }
+.legend span { display: flex; align-items: center; gap: 14px; }
+.s-compare .pane.bottom { padding-top: 48px; }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; padding: 0 32px; border-bottom: 1px solid var(--rule-on-white); }
+thead th { height: 64px; font-size: 18px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint-on-white); border-bottom: 2px solid var(--text-dark); }
+thead th.us { background: var(--accent-blue); color: var(--text-light); border-bottom-color: var(--accent-blue); }
+tbody th { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+tbody td { font-size: 24px; color: var(--muted-on-white); }
+tbody td.us { background: var(--blue-tint); color: var(--text-dark); font-weight: 500; }
+th:first-child { width: 28%; padding-left: 0; }
+.cell { display: flex; align-items: center; gap: 18px; }
+.mk { flex: none; width: 22px; height: 22px; border-radius: 50%; }
+.mk.yes { background: var(--accent-blue); }
+.mk.part { border: 3px solid var(--accent-blue); }
+.mk.no { border-radius: 0; height: 4px; background: var(--faint-on-white); }
+.legend .mk.yes, .legend .mk.part { background: var(--bg-white); border-color: var(--bg-white); }
+.legend .mk.part { background: none; }
+.legend .mk.no { background: var(--faint-on-color); }
+
+/* ===========================================
+   SLIDE 10 — QUOTE (quote typography as hero)
+   =========================================== */
+.s-quote .pane.top { padding-bottom: 80px; }
+.qmark { font-weight: 800; font-size: 300px; line-height: 0.62; height: 132px; color: var(--accent-blue); margin-left: -8px; }
+.s-quote blockquote { font-weight: 800; font-size: 88px; line-height: 1.08; letter-spacing: -0.035em; max-width: 1640px; margin-top: 32px; }
+.s-quote .pane.bottom { padding-top: 56px; }
+.s-quote .who .name { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; }
+.s-quote .who .small { margin-top: 6px; }
+
+/* ===========================================
+   SLIDE 11 — CLOSING
+   =========================================== */
+.s-close .pane.top .lede { margin-top: 36px; color: var(--muted-on-white); }
+.steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr) 1.15fr; gap: 0; height: 100%; }
+.steps li { padding: 0 40px; border-left: 1px solid var(--rule-on-color); display: flex; flex-direction: column; }
+.steps li:first-child { padding-left: 0; border-left: 0; }
+.steps .when { font-weight: 800; font-size: 48px; line-height: 1; letter-spacing: -0.04em; margin-top: 20px; }
+.steps .small { margin-top: 14px; }
+.steps li.contact { border-left: 2px solid var(--bg-white); }
+.steps li.contact p { font-size: 26px; font-weight: 700; line-height: 1.5; color: var(--text-light); }
+.steps li.contact p + p { font-weight: 500; color: var(--muted-on-color); }
+
+/* ===========================================
+   ANIMATIONS
+   Triggered by .visible on the active slide. --i sets the stagger step.
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity var(--dur) var(--ease-out-expo), transform var(--dur) var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 90ms + 120ms);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+
+/* Panels slide into place from their seam side */
+.split-h .pane.bottom { clip-path: inset(0 0 100% 0); transition: clip-path 0.8s var(--ease-out-expo); }
+.split-v .pane.right  { clip-path: inset(0 0 0 100%); transition: clip-path 0.8s var(--ease-out-expo); }
+.slide.visible .pane.bottom, .slide.visible .pane.right { clip-path: inset(0 0 0 0); }
+
+/* The accent bar draws along the seam */
+.split-h .edge-bar { transform: scaleX(0); transform-origin: left; transition: transform 0.7s var(--ease-out-expo) 0.35s; }
+.split-v .edge-bar { transform: scaleY(0); transform-origin: top; transition: transform 0.7s var(--ease-out-expo) 0.35s; }
+.slide.visible .edge-bar { transform: none; }
+
+/* Chart bars grow from the axis */
+.grow { transform: scaleX(0); transition: transform 0.9s var(--ease-out-expo); transition-delay: calc(var(--i, 0) * 70ms + 200ms); }
+.slide.visible .grow { transform: scaleX(1); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide split-h s-cover active visible" style="--seam:760px" data-label="Cover">
+        <div class="pane white top">
+            <p class="label reveal">Wayfinding &amp; identity proposal · March 2027</p>
+            <h1 class="d t-hero reveal" style="--i:1">Make the city<br>readable<span class="blue-ink">.</span></h1>
+            <p class="lede reveal" style="--i:2">One signage system for 212 stations, 3 modes and every language on the platform.</p>
+        </div>
+        <div class="pane blue bottom">
+            <dl class="meta-row">
+                <div class="reveal" style="--i:3"><dt class="label">Prepared for</dt><dd>Calder City Transit</dd></div>
+                <div class="reveal" style="--i:4"><dt class="label">Prepared by</dt><dd>Lumen &amp; Pike Studio</dd></div>
+                <div class="reveal" style="--i:5"><dt class="label">Presented</dt><dd>18 March 2027</dd></div>
+            </dl>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The brief</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 2. AGENDA =========================================== -->
+    <section class="slide split-v s-agenda" style="--seam:720px" data-label="Agenda">
+        <div class="pane blue left">
+            <p class="label reveal">60 minutes · questions throughout</p>
+            <h2 class="d t-display reveal" style="--i:1">Agenda</h2>
+        </div>
+        <div class="pane white right">
+            <ol class="agenda">
+                <li class="reveal" style="--i:1"><span class="n">01</span><div><h3 class="h3">The brief</h3><p class="small">What Calder asked for, in one line</p></div><span class="label">5 min</span></li>
+                <li class="reveal" style="--i:2"><span class="n">02</span><div><h3 class="h3">The insight</h3><p class="small">Where riders actually get lost</p></div><span class="label">10 min</span></li>
+                <li class="reveal" style="--i:3"><span class="n">03</span><div><h3 class="h3">The system</h3><p class="small">Four principles, one sign family</p></div><span class="label">20 min</span></li>
+                <li class="reveal" style="--i:4"><span class="n">04</span><div><h3 class="h3">The proof</h3><p class="small">Pilot results from six stations</p></div><span class="label">15 min</span></li>
+                <li class="reveal" style="--i:5"><span class="n">05</span><div><h3 class="h3">The plan</h3><p class="small">Phasing, budget and next steps</p></div><span class="label">10 min</span></li>
+            </ol>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl inv"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">Agenda</div>
+        <div class="corner br" data-pagenum></div>
+    </section>
+
+    <!-- ============== 3. SECTION DIVIDER ================================== -->
+    <section class="slide split-h s-divider" style="--seam:760px" data-label="Section 02">
+        <div class="pane blue top">
+            <div class="bignum reveal" style="--i:1">02</div>
+            <p class="label reveal" style="--i:2">Section two of five</p>
+        </div>
+        <div class="pane white bottom">
+            <h2 class="d t-display reveal" style="--i:3">The insight</h2>
+            <p class="body reveal" style="--i:4">We rode every line for three weeks and timed where people stopped, turned around or asked for help.</p>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl inv"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr inv">Proposal 27-014</div>
+        <div class="corner bl">The insight</div>
+        <div class="corner br" data-pagenum></div>
+    </section>
+
+    <!-- ============== 4. STATEMENT ======================================== -->
+    <section class="slide split-h s-statement" style="--seam:840px" data-label="Statement">
+        <div class="pane white top">
+            <p class="label reveal">What the ride-alongs showed</p>
+            <h2 class="d t-stmt reveal" style="--i:1">Riders don't get lost on the train. They get lost in the <span class="blue-ink">forty metres</span> between the street and the platform.</h2>
+        </div>
+        <div class="pane blue bottom">
+            <p class="small reveal" style="--i:2">Lumen &amp; Pike ride-along study, 318 observed journeys across 24 stations, January 2027.</p>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The insight</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 5. LIST ============================================= -->
+    <section class="slide split-h s-list" style="--seam:448px" data-label="Principles">
+        <div class="pane white top">
+            <div>
+                <p class="label reveal">The system</p>
+                <h2 class="d t-title reveal" style="--i:1">Four principles,<br>one sign family<span class="blue-ink">.</span></h2>
+            </div>
+            <p class="body reveal" style="--i:2">Every sign in the network follows the same four rules, from a bus-stop flag to a forty-metre concourse wall.</p>
+        </div>
+        <div class="pane blue bottom">
+            <ol class="cols4">
+                <li class="reveal" style="--i:3"><span class="n">01</span><h3 class="h3">Decide at the door</h3><p class="small">Line, direction and exit are answered before the ticket gates, not after.</p></li>
+                <li class="reveal" style="--i:4"><span class="n">02</span><h3 class="h3">One colour per line</h3><p class="small">Twelve line colours, used only for lines — never for ads or alerts.</p></li>
+                <li class="reveal" style="--i:5"><span class="n">03</span><h3 class="h3">Numbers over names</h3><p class="small">Exits and platforms get numbers that read in any language.</p></li>
+                <li class="reveal" style="--i:6"><span class="n">04</span><h3 class="h3">Light it, then print it</h3><p class="small">Back-lit panels for decisions, print for confirmation only.</p></li>
+            </ol>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The system</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 6. TWO COLUMNS ====================================== -->
+    <section class="slide split-v s-two" style="--seam:960px" data-label="Today and proposed">
+        <div class="pane white left">
+            <p class="label reveal">Today</p>
+            <h2 class="d t-sub reveal" style="--i:1">Fourteen sign styles from six decades</h2>
+            <ul class="ticks reveal" style="--i:2">
+                <li>Line colours change between bus, tram and metro</li>
+                <li>Exits named after streets that were renamed</li>
+                <li>Platform direction shown only after the gates</li>
+            </ul>
+        </div>
+        <div class="pane dark right">
+            <p class="label reveal" style="--i:2">Proposed</p>
+            <h2 class="d t-sub reveal" style="--i:3">One family, built from four rules</h2>
+            <ul class="ticks reveal" style="--i:4">
+                <li>The same twelve line colours on every mode</li>
+                <li>Numbered exits, mapped at street level</li>
+                <li>Direction decided at the station door</li>
+            </ul>
+        </div>
+        <i class="edge-bar blue" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr inv">Proposal 27-014</div>
+        <div class="corner bl">The system</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 7. BIG NUMBER + STATS =============================== -->
+    <section class="slide split-v s-stats" style="--seam:1080px" data-label="Results">
+        <div class="pane blue left">
+            <p class="label reveal">Pilot · six stations · 12 weeks</p>
+            <div>
+                <div class="stat-xl reveal" style="--i:1">−38%</div>
+                <p class="lede reveal" style="--i:2">time from station door to the right platform, pilot vs. control.</p>
+            </div>
+        </div>
+        <div class="pane white right">
+            <div class="stat-rows">
+                <div class="stat-row reveal" style="--i:3"><span class="num">−52%</span><p><strong>Help-desk questions</strong> about directions</p></div>
+                <div class="stat-row reveal" style="--i:4"><span class="num">4.6</span><p><strong>Rider rating</strong> out of 5, up from 2.9</p></div>
+                <div class="stat-row reveal" style="--i:5"><span class="num">71%</span><p><strong>Fewer sign types</strong> to print and stock</p></div>
+            </div>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl inv"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The proof</div>
+        <div class="corner br" data-pagenum></div>
+    </section>
+
+    <!-- ============== 8. BAR CHART ======================================== -->
+    <section class="slide split-h s-chart" style="--seam:808px" data-label="Pilot chart">
+        <div class="pane white top">
+            <div class="intro">
+                <p class="label reveal">The proof</p>
+                <h2 class="d t-title reveal" style="--i:1">Seconds from door to platform</h2>
+            </div>
+            <div class="hchart" role="img" aria-label="Horizontal bar chart: median seconds from station door to platform. Control stations 94 to 141 seconds; Harbour Street pilot 58 seconds.">
+                <div class="axis-head label reveal" style="--i:1"><span>Station</span><span>Median time, door to platform</span><span>Seconds</span></div>
+                <!-- Bar width = value / 150 (the axis maximum) -->
+                <div class="hrow reveal" style="--i:2"><span class="name">Fenwick Cross</span><div class="track"><div class="bar grow" style="--w:94%;--i:2"></div></div><span class="val">141</span></div>
+                <div class="hrow reveal" style="--i:2"><span class="name">Old Market</span><div class="track"><div class="bar grow" style="--w:82.7%;--i:3"></div></div><span class="val">124</span></div>
+                <div class="hrow reveal" style="--i:3"><span class="name">Canal Yard</span><div class="track"><div class="bar grow" style="--w:74.7%;--i:4"></div></div><span class="val">112</span></div>
+                <div class="hrow reveal" style="--i:3"><span class="name">Sutton Park</span><div class="track"><div class="bar grow" style="--w:62.7%;--i:5"></div></div><span class="val">94</span></div>
+                <div class="hrow hi reveal" style="--i:4"><span class="name">Harbour St. (pilot)</span><div class="track"><div class="bar grow" style="--w:38.7%;--i:6"></div></div><span class="val">58</span></div>
+            </div>
+        </div>
+        <div class="pane blue bottom">
+            <p class="d t-sub reveal" style="--i:5">The pilot station is the busiest of the five — and the fastest to navigate.</p>
+            <p class="small reveal" style="--i:6">Median of 1,240 timed journeys per station, Oct–Dec 2026.</p>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The proof</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 9. COMPARISON TABLE ================================= -->
+    <section class="slide split-h s-compare" style="--seam:392px" data-label="Options">
+        <div class="pane dark top">
+            <div>
+                <p class="label reveal">Three ways forward</p>
+                <h2 class="d t-title reveal" style="--i:1">How the options compare</h2>
+            </div>
+            <div class="legend label reveal" style="--i:2"><span><i class="mk yes"></i>Yes</span><span><i class="mk part"></i>Partly</span><span><i class="mk no"></i>No</span></div>
+        </div>
+        <div class="pane white bottom">
+            <table class="reveal" style="--i:3">
+                <thead><tr><th>Criterion</th><th class="us">One sign family</th><th>Patch &amp; repaint</th><th>Screens only</th></tr></thead>
+                <tbody>
+                    <tr><th>Works across modes</th><td class="us"><span class="cell"><i class="mk yes"></i>Bus, tram, metro</span></td><td><span class="cell"><i class="mk no"></i>Metro only</span></td><td><span class="cell"><i class="mk part"></i>Where powered</span></td></tr>
+                    <tr><th>Readable offline</th><td class="us"><span class="cell"><i class="mk yes"></i>Print + light</span></td><td><span class="cell"><i class="mk yes"></i>Print</span></td><td><span class="cell"><i class="mk no"></i>Fails in outages</span></td></tr>
+                    <tr><th>Five-year cost</th><td class="us"><span class="cell"><i class="mk yes"></i>€18.4m</span></td><td><span class="cell"><i class="mk part"></i>€11.2m, recurring</span></td><td><span class="cell"><i class="mk no"></i>€31.0m</span></td></tr>
+                    <tr><th>Live in 2028</th><td class="us"><span class="cell"><i class="mk part"></i>Core network</span></td><td><span class="cell"><i class="mk yes"></i>Everywhere</span></td><td><span class="cell"><i class="mk part"></i>40 stations</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <i class="edge-bar blue" aria-hidden="true"></i>
+        <div class="corner tl inv"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr inv">Proposal 27-014</div>
+        <div class="corner bl">The plan</div>
+        <div class="corner br" data-pagenum></div>
+    </section>
+
+    <!-- ============== 10. QUOTE =========================================== -->
+    <section class="slide split-h s-quote" style="--seam:792px" data-label="Rider quote">
+        <div class="pane dark top">
+            <div class="qmark reveal" aria-hidden="true">“</div>
+            <blockquote class="reveal" style="--i:1">For the first time, I knew which exit to take before I reached the stairs.</blockquote>
+        </div>
+        <div class="pane blue bottom">
+            <div class="who reveal" style="--i:3">
+                <p class="name">Amara Lindqvist</p>
+                <p class="small">Daily commuter, Harbour Street pilot — interviewed in week 9</p>
+            </div>
+        </div>
+        <i class="edge-bar white" aria-hidden="true"></i>
+        <div class="corner tl inv"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr inv">Proposal 27-014</div>
+        <div class="corner bl inv">The proof</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+    <!-- ============== 11. CLOSING ========================================= -->
+    <section class="slide split-h s-close" style="--seam:600px" data-label="Closing">
+        <div class="pane white top">
+            <p class="label reveal">Next steps</p>
+            <h2 class="d t-hero reveal" style="--i:1">Let's build it<span class="blue-ink">.</span></h2>
+        </div>
+        <div class="pane blue bottom">
+            <ol class="steps">
+                <li class="reveal" style="--i:2"><span class="label">Step 1</span><div class="when">2 Apr</div><p class="small">Board decision on the sign family</p></li>
+                <li class="reveal" style="--i:3"><span class="label">Step 2</span><div class="when">May</div><p class="small">Detailed design for the core network</p></li>
+                <li class="reveal" style="--i:4"><span class="label">Step 3</span><div class="when">Q1 2028</div><p class="small">First 40 stations go live</p></li>
+                <li class="contact reveal" style="--i:5"><span class="label">Contact</span><p style="margin-top:20px">Ines Moreau, Partner</p><p>ines@lumenpike.example</p></li>
+            </ol>
+        </div>
+        <i class="edge-bar" aria-hidden="true"></i>
+        <div class="corner tl"><i class="brand-mark"></i>Lumen &amp; Pike</div>
+        <div class="corner tr">Proposal 27-014</div>
+        <div class="corner bl inv">The plan</div>
+        <div class="corner br inv" data-pagenum></div>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

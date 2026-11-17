@@ -1,0 +1,44 @@
+name: New template proposal
+description: Propose a template before (or instead of) building it
+title: "template: "
+labels: ["template"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Templates are added by pull request, see [CONTRIBUTING.md](https://github.com/NeoSunxz/slides-commons/blob/dev/CONTRIBUTING.md). An issue is a good place to agree on the direction first. Demo content must be fictional; no photos or brands.
+  - type: input
+    id: name
+    attributes:
+      label: Working name
+    validations:
+      required: true
+  - type: textarea
+    id: look
+    attributes:
+      label: The look
+      description: Mood, palette, fonts, what makes it recognizable. Links to reference images are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: Best for
+      description: Which occasions and audiences is it for? Which gap in the gallery does it fill?
+    validations:
+      required: true
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who will build it?
+      options:
+        - I will, and open the pull request
+        - I need help
+        - Just an idea
+    validations:
+      required: true
+  - type: input
+    id: derived
+    attributes:
+      label: Based on another template or work?
+      description: Gallery slug or link, and its license. Leave empty if original.

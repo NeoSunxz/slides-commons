@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<!--
+  Boardroom Quarterly — slides-commons template.
+  Original design by slides-commons (MIT).
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+  Altamira Software and every person and figure in this deck are fictional demo content.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boardroom Quarterly — Altamira Software Q3 FY2027 Board Review (demo)</title>
+
+<!-- Fonts: Hanken Grotesk 400/500/600/700 (one family for everything; tabular figures) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   =========================================== */
+:root {
+    /* Canvas and slate neutrals */
+    --paper: #FFFFFF;
+    --ink: #0F172A;          /* titles, key figures */
+    --text: #1E293B;         /* body */
+    --muted: #475569;        /* secondary text, labels */
+    --faint: #64748B;        /* axis labels, footer */
+    --line: #CBD5E1;         /* strong hairline, card border */
+    --rule: #E2E8F0;         /* table rules, gridlines */
+    --panel: #F8FAFC;        /* panels, zebra, forecast band */
+
+    /* The one brand hue */
+    --blue: #2357C6;
+    --blue-60: #7C9BE0;
+    --blue-30: #BCCDF2;
+    --blue-tint: #EEF3FD;
+
+    /* Semantic status (text-strength / fill / tint) */
+    --good: #157F3B;  --good-fill: #2E9E57;  --good-tint: #E3F4E9;  --good-strong: #B9E3C8;
+    --warn: #A15C00;  --warn-fill: #E09B12;  --warn-tint: #FDF2DC;
+    --bad:  #B42318;  --bad-fill:  #D9443A;  --bad-tint:  #FCE8E6;  --bad-strong: #F5BDB7;
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #E5E9EF;
+    --slide-bg: var(--paper);
+
+    /* Typography (authored at 1920x1080) */
+    --font: 'Hanken Grotesk', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Layout */
+    --pad-x: 72px;
+    --body-top: 290px;
+    --body-bottom: 104px;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   =========================================== */
+.slide {
+    background: var(--paper);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 22px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ===========================================
+   CHROME: brand bar, kicker + title, footer
+   =========================================== */
+.top {
+    position: absolute; top: 36px; left: var(--pad-x); right: var(--pad-x);
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.005em; }
+.logo { width: 30px; height: 30px; background: var(--blue); position: relative; border-radius: 6px; }
+.logo::after { content: ""; position: absolute; left: 8px; bottom: 8px; width: 14px; height: 7px; background: #fff; border-radius: 1px; }
+.brand span { font-weight: 500; color: var(--muted); padding-left: 14px; border-left: 1px solid var(--line); }
+.sections { display: flex; gap: 6px; list-style: none; }
+.sections li { font-size: 18px; font-weight: 600; color: var(--faint); padding: 5px 14px; border-radius: 999px; }
+.sections li.on { background: var(--blue-tint); color: var(--blue); }
+
+.kicker {
+    position: absolute; top: 128px; left: var(--pad-x);
+    font-size: 18px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue);
+}
+.title {
+    position: absolute; top: 160px; left: var(--pad-x); right: var(--pad-x); max-width: 1640px;
+    font-size: 44px; font-weight: 700; line-height: 1.18; letter-spacing: -0.012em; color: var(--ink);
+    text-wrap: balance;
+}
+.body { position: absolute; top: var(--body-top); left: var(--pad-x); right: var(--pad-x); bottom: var(--body-bottom); }
+.foot {
+    position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 36px;
+    display: flex; justify-content: space-between; gap: 40px; font-size: 18px; color: var(--faint);
+}
+.foot .right { display: flex; gap: 28px; white-space: nowrap; }
+.pagenum { color: var(--ink); font-weight: 600; }
+.pagenum span { color: var(--faint); font-weight: 400; }
+
+/* ===========================================
+   TEXT + STATUS PRIMITIVES
+   =========================================== */
+.label { font-size: 18px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.h3 { font-size: 24px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.sub { font-size: 19px; color: var(--faint); line-height: 1.35; }
+.small { font-size: 19px; line-height: 1.45; color: var(--muted); }
+.good { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+
+/* Delta: CSS triangle + text. Colour = favourability, direction = arithmetic sign. */
+.delta { display: inline-flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 600; white-space: nowrap; }
+.delta::before { content: ""; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; }
+.delta.up::before { border-bottom: 11px solid currentColor; }
+.delta.down::before { border-top: 11px solid currentColor; }
+.delta.flat::before { width: 12px; height: 3px; background: currentColor; border: none; }
+.delta.good { color: var(--good); } .delta.bad { color: var(--bad); } .delta.flat, .delta.neutral { color: var(--faint); }
+.delta small { font-size: 18px; font-weight: 400; color: var(--faint); }
+
+/* RAG status pill: dot + word (never colour alone) */
+.rag { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 12px 4px 10px; border-radius: 999px; }
+.rag::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: currentColor; }
+.rag.g { color: var(--good); background: var(--good-tint); }
+.rag.a { color: var(--warn); background: var(--warn-tint); }
+.rag.r { color: var(--bad); background: var(--bad-tint); }
+
+.chip { display: inline-block; font-size: 17px; font-weight: 600; padding: 2px 10px; border-radius: 4px; background: var(--panel); color: var(--muted); border: 1px solid var(--rule); white-space: nowrap; }
+.chip.dec { background: var(--blue-tint); color: var(--blue); border-color: var(--blue-30); }
+
+/* Panel */
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 26px 30px; }
+
+/* ===========================================
+   KPI CARDS
+   =========================================== */
+.kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+.kpi {
+    border: 1px solid var(--line); border-radius: 8px; padding: 26px 24px 24px; position: relative;
+    display: flex; flex-direction: column; gap: 6px; min-width: 0; background: var(--paper);
+}
+.kpi::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 4px; border-radius: 8px 8px 0 0; background: var(--line); }
+.kpi.s-good::before { background: var(--good-fill); }
+.kpi.s-bad::before { background: var(--bad-fill); }
+.kpi.s-warn::before { background: var(--warn-fill); }
+.kpi .label { font-size: 17px; }
+.kpi .v { font-size: 54px; font-weight: 700; line-height: 1.05; color: var(--ink); letter-spacing: -0.02em; margin: 4px 0 6px; }
+.kpi .v small { font-size: 28px; font-weight: 600; letter-spacing: 0; color: var(--muted); margin-left: 2px; }
+.kpi .delta { font-size: 18px; }
+.kpi .spark { margin-top: 18px; }
+.spark polyline { fill: none; stroke: var(--blue); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.spark circle { fill: var(--blue); }
+.spark.down polyline { stroke: var(--muted); }
+.spark.down circle { fill: var(--bad-fill); }
+
+/* ===========================================
+   SVG CHARTS (line, combo)
+   =========================================== */
+svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.linechart .gl, .combo .gl { stroke: var(--rule); stroke-width: 1.5; }
+.linechart .yl, .linechart .xl, .combo .yl, .combo .xl { font-size: 19px; fill: var(--faint); }
+.linechart .xl.on { fill: var(--ink); font-weight: 700; }
+.linechart .fcband { fill: var(--panel); }
+.linechart .act { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linejoin: round; }
+.linechart .plan { fill: none; stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 8 7; }
+.linechart .fc { fill: none; stroke: var(--blue); stroke-width: 3; stroke-dasharray: 3 7; stroke-linecap: round; }
+.linechart .dot { fill: var(--paper); stroke: var(--blue); stroke-width: 3; }
+.linechart .dot.on { fill: var(--blue); }
+.linechart .dot.fcd { stroke-dasharray: 3 3; }
+.linechart .vl { font-size: 18px; font-weight: 600; fill: var(--muted); }
+.linechart .end { font-size: 20px; font-weight: 700; }
+.linechart .act-l { fill: var(--blue); font-size: 26px; }
+.linechart .plan-l { fill: var(--muted); }
+.linechart .fc-l { fill: var(--blue); }
+.combo .burn { fill: var(--line); }
+.combo .burn.q { fill: var(--muted); }
+.combo .bl { font-size: 18px; font-weight: 600; fill: var(--text); }
+.combo .bl.q { fill: #fff; }
+.combo .pl { font-size: 19px; font-weight: 600; fill: var(--muted); }
+.combo .base { stroke: var(--muted); stroke-width: 1.5; }
+.combo .cash { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linejoin: round; }
+.combo .cd { fill: var(--paper); stroke: var(--blue); stroke-width: 3; }
+.combo .cd.on { fill: var(--blue); }
+.combo .cl { font-size: 19px; font-weight: 600; fill: var(--ink); }
+.combo .cl.on { fill: var(--blue); font-size: 22px; font-weight: 700; }
+.combo .yr { font-size: 17px; font-weight: 600; fill: var(--muted); }
+.chart-legend { display: flex; gap: 28px; font-size: 19px; color: var(--muted); }
+.chart-legend i { display: inline-block; width: 26px; height: 0; border-top: 4px solid var(--blue); vertical-align: middle; margin-right: 10px; }
+.chart-legend i.plan { border-top: 3px dashed var(--muted); }
+.chart-legend i.fc { border-top: 3px dotted var(--blue); }
+.chart-legend i.bar { width: 16px; height: 16px; border: none; background: var(--line); }
+.chart-legend i.bar.q { background: var(--muted); }
+
+/* ===========================================
+   TABLES (financial) + conditional colouring
+   =========================================== */
+table.fin { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.fin th {
+    font-size: 17px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+    text-align: right; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); vertical-align: bottom; line-height: 1.25;
+}
+table.fin th:first-child, table.fin td:first-child { text-align: left; padding-left: 0; }
+table.fin th.grp { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 6px; color: var(--ink); }
+table.fin td { font-size: 21px; text-align: right; padding: 0 14px; height: 44px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.fin tr.sum td { font-weight: 700; color: var(--ink); border-top: 1.5px solid var(--ink); }
+table.fin tr.ratio td { color: var(--muted); font-style: normal; font-size: 19px; }
+table.fin tr.ratio td:first-child { padding-left: 22px; }
+table.fin td.f, table.fin td.u { font-weight: 600; }
+table.fin td.f { color: var(--good); background: var(--good-tint); }
+table.fin td.u { color: var(--bad); background: var(--bad-tint); }
+table.fin td.n { color: var(--muted); }
+table.fin .sep { border-left: 1px solid var(--line); }
+table.fin td.l { text-align: left; white-space: normal; line-height: 1.3; }
+table.pl td.l { padding-left: 28px; color: var(--muted); font-size: 20px; }
+table.pl td { height: 50px; }
+
+/* Heatmap table: 5 bins of % of plan */
+table.heat { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+table.heat th { font-size: 17px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); text-align: center; padding-bottom: 6px; }
+table.heat th:first-child { text-align: left; }
+table.heat td { height: 64px; text-align: center; font-size: 21px; font-weight: 600; border-radius: 4px; color: var(--text); background: var(--panel); }
+table.heat td:first-child { text-align: left; background: none; font-weight: 600; color: var(--ink); padding-left: 0; }
+table.heat td.h1 { background: var(--bad-strong); color: #7A1610; }
+table.heat td.h2 { background: var(--bad-tint); color: var(--bad); }
+table.heat td.h3 { background: var(--panel); color: var(--text); }
+table.heat td.h4 { background: var(--good-tint); color: var(--good); }
+table.heat td.h5 { background: var(--good-strong); color: #0B5A28; }
+table.heat .q { box-shadow: inset 0 0 0 2px var(--ink); }
+table.heat tr.tot td { font-weight: 700; }
+table.heat th.qh { color: var(--ink); }
+.heat-key { display: flex; gap: 6px; align-items: center; font-size: 18px; color: var(--muted); }
+.heat-key b { display: inline-block; min-width: 92px; text-align: center; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 17px; }
+
+/* ===========================================
+   BULLET CHARTS (% of target)
+   =========================================== */
+.bullets { display: grid; gap: 0; }
+.brow { display: grid; grid-template-columns: 250px 1fr 120px 110px; align-items: center; gap: 22px; height: 90px; border-bottom: 1px solid var(--rule); }
+.brow .name { font-size: 22px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.brow .name small { display: block; font-size: 18px; font-weight: 400; color: var(--faint); }
+.bscale { position: relative; height: 34px; }
+.bscale .band { position: absolute; top: 0; bottom: 0; }
+.bscale .b1 { left: 0; width: calc(90 / 120 * 100%); background: #EEF1F5; }
+.bscale .b2 { left: calc(90 / 120 * 100%); width: calc(10 / 120 * 100%); background: #E2E7EE; }
+.bscale .b3 { left: calc(100 / 120 * 100%); right: 0; background: #F6F8FA; }
+.bscale .bar { position: absolute; left: 0; top: 9px; height: 16px; width: calc(var(--v) / 120 * 100%); background: var(--blue); transform-origin: left; }
+.bscale .tgt { position: absolute; top: -4px; bottom: -4px; left: calc(100 / 120 * 100%); width: 4px; margin-left: -2px; background: var(--ink); }
+.brow .val { text-align: right; font-size: 22px; font-weight: 600; color: var(--ink); }
+.brow .val small { display: block; font-size: 18px; font-weight: 400; color: var(--faint); }
+.brow .att { text-align: right; }
+.att b { display: inline-block; min-width: 82px; text-align: center; font-size: 20px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.att .g { background: var(--good-tint); color: var(--good); }
+.att .a { background: var(--warn-tint); color: var(--warn); }
+.att .r { background: var(--bad-tint); color: var(--bad); }
+.bticks { display: grid; grid-template-columns: 250px 1fr 120px 110px; gap: 22px; margin-top: 10px; }
+.bticks .sc { position: relative; height: 24px; font-size: 18px; color: var(--faint); }
+.bticks .sc span { position: absolute; transform: translateX(-50%); left: calc(var(--t) / 120 * 100%); }
+
+/* ===========================================
+   RISK MATRIX 5x5
+   =========================================== */
+.rm { display: grid; grid-template-columns: 34px 30px repeat(5, 1fr); grid-template-rows: repeat(5, 1fr) 30px 30px; gap: 4px; height: 100%; }
+.rm .c { border-radius: 4px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px; }
+.rm .lo { background: var(--good-tint); }
+.rm .md { background: var(--warn-tint); }
+.rm .hi { background: var(--bad-tint); }
+.rm .ax { font-size: 18px; color: var(--faint); display: grid; place-items: center; }
+.rm .axt { font-size: 18px; color: var(--muted); font-weight: 600; display: grid; place-items: center; }
+.rm .yt { grid-row: 1 / span 5; grid-column: 1; }
+.rm .yt span { transform: rotate(-90deg); white-space: nowrap; }
+.rm .xt { grid-column: 3 / span 5; grid-row: 7; }
+.rid { display: inline-grid; place-items: center; min-width: 46px; height: 32px; padding: 0 8px; border-radius: 16px; background: var(--ink); color: #fff; font-size: 17px; font-weight: 700; }
+
+/* ===========================================
+   SLIDE 1 — COVER
+   =========================================== */
+.s-cover .brand { position: absolute; top: 64px; left: var(--pad-x); }
+.s-cover .conf { position: absolute; top: 66px; right: var(--pad-x); }
+.s-cover .main { position: absolute; left: var(--pad-x); top: 290px; width: 1040px; }
+.s-cover h1 { font-size: 150px; font-weight: 700; line-height: 0.98; letter-spacing: -0.035em; color: var(--ink); margin-top: 22px; }
+.s-cover h1 span { color: var(--blue); }
+.s-cover .h1b { font-size: 56px; font-weight: 600; line-height: 1.15; letter-spacing: -0.015em; color: var(--ink); margin-top: 18px; }
+.s-cover .meta { position: absolute; left: var(--pad-x); bottom: 128px; display: grid; grid-template-columns: repeat(3, auto); gap: 72px; }
+.s-cover .meta dd { font-size: 24px; font-weight: 600; color: var(--ink); margin-top: 6px; line-height: 1.35; }
+.tiles { position: absolute; right: var(--pad-x); top: 250px; display: grid; grid-template-columns: repeat(6, 82px); grid-auto-rows: 82px; gap: 10px; }
+.tiles i { border-radius: 6px; background: var(--panel); border: 1px solid var(--rule); }
+.tiles i.b1 { background: var(--blue-tint); border-color: var(--blue-30); }
+.tiles i.b2 { background: var(--blue-30); border-color: var(--blue-30); }
+.tiles i.b3 { background: var(--blue); border-color: var(--blue); }
+.tiles i.g { background: var(--good-fill); border-color: var(--good-fill); }
+.tiles i.a { background: var(--warn-fill); border-color: var(--warn-fill); }
+
+/* ===========================================
+   SLIDE 2 — AGENDA + DECISIONS
+   =========================================== */
+.agenda-wrap { display: grid; grid-template-columns: 1fr 640px; gap: 56px; height: 100%; }
+table.agenda { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.agenda th { font-size: 17px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 0 12px 10px 0; border-bottom: 2px solid var(--ink); }
+table.agenda td { font-size: 21px; padding: 0 12px 0 0; height: 62px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.agenda td.t { color: var(--faint); }
+table.agenda td b { color: var(--ink); font-weight: 600; }
+.decide { border: 1px solid var(--blue-30); background: var(--blue-tint); border-radius: 8px; padding: 26px 30px; }
+.decide .label { color: var(--blue); }
+.decide ol { list-style: none; margin-top: 8px; }
+.decide li { display: grid; grid-template-columns: 44px 1fr; padding: 16px 0; border-bottom: 1px solid var(--blue-30); }
+.decide li:last-child { border-bottom: none; padding-bottom: 4px; }
+.decide li .n { width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 17px; font-weight: 700; display: grid; place-items: center; margin-top: 2px; }
+.decide li h4 { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.decide li p { font-size: 19px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+.prereads { margin-top: 24px; }
+.prereads p { font-size: 19px; color: var(--muted); padding: 6px 0; }
+
+/* ===========================================
+   SLIDE 3 — AT A GLANCE
+   =========================================== */
+.glance { display: grid; grid-template-rows: auto 1fr; gap: 28px; height: 100%; }
+.wn { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.wn .panel { padding: 22px 28px; }
+.wn .panel.ok { border-top: 4px solid var(--good-fill); }
+.wn .panel.watch { border-top: 4px solid var(--warn-fill); }
+.wn ul { list-style: none; margin-top: 10px; }
+.wn li { font-size: 21px; line-height: 1.4; padding: 15px 0 15px 22px; position: relative; border-bottom: 1px solid var(--rule); }
+.wn li:last-child { border-bottom: none; }
+.wn li::before { content: ""; position: absolute; left: 0; top: 25px; width: 10px; height: 10px; border-radius: 2px; background: var(--good-fill); }
+.wn .watch li::before { background: var(--warn-fill); }
+.wn li b { color: var(--ink); font-weight: 700; }
+
+/* ===========================================
+   SLIDE 4 — ARR TREND
+   =========================================== */
+.trend { display: grid; grid-template-columns: 1080px 1fr; gap: 56px; height: 100%; }
+.trend-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+.drivers .row { display: grid; grid-template-columns: 1fr 150px 76px; gap: 14px; align-items: center; height: 54px; border-bottom: 1px solid var(--rule); font-size: 21px; }
+.drivers .row .bar { height: 16px; position: relative; }
+.drivers .row .bar i { position: absolute; top: 0; bottom: 0; }
+.drivers .row .bar i.p { left: 30%; width: calc(var(--v) / 8 * 70%); background: var(--good-fill); }
+.drivers .row .bar i.m { right: 70%; width: calc(var(--v) / 8 * 70%); background: var(--bad-fill); }
+.drivers .row .bar::after { content: ""; position: absolute; left: 30%; top: -6px; bottom: -6px; border-left: 1.5px solid var(--muted); }
+.drivers .row b { text-align: right; font-weight: 700; }
+.drivers .row.sum { border-top: 2px solid var(--ink); border-bottom: none; font-weight: 700; color: var(--ink); }
+
+/* ===========================================
+   SLIDE 9 — RAG TABLE
+   =========================================== */
+table.rag-t td { white-space: nowrap; }
+table.rag-t td.l { white-space: normal; }
+.rag-sum { display: flex; gap: 12px; align-items: center; }
+.budget { display: inline-flex; align-items: center; gap: 10px; }
+.budget i { width: 90px; height: 10px; background: var(--rule); position: relative; border-radius: 5px; overflow: hidden; }
+.budget i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--v) * 1%); background: var(--blue-60); }
+.budget i.over::after { background: var(--bad-fill); }
+
+table.rag-t td { height: 56px; }
+.escal { margin-top: 26px; border: 1px solid var(--bad-strong); border-left: 5px solid var(--bad-fill); background: #FFFBFA; border-radius: 6px; padding: 20px 28px 22px; }
+.escal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 10px; }
+.escal-grid p { font-size: 20px; line-height: 1.45; color: var(--text); }
+.escal-grid b { color: var(--ink); }
+.changes { margin-top: 26px; }
+.changes li { list-style: none; display: grid; grid-template-columns: 84px 1fr; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 20px; }
+.changes li:last-child { border-bottom: none; }
+table.outlook td { height: 54px; }
+
+/* ===========================================
+   SLIDE 12 — APPENDIX
+   =========================================== */
+.appx-tag { display: inline-block; background: var(--ink); color: #fff; font-size: 18px; font-weight: 700; padding: 2px 10px; border-radius: 4px; margin-right: 12px; letter-spacing: 0.04em; }
+table.fin.dense td { font-size: 19px; height: 46px; }
+table.fin.dense td.l { font-size: 17px; color: var(--faint); padding-left: 24px; }
+
+/* ===========================================
+   MOTION
+   =========================================== */
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); transition-delay: calc(var(--i, 0) * 70ms + 80ms); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.growx { transform: scaleX(0); transform-origin: left; transition: transform 0.8s var(--ease); transition-delay: calc(var(--i, 0) * 60ms + 200ms); }
+.slide.visible .growx { transform: none; }
+.draw polyline.act, .draw polyline.cash { stroke-dasharray: 2400; stroke-dashoffset: 2400; transition: stroke-dashoffset 1.2s var(--ease) 0.25s; }
+.slide.visible .draw polyline.act, .slide.visible .draw polyline.cash { stroke-dashoffset: 0; }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide s-cover active visible" data-label="Cover">
+        <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira Software</div>
+        <span class="chip conf">Confidential · Board use only</span>
+        <div class="main">
+            <p class="label reveal" style="color:var(--blue)">Board of Directors · Quarterly business review</p>
+            <h1 class="reveal" style="--i:1">Q3 <span>FY27</span></h1>
+            <p class="h1b reveal" style="--i:2">Quarterly Business Review</p>
+        </div>
+        <dl class="meta">
+            <div class="reveal" style="--i:3"><dt class="label">Board meeting</dt><dd>21 October 2027</dd></div>
+            <div class="reveal" style="--i:4"><dt class="label">Presented by</dt><dd>Dana Whitfield, CEO<br>Marco Ilić, CFO</dd></div>
+            <div class="reveal" style="--i:5"><dt class="label">Period</dt><dd>1 July – 30 September 2027</dd></div>
+        </dl>
+        <div class="tiles reveal" style="--i:3" aria-hidden="true">
+            <i></i><i></i><i></i><i class="b1"></i><i></i><i class="b1"></i>
+            <i></i><i></i><i class="b1"></i><i></i><i class="b1"></i><i class="b2"></i>
+            <i></i><i class="b1"></i><i></i><i class="b2"></i><i class="b2"></i><i class="b3"></i>
+            <i class="b1"></i><i></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i>
+            <i></i><i class="b2"></i><i class="a"></i><i class="b3"></i><i class="b3"></i><i class="g"></i>
+            <i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="g"></i><i class="g"></i>
+        </div>
+        <footer class="foot"><span>Demo content: Altamira Software and all figures are fictional</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 2. AGENDA + DECISIONS =============================== -->
+    <section class="slide" data-label="Agenda">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li class="on">Overview</li><li>Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">01 · Overview</p>
+        <h2 class="title">Agenda and the three decisions we need from the board today</h2>
+        <div class="body">
+            <div class="agenda-wrap">
+                <table class="agenda reveal" style="--i:1">
+                    <colgroup><col style="width:130px"><col><col style="width:220px"><col style="width:190px"></colgroup>
+                    <thead><tr><th>Time</th><th>Item</th><th>Lead</th><th>Purpose</th></tr></thead>
+                    <tbody>
+                        <tr><td class="t">09:00</td><td><b>Quarter at a glance</b></td><td>D. Whitfield</td><td><span class="chip">For noting</span></td></tr>
+                        <tr><td class="t">09:15</td><td><b>Growth:</b> ARR, segments, bookings</td><td>R. Okonjo</td><td><span class="chip">For discussion</span></td></tr>
+                        <tr><td class="t">09:45</td><td><b>Financials:</b> P&amp;L, cash and runway</td><td>M. Ilić</td><td><span class="chip">For noting</span></td></tr>
+                        <tr><td class="t">10:15</td><td><b>Execution:</b> initiatives and risks</td><td>D. Whitfield</td><td><span class="chip">For discussion</span></td></tr>
+                        <tr><td class="t">10:45</td><td><b>Outlook</b> and FY28 plan envelope</td><td>M. Ilić</td><td><span class="chip dec">For decision</span></td></tr>
+                        <tr><td class="t">11:15</td><td><b>Executive session</b> (directors only)</td><td>Chair</td><td><span class="chip">Closed</span></td></tr>
+                    </tbody>
+                </table>
+                <div class="reveal" style="--i:2">
+                    <div class="decide">
+                        <p class="label">Decisions requested</p>
+                        <ol>
+                            <li><span class="n">1</span><div><h4>Approve the FY28 plan envelope</h4><p>ARR growth 26–28%; free cash flow break-even in Q4 FY28</p></div></li>
+                            <li><span class="n">2</span><div><h4>Approve a $4.5m ERP contingency</h4><p>Covers a six-week vendor delay; released only on CFO request</p></div></li>
+                            <li><span class="n">3</span><div><h4>Endorse EU-region pricing</h4><p>+8% list uplift for the Frankfurt data-residency tier</p></div></li>
+                        </ol>
+                    </div>
+                    <div class="prereads">
+                        <p class="label">Pre-reads (board portal)</p>
+                        <p>A1 Operating metrics · A2 Management accounts · A3 Audit committee minutes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Times are approximate; executive session follows the main agenda.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 3. QUARTER AT A GLANCE (KPI CARDS) ================== -->
+    <section class="slide" data-label="KPI cards">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li class="on">Overview</li><li>Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">01 · Overview</p>
+        <h2 class="title">A record quarter for new ARR, ahead of plan on growth and burn; retention needs attention</h2>
+        <div class="body">
+            <div class="glance">
+                <div class="kpis">
+                    <div class="kpi s-good reveal" style="--i:1"><p class="label">ARR</p><p class="v">$184.6<small>m</small></p><span class="delta up good">2.1% <small>vs plan</small></span><span class="delta up good">31.0% <small>YoY</small></span><svg class="spark up" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,39.0 22.4,34.6 39.9,30.2 57.3,25.5 74.7,20.6 92.1,15.4 109.6,11.2 127.0,5.0"/><circle cx="127.0" cy="5.0" r="4"/></svg></div>
+                    <div class="kpi s-good reveal" style="--i:2"><p class="label">Net new ARR</p><p class="v">$13.2<small>m</small></p><span class="delta up good">28% <small>vs plan</small></span><span class="delta up good">31% <small>YoY</small></span><svg class="spark up" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,39.0 22.4,29.7 39.9,31.0 57.3,25.7 74.7,24.3 92.1,18.3 109.6,33.0 127.0,5.0"/><circle cx="127.0" cy="5.0" r="4"/></svg></div>
+                    <div class="kpi s-warn reveal" style="--i:3"><p class="label">Net revenue retention</p><p class="v">118<small>%</small></p><span class="delta down bad">2 pts <small>vs plan</small></span><span class="delta down bad">1 pt <small>YoY</small></span><svg class="spark down" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,39.0 22.4,34.1 39.9,24.4 57.3,14.7 74.7,5.0 92.1,5.0 109.6,9.9 127.0,19.6"/><circle cx="127.0" cy="19.6" r="4"/></svg></div>
+                    <div class="kpi s-good reveal" style="--i:4"><p class="label">Gross margin</p><p class="v">78.5<small>%</small></p><span class="delta up good">0.7 pts <small>vs plan</small></span><span class="delta up good">0.9 pts <small>YoY</small></span><svg class="spark up" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,39.0 22.4,32.0 39.9,30.0 57.3,14.0 74.7,18.0 92.1,11.0 109.6,10.0 127.0,5.0"/><circle cx="127.0" cy="5.0" r="4"/></svg></div>
+                    <div class="kpi s-good reveal" style="--i:5"><p class="label">Net cash burn</p><p class="v">$6.8<small>m</small></p><span class="delta down good">$1.1m <small>vs plan</small></span><span class="delta down good">29% <small>YoY</small></span><svg class="spark up" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,5.0 22.4,8.6 39.9,14.1 57.3,22.0 74.7,20.2 92.1,28.1 109.6,32.9 127.0,39.0"/><circle cx="127.0" cy="39.0" r="4"/></svg></div>
+                    <div class="kpi s-bad reveal" style="--i:6"><p class="label">Gross logo churn</p><p class="v">1.9<small>%</small></p><span class="delta up bad">0.4 pts <small>vs plan</small></span><span class="delta up bad">0.4 pts <small>YoY</small></span><svg class="spark down" width="132" height="44" viewBox="0 0 132 44" aria-hidden="true"><polyline points="5.0,5.0 22.4,11.8 39.9,22.0 57.3,35.6 74.7,32.2 92.1,39.0 109.6,35.6 127.0,22.0"/><circle cx="127.0" cy="22.0" r="4"/></svg></div>
+                </div>
+                <div class="wn">
+                    <div class="panel ok reveal" style="--i:7">
+                        <p class="label" style="color:var(--good)">What went well</p>
+                        <ul>
+                            <li><b>Enterprise ARR at 107% of target</b>; three seven-figure wins in the US public sector</li>
+                            <li><b>Burn multiple fell to 0.52×</b> from 0.87× in Q2, the best in the company’s history</li>
+                            <li><b>Gross margin 78.5%</b> as reserved hosting capacity came online in August</li>
+                            <li><b>Channel ARR at 112% of target</b> with 31 certified partners, up from 19</li>
+                        </ul>
+                    </div>
+                    <div class="panel watch reveal" style="--i:8">
+                        <p class="label" style="color:var(--warn)">Needs attention</p>
+                        <ul>
+                            <li><b>SMB churn up 0.4 pts</b> after the June price change; save-desk launched 2 September</li>
+                            <li><b>DACH bookings at 85% of plan</b> for the third month; new regional lead starts November</li>
+                            <li><b>ERP cut-over is red</b>: vendor delay of six weeks; contingency request on page 9</li>
+                            <li><b>NRR 118%, 2 pts below plan</b> as SMB contraction rose for a second quarter</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Triangles show direction of change; colour shows whether it is favourable. Sparklines: last eight quarters.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 4. ARR TREND (SVG LINE CHART) ======================= -->
+    <section class="slide" data-label="Line chart">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li class="on">Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">02 · Growth</p>
+        <h2 class="title">ARR reached $184.6m, 2.1% ahead of plan; we now forecast $196.5m at year end</h2>
+        <div class="body">
+            <div class="trend">
+                <div class="reveal draw" style="--i:1">
+                    <div class="trend-head">
+                        <div><p class="h3">Annual recurring revenue</p><p class="sub">USD m, end of quarter</p></div>
+                        <div class="chart-legend"><span><i></i>Actual</span><span><i class="plan"></i>FY27 plan</span><span><i class="fc"></i>Forecast</span></div>
+                    </div>
+                    <svg class="linechart" width="1080" height="560" viewBox="0 0 1080 560" role="img" aria-label="ARR by quarter, actual versus plan"><line class="gl" x1="72" x2="950" y1="504.0" y2="504.0"/><text class="yl" x="58" y="510.0" text-anchor="end">100</text><line class="gl" x1="72" x2="950" y1="408.0" y2="408.0"/><text class="yl" x="58" y="414.0" text-anchor="end">120</text><line class="gl" x1="72" x2="950" y1="312.0" y2="312.0"/><text class="yl" x="58" y="318.0" text-anchor="end">140</text><line class="gl" x1="72" x2="950" y1="216.0" y2="216.0"/><text class="yl" x="58" y="222.0" text-anchor="end">160</text><line class="gl" x1="72" x2="950" y1="120.0" y2="120.0"/><text class="yl" x="58" y="126.0" text-anchor="end">180</text><line class="gl" x1="72" x2="950" y1="24.0" y2="24.0"/><text class="yl" x="58" y="30.0" text-anchor="end">200</text><text class="xl" x="72.0" y="542" text-anchor="middle">Q4 FY25</text><text class="xl" x="179.3" y="542" text-anchor="middle">Q1 FY26</text><text class="xl" x="286.5" y="542" text-anchor="middle">Q2 FY26</text><text class="xl" x="393.8" y="542" text-anchor="middle">Q3 FY26</text><text class="xl" x="501.0" y="542" text-anchor="middle">Q4 FY26</text><text class="xl" x="608.3" y="542" text-anchor="middle">Q1 FY27</text><text class="xl" x="715.5" y="542" text-anchor="middle">Q2 FY27</text><text class="xl on" x="822.8" y="542" text-anchor="middle">Q3 FY27</text><text class="xl" x="930.0" y="542" text-anchor="middle">Q4 FY27F</text><rect class="fcband" x="822.8" y="24" width="107.3" height="480"/><polyline class="plan" points="501.0,258.2 608.3,216.0 715.5,165.6 822.8,116.2 930.0,62.4"/><polyline class="fc" points="822.8,97.9 930.0,40.8"/><polyline class="act" points="72.0,446.4 179.3,400.8 286.5,356.2 393.8,307.7 501.0,258.2 608.3,204.5 715.5,161.3 822.8,97.9"/><circle class="dot" cx="72.0" cy="446.4" r="6"/><circle class="dot" cx="179.3" cy="400.8" r="6"/><circle class="dot" cx="286.5" cy="356.2" r="6"/><circle class="dot" cx="393.8" cy="307.7" r="6"/><circle class="dot" cx="501.0" cy="258.2" r="6"/><circle class="dot" cx="608.3" cy="204.5" r="6"/><circle class="dot" cx="715.5" cy="161.3" r="6"/><circle class="dot on" cx="822.8" cy="97.9" r="9"/><text class="vl" x="86.0" y="480.4" text-anchor="start">112.0</text><text class="vl" x="179.3" y="382.8" text-anchor="middle">121.5</text><text class="vl" x="286.5" y="338.2" text-anchor="middle">130.8</text><text class="vl" x="393.8" y="289.7" text-anchor="middle">140.9</text><text class="vl" x="501.0" y="240.2" text-anchor="middle">151.2</text><text class="vl" x="608.3" y="186.5" text-anchor="middle">162.4</text><text class="vl" x="715.5" y="143.3" text-anchor="middle">171.4</text><text class="end act-l" x="806.8" y="75.9" text-anchor="end">184.6</text><text class="end plan-l" x="944.0" y="69.4">Plan 192.0</text><text class="end fc-l" x="944.0" y="26.8">Fcst 196.5</text><circle class="dot fcd" cx="930.0" cy="40.8" r="6"/></svg>
+                </div>
+                <div class="reveal" style="--i:2">
+                    <p class="h3">Net new ARR bridge, Q3</p>
+                    <p class="sub" style="margin-bottom:12px">USD m</p>
+                    <div class="drivers">
+                        <div class="row"><span>New logos</span><span class="bar"><i class="p growx" style="--v:7.9"></i></span><b class="good">+7.9</b></div>
+                        <div class="row"><span>Expansion</span><span class="bar"><i class="p growx" style="--v:7.6"></i></span><b class="good">+7.6</b></div>
+                        <div class="row"><span>Contraction</span><span class="bar"><i class="m" style="--v:0.9"></i></span><b class="bad">−0.9</b></div>
+                        <div class="row"><span>Churn</span><span class="bar"><i class="m" style="--v:1.4"></i></span><b class="bad">−1.4</b></div>
+                        <div class="row sum"><span>Net new ARR</span><span></span><b>13.2</b></div>
+                    </div>
+                    <div class="panel" style="margin-top:26px; padding:20px 24px;">
+                        <p class="small"><b style="color:var(--ink)">Forecast basis:</b> weighted Q4 pipeline of $41.0m at a 29% historical conversion, less expected churn of $1.6m.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Source: Altamira billing system; FY27 plan approved by the board in December 2026. Unaudited.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 5. SEGMENTS (BULLET CHARTS) ========================= -->
+    <section class="slide" data-label="Bullet charts">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li class="on">Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">02 · Growth</p>
+        <h2 class="title">Enterprise and channel carried the quarter; SMB is 10% short of target</h2>
+        <div class="body">
+            <div style="display:grid; grid-template-columns: 1fr 520px; gap: 56px; height:100%;">
+                <div class="reveal" style="--i:1">
+                    <div class="bticks" style="margin:0 0 6px;"><span class="label">Segment</span><span class="label">ARR attainment vs. Q3 target</span><span class="label" style="text-align:right">ARR $m</span><span class="label" style="text-align:right">vs. tgt</span></div>
+                    <div class="bullets" style="border-top:2px solid var(--ink);">
+                        <div class="brow"><span class="name">Enterprise<small>&gt; 2,000 employees</small></span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:107;--i:1"></i><i class="tgt"></i></div><span class="val">82.4<small>tgt 77.0</small></span><span class="att"><b class="g">107%</b></span></div>
+                        <div class="brow"><span class="name">Mid-market<small>200–2,000</small></span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:99;--i:2"></i><i class="tgt"></i></div><span class="val">51.3<small>tgt 51.6</small></span><span class="att"><b class="a">99%</b></span></div>
+                        <div class="brow"><span class="name">SMB<small>&lt; 200, self-serve</small></span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:90;--i:3"></i><i class="tgt"></i></div><span class="val">21.7<small>tgt 24.2</small></span><span class="att"><b class="r">90%</b></span></div>
+                        <div class="brow"><span class="name">Channel<small>Partner-sourced</small></span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:112;--i:4"></i><i class="tgt"></i></div><span class="val">14.8<small>tgt 13.2</small></span><span class="att"><b class="g">112%</b></span></div>
+                        <div class="brow"><span class="name">Public sector<small>US federal and state</small></span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:97;--i:5"></i><i class="tgt"></i></div><span class="val">14.4<small>tgt 14.8</small></span><span class="att"><b class="a">97%</b></span></div>
+                        <div class="brow" style="border-bottom:none; border-top:1.5px solid var(--ink);"><span class="name">Total</span><div class="bscale"><i class="band b1"></i><i class="band b2"></i><i class="band b3"></i><i class="bar growx" style="--v:102;--i:6"></i><i class="tgt"></i></div><span class="val">184.6<small>tgt 180.8</small></span><span class="att"><b class="g">102%</b></span></div>
+                    </div>
+                    <div class="bticks"><span></span><div class="sc"><span style="--t:0">0%</span><span style="--t:30">30%</span><span style="--t:60">60%</span><span style="--t:90">90%</span><span style="--t:120">120%</span></div><span></span><span></span></div>
+                </div>
+                <div class="reveal" style="--i:2">
+                    <p class="h3">Sales efficiency by segment</p>
+                    <p class="sub" style="margin-bottom:14px">Q3 FY27, new business</p>
+                    <table class="fin">
+                        <colgroup><col><col style="width:110px"><col style="width:110px"><col style="width:110px"></colgroup>
+                        <thead><tr><th>Segment</th><th>Win rate</th><th>ACV $k</th><th>Cycle, days</th></tr></thead>
+                        <tbody>
+                            <tr><td>Enterprise</td><td class="f">31%</td><td>212</td><td>142</td></tr>
+                            <tr><td>Mid-market</td><td>24%</td><td>58</td><td>71</td></tr>
+                            <tr><td>SMB</td><td class="u">17%</td><td>9</td><td>18</td></tr>
+                            <tr><td>Channel</td><td class="f">35%</td><td>64</td><td>66</td></tr>
+                            <tr><td>Public sector</td><td>26%</td><td>174</td><td class="u">198</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="small" style="margin-top:18px">Shaded cells differ from the trailing four-quarter average by more than 3 pts (win rate) or 20 days (cycle).</p>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Bars show ARR as % of Q3 target; the black tick is 100%. Grey bands: &lt; 90%, 90–100%, &gt; 100%. Source: CRM, billing.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 6. BOOKINGS HEATMAP ================================= -->
+    <section class="slide" data-label="Heatmap table">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li class="on">Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">02 · Growth</p>
+        <h2 class="title">Bookings recovered to 104% of plan in Q3; DACH is the only region still below 90%</h2>
+        <div class="body">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px;" class="reveal">
+                <div><p class="h3">New bookings as % of monthly plan, by region</p><p class="sub">January–September 2027; Q3 column outlined</p></div>
+                <div class="heat-key"><b style="background:var(--bad-strong);color:#7A1610">&lt; 85%</b><b style="background:var(--bad-tint);color:var(--bad)">85–94%</b><b style="background:var(--panel);color:var(--text)">95–104%</b><b style="background:var(--good-tint);color:var(--good)">105–119%</b><b style="background:var(--good-strong);color:#0B5A28">≥ 120%</b></div>
+            </div>
+            <table class="heat reveal" style="--i:1">
+                <colgroup><col style="width:240px"><col><col><col><col><col><col><col><col><col><col style="width:150px"></colgroup>
+                <thead><tr><th>Region</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th class="qh">Q3</th></tr></thead>
+                <tbody>
+                    <tr><td>North America East</td><td class="h3">104</td><td class="h4">112</td><td class="h3">98</td><td class="h5">121</td><td class="h4">109</td><td class="h3">96</td><td class="h4">118</td><td class="h5">125</td><td class="h5">131</td><td class="h5 q">125</td></tr>
+                    <tr><td>North America West</td><td class="h3">96</td><td class="h2">88</td><td class="h3">102</td><td class="h4">107</td><td class="h2">93</td><td class="h3">99</td><td class="h3">104</td><td class="h4">112</td><td class="h4">108</td><td class="h4 q">108</td></tr>
+                    <tr><td>UK &amp; Ireland</td><td class="h2">91</td><td class="h3">97</td><td class="h4">105</td><td class="h2">88</td><td class="h1">84</td><td class="h2">92</td><td class="h3">99</td><td class="h4">106</td><td class="h4">114</td><td class="h4 q">106</td></tr>
+                    <tr><td>DACH</td><td class="h1">82</td><td class="h1">76</td><td class="h2">89</td><td class="h2">94</td><td class="h3">101</td><td class="h3">97</td><td class="h2">86</td><td class="h1">79</td><td class="h2">91</td><td class="h2 q">85</td></tr>
+                    <tr><td>Nordics</td><td class="h4">108</td><td class="h4">115</td><td class="h3">99</td><td class="h3">104</td><td class="h5">121</td><td class="h4">117</td><td class="h4">110</td><td class="h3">102</td><td class="h3">97</td><td class="h3 q">103</td></tr>
+                    <tr><td>ANZ</td><td class="h1">73</td><td class="h2">85</td><td class="h2">92</td><td class="h1">81</td><td class="h1">77</td><td class="h2">88</td><td class="h3">95</td><td class="h3">102</td><td class="h3">99</td><td class="h3 q">99</td></tr>
+                    <tr class="tot"><td>All regions</td><td class="h2">92</td><td class="h3">96</td><td class="h3">98</td><td class="h3">99</td><td class="h3">98</td><td class="h3">98</td><td class="h3">102</td><td class="h3">104</td><td class="h4">107</td><td class="h3 q">104</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <footer class="foot"><span>Simple average of regions; Q3 = mean of Jul–Sep. Source: CRM closed-won, plan v3.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 7. P&L TABLE ======================================== -->
+    <section class="slide" data-label="P&L table">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li class="on">Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">03 · Financials</p>
+        <h2 class="title">Revenue beat budget by 2.1%; sales and marketing overspend absorbed most of it</h2>
+        <div class="body">
+            <table class="fin pl reveal" style="--i:1">
+                <colgroup><col style="width:330px"><col><col><col><col><col><col><col style="width:400px"></colgroup>
+                <thead>
+                    <tr><th></th><th colspan="4" class="grp">Q3 FY27</th><th colspan="2" class="grp sep">Prior year</th><th></th></tr>
+                    <tr><th>USD m</th><th>Actual</th><th>Budget</th><th>Var</th><th>Var %</th><th class="sep">Q3 FY26</th><th>YoY %</th><th style="text-align:left; padding-left:28px">Comment</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Revenue</td><td>44.1</td><td>43.2</td><td class="f">0.9</td><td class="f">2.1%</td><td class="sep">33.9</td><td>30.1%</td><td class="l">Enterprise expansion</td></tr>
+                    <tr><td>Cost of revenue</td><td>(9.5)</td><td>(9.6)</td><td class="f">0.1</td><td class="f">1.0%</td><td class="sep">(7.6)</td><td>25.0%</td><td class="l">Reserved hosting from August</td></tr>
+                    <tr class="sum"><td>Gross profit</td><td>34.6</td><td>33.6</td><td class="f">1.0</td><td class="f">3.0%</td><td class="sep">26.3</td><td>31.6%</td><td class="l"></td></tr>
+                    <tr class="ratio"><td>Gross margin</td><td>78.5%</td><td>77.8%</td><td class="n">+0.7 pts</td><td></td><td class="sep">77.6%</td><td class="n">+0.9 pts</td><td class="l"></td></tr>
+                    <tr><td>Sales &amp; marketing</td><td>(19.8)</td><td>(18.9)</td><td class="u">(0.9)</td><td class="u">(4.8%)</td><td class="sep">(16.1)</td><td>23.0%</td><td class="l">Public-sector event series</td></tr>
+                    <tr><td>Research &amp; development</td><td>(12.1)</td><td>(12.4)</td><td class="f">0.3</td><td class="f">2.4%</td><td class="sep">(10.2)</td><td>18.6%</td><td class="l">Two senior hires slipped to Q4</td></tr>
+                    <tr><td>General &amp; administrative</td><td>(6.2)</td><td>(6.0)</td><td class="u">(0.2)</td><td class="u">(3.3%)</td><td class="sep">(5.4)</td><td>14.8%</td><td class="l">ERP consultants</td></tr>
+                    <tr class="sum"><td>Total operating expenses</td><td>(38.1)</td><td>(37.3)</td><td class="u">(0.8)</td><td class="u">(2.1%)</td><td class="sep">(31.7)</td><td>20.2%</td><td class="l"></td></tr>
+                    <tr class="sum"><td>Operating income (loss)</td><td>(3.5)</td><td>(3.7)</td><td class="f">0.2</td><td class="f">5.4%</td><td class="sep">(5.4)</td><td>35.2%</td><td class="l"></td></tr>
+                    <tr class="ratio"><td>Operating margin</td><td>(7.9%)</td><td>(8.6%)</td><td class="n">+0.7 pts</td><td></td><td class="sep">(15.9%)</td><td class="n">+8.0 pts</td><td class="l"></td></tr>
+                    <tr class="sum"><td>Free cash flow</td><td>(6.8)</td><td>(7.9)</td><td class="f">1.1</td><td class="f">13.9%</td><td class="sep">(9.6)</td><td>29.2%</td><td class="l">Collections ahead of plan</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <footer class="foot"><span>Unaudited management accounts. ( ) = negative or cost. Green / red cells = favourable / unfavourable variance; % changes are on absolute values.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 8. CASH & RUNWAY (SVG COMBO) ======================== -->
+    <section class="slide" data-label="Combo chart">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li class="on">Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">03 · Financials</p>
+        <h2 class="title">Monthly burn has fallen by a third in a year; $71.5m of cash funds 31 months at the Q3 rate</h2>
+        <div class="body">
+            <div class="trend">
+                <div class="reveal draw" style="--i:1">
+                    <div class="trend-head">
+                        <div><p class="h3">Cash balance and monthly net burn</p><p class="sub">USD m, month end; burn shown on its own scale below</p></div>
+                        <div class="chart-legend"><span><i></i>Cash balance</span><span><i class="bar"></i>Net burn</span><span><i class="bar q"></i>Net burn, Q3</span></div>
+                    </div>
+                    <svg class="combo" width="1080" height="560" viewBox="0 0 1080 560" role="img" aria-label="Cash balance and monthly net burn"><line class="gl" x1="72" x2="1040" y1="320.0" y2="320.0"/><text class="yl" x="58" y="326.0" text-anchor="end">60</text><line class="gl" x1="72" x2="1040" y1="262.0" y2="262.0"/><text class="yl" x="58" y="268.0" text-anchor="end">70</text><line class="gl" x1="72" x2="1040" y1="204.0" y2="204.0"/><text class="yl" x="58" y="210.0" text-anchor="end">80</text><line class="gl" x1="72" x2="1040" y1="146.0" y2="146.0"/><text class="yl" x="58" y="152.0" text-anchor="end">90</text><line class="gl" x1="72" x2="1040" y1="88.0" y2="88.0"/><text class="yl" x="58" y="94.0" text-anchor="end">100</text><line class="gl" x1="72" x2="1040" y1="30.0" y2="30.0"/><text class="yl" x="58" y="36.0" text-anchor="end">110</text><text class="pl" x="72" y="360.0">Monthly net burn, $m</text><line class="base" x1="72" x2="1040" y1="494.0" y2="494.0"/><rect class="burn" x="89.7" y="390.1" width="45.2" height="103.9"/><text class="bl" x="112.3" y="414.1" text-anchor="middle">3.4</text><rect class="burn" x="170.4" y="396.2" width="45.2" height="97.8"/><text class="bl" x="193.0" y="420.2" text-anchor="middle">3.2</text><rect class="burn" x="251.1" y="393.2" width="45.2" height="100.8"/><text class="bl" x="273.7" y="417.2" text-anchor="middle">3.3</text><rect class="burn" x="331.7" y="405.4" width="45.2" height="88.6"/><text class="bl" x="354.3" y="429.4" text-anchor="middle">2.9</text><rect class="burn" x="412.4" y="408.4" width="45.2" height="85.6"/><text class="bl" x="435.0" y="432.4" text-anchor="middle">2.8</text><rect class="burn" x="493.1" y="405.4" width="45.2" height="88.6"/><text class="bl" x="515.7" y="429.4" text-anchor="middle">2.9</text><rect class="burn" x="573.7" y="414.6" width="45.2" height="79.4"/><text class="bl" x="596.3" y="438.6" text-anchor="middle">2.6</text><rect class="burn" x="654.4" y="411.5" width="45.2" height="82.5"/><text class="bl" x="677.0" y="435.5" text-anchor="middle">2.7</text><rect class="burn" x="735.1" y="417.6" width="45.2" height="76.4"/><text class="bl" x="757.7" y="441.6" text-anchor="middle">2.5</text><rect class="burn q" x="815.7" y="420.7" width="45.2" height="73.3"/><text class="bl q" x="838.3" y="444.7" text-anchor="middle">2.4</text><rect class="burn q" x="896.4" y="426.8" width="45.2" height="67.2"/><text class="bl q" x="919.0" y="450.8" text-anchor="middle">2.2</text><rect class="burn q" x="977.1" y="426.8" width="45.2" height="67.2"/><text class="bl q" x="999.7" y="450.8" text-anchor="middle">2.2</text><polyline class="cash" points="112.3,81.0 193.0,99.6 273.7,118.7 354.3,135.6 435.0,151.8 515.7,168.6 596.3,183.7 677.0,199.4 757.7,213.9 838.3,227.8 919.0,240.5 999.7,253.3"/><circle class="cd" cx="112.3" cy="81.0" r="5"/><circle class="cd" cx="193.0" cy="99.6" r="5"/><circle class="cd" cx="273.7" cy="118.7" r="5"/><text class="cl" x="273.7" y="100.7" text-anchor="middle">94.7</text><circle class="cd" cx="354.3" cy="135.6" r="5"/><circle class="cd" cx="435.0" cy="151.8" r="5"/><circle class="cd" cx="515.7" cy="168.6" r="5"/><text class="cl" x="515.7" y="150.6" text-anchor="middle">86.1</text><circle class="cd" cx="596.3" cy="183.7" r="5"/><circle class="cd" cx="677.0" cy="199.4" r="5"/><circle class="cd" cx="757.7" cy="213.9" r="5"/><text class="cl" x="757.7" y="195.9" text-anchor="middle">78.3</text><circle class="cd" cx="838.3" cy="227.8" r="5"/><circle class="cd" cx="919.0" cy="240.5" r="5"/><circle class="cd on" cx="999.7" cy="253.3" r="8"/><text class="cl on" x="999.7" y="235.3" text-anchor="middle">71.5</text><text class="xl" x="112.3" y="526.0" text-anchor="middle">Oct</text><text class="xl" x="193.0" y="526.0" text-anchor="middle">Nov</text><text class="xl" x="273.7" y="526.0" text-anchor="middle">Dec</text><text class="xl" x="354.3" y="526.0" text-anchor="middle">Jan</text><text class="xl" x="435.0" y="526.0" text-anchor="middle">Feb</text><text class="xl" x="515.7" y="526.0" text-anchor="middle">Mar</text><text class="xl" x="596.3" y="526.0" text-anchor="middle">Apr</text><text class="xl" x="677.0" y="526.0" text-anchor="middle">May</text><text class="xl" x="757.7" y="526.0" text-anchor="middle">Jun</text><text class="xl" x="838.3" y="526.0" text-anchor="middle">Jul</text><text class="xl" x="919.0" y="526.0" text-anchor="middle">Aug</text><text class="xl" x="999.7" y="526.0" text-anchor="middle">Sep</text><text class="xl yr" x="112.3" y="550.0" text-anchor="middle">2026</text><text class="xl yr" x="354.3" y="550.0" text-anchor="middle">2027</text></svg>
+                </div>
+                <div class="reveal" style="--i:2">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="kpi"><p class="label">Cash, 30 Sep</p><p class="v">$71.5<small>m</small></p><span class="delta down neutral">$6.8m <small>in Q3</small></span></div>
+                        <div class="kpi s-good"><p class="label">Runway</p><p class="v">31<small> mo</small></p><span class="delta up good">7 mo <small>vs Q2</small></span></div>
+                        <div class="kpi s-good"><p class="label">Burn multiple</p><p class="v">0.52<small>×</small></p><span class="delta down good">0.35× <small>vs Q2</small></span></div>
+                        <div class="kpi"><p class="label">Undrawn credit</p><p class="v">$25<small>m</small></p><span class="delta flat">Unchanged</span></div>
+                    </div>
+                    <div class="panel" style="margin-top:20px; padding:20px 24px;">
+                        <p class="small"><b style="color:var(--ink)">Runway</b> = cash ÷ average monthly net burn of the last quarter ($2.27m), excluding the undrawn facility.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Source: treasury report 30 September 2027; burn multiple = net burn ÷ net new ARR. Unaudited.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 9. STRATEGIC INITIATIVES (RAG) ====================== -->
+    <section class="slide" data-label="RAG status">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li>Financials</li><li class="on">Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">04 · Execution</p>
+        <h2 class="title">Four of seven initiatives are on track; the ERP migration is red and needs a contingency</h2>
+        <div class="body">
+            <div class="rag-sum reveal" style="margin-bottom:18px;"><span class="rag g">4 on track</span><span class="rag a">2 at risk</span><span class="rag r">1 off track</span><span class="small" style="margin-left:12px">Status as of 30 September; trend vs. Q2 report</span></div>
+            <table class="fin rag-t reveal" style="--i:1">
+                <colgroup><col style="width:350px"><col style="width:120px"><col style="width:330px"><col style="width:130px"><col style="width:180px"><col style="width:190px"><col style="width:90px"><col></colgroup>
+                <thead><tr><th>Initiative</th><th style="text-align:left">Owner</th><th style="text-align:left">Next milestone</th><th>Due</th><th style="text-align:left">Budget used</th><th style="text-align:left">Status</th><th style="text-align:center">Trend</th><th style="text-align:left">Comment</th></tr></thead>
+                <tbody>
+                    <tr><td>EU data-residency region</td><td class="l">CTO</td><td class="l">General availability, Frankfurt</td><td>15 Nov</td><td class="l"><span class="budget"><i style="--v:72"></i>72%</span></td><td class="l"><span class="rag g">Green</span></td><td style="text-align:center"><span class="delta up good"></span></td><td class="l">Three design partners live</td></tr>
+                    <tr><td>Self-serve SMB funnel</td><td class="l">CMO</td><td class="l">Pricing-page test readout</td><td>30 Oct</td><td class="l"><span class="budget"><i style="--v:58"></i>58%</span></td><td class="l"><span class="rag a">Amber</span></td><td style="text-align:center"><span class="delta down bad"></span></td><td class="l">Conversion +8% vs. +15% target</td></tr>
+                    <tr><td>Partner program 2.0</td><td class="l">CRO</td><td class="l">40 certified partners</td><td>31 Dec</td><td class="l"><span class="budget"><i style="--v:64"></i>64%</span></td><td class="l"><span class="rag g">Green</span></td><td style="text-align:center"><span class="delta flat"></span></td><td class="l">31 certified; pipeline $9.4m</td></tr>
+                    <tr><td>Finance ERP migration</td><td class="l">CFO</td><td class="l">Cut-over and parallel close</td><td>1 Jan 28</td><td class="l"><span class="budget"><i class="over" style="--v:91"></i>91%</span></td><td class="l"><span class="rag r">Red</span></td><td style="text-align:center"><span class="delta down bad"></span></td><td class="l">Vendor delay of six weeks</td></tr>
+                    <tr><td>AI forecasting module</td><td class="l">CPO</td><td class="l">Beta with 25 customers</td><td>30 Nov</td><td class="l"><span class="budget"><i style="--v:47"></i>47%</span></td><td class="l"><span class="rag a">Amber</span></td><td style="text-align:center"><span class="delta up good"></span></td><td class="l">18 of 25 live; accuracy met</td></tr>
+                    <tr><td>Hosting margin program</td><td class="l">CTO</td><td class="l">Three-year capacity contract</td><td>15 Dec</td><td class="l"><span class="budget"><i style="--v:35"></i>35%</span></td><td class="l"><span class="rag g">Green</span></td><td style="text-align:center"><span class="delta up good"></span></td><td class="l">+0.7 pts gross margin YTD</td></tr>
+                    <tr><td>SOC 2 Type II and ISO 27001</td><td class="l">CISO</td><td class="l">Audit fieldwork complete</td><td>20 Nov</td><td class="l"><span class="budget"><i style="--v:80"></i>80%</span></td><td class="l"><span class="rag g">Green</span></td><td style="text-align:center"><span class="delta flat"></span></td><td class="l">No major findings so far</td></tr>
+                </tbody>
+            </table>
+            <div class="escal reveal" style="--i:2">
+                <p class="label" style="color:var(--bad)">Escalation · Finance ERP migration</p>
+                <div class="escal-grid">
+                    <p><b>What happened.</b> The integrator lost two specialists in August; data migration testing is six weeks behind.</p>
+                    <p><b>Impact.</b> Cut-over moves from 1 January to mid-February unless we add capacity; the year-end close would run on the legacy system.</p>
+                    <p><b>Ask.</b> Approve a $4.5m contingency (decision 2) to fund a second integrator team and a parallel close.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Green = on plan; Amber = at risk, recoverable within the quarter; Red = off plan, board action needed.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 10. RISK REGISTER =================================== -->
+    <section class="slide" data-label="Risk register">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li>Financials</li><li class="on">Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker">04 · Execution</p>
+        <h2 class="title">Renewal concentration remains our largest risk; ERP timing moved into the high band this quarter</h2>
+        <div class="body">
+            <div style="display:grid; grid-template-columns: 540px 1fr; gap: 52px; height:100%;">
+                <div class="reveal" style="--i:1; height: 100%;">
+                    <div class="rm">
+                        <div class="axt yt"><span>Likelihood →</span></div>
+                        <span class="ax" style="grid-row:1;grid-column:2">5</span><span class="ax" style="grid-row:2;grid-column:2">4</span><span class="ax" style="grid-row:3;grid-column:2">3</span><span class="ax" style="grid-row:4;grid-column:2">2</span><span class="ax" style="grid-row:5;grid-column:2">1</span>
+                        <!-- row L5 -->
+                        <div class="c lo" style="grid-row:1;grid-column:3"></div><div class="c hi" style="grid-row:1;grid-column:4"></div><div class="c hi" style="grid-row:1;grid-column:5"></div><div class="c hi" style="grid-row:1;grid-column:6"></div><div class="c hi" style="grid-row:1;grid-column:7"></div>
+                        <!-- row L4 -->
+                        <div class="c lo" style="grid-row:2;grid-column:3"></div><div class="c md" style="grid-row:2;grid-column:4"></div><div class="c hi" style="grid-row:2;grid-column:5"><span class="rid">R2</span></div><div class="c hi" style="grid-row:2;grid-column:6"></div><div class="c hi" style="grid-row:2;grid-column:7"></div>
+                        <!-- row L3 -->
+                        <div class="c lo" style="grid-row:3;grid-column:3"></div><div class="c lo" style="grid-row:3;grid-column:4"><span class="rid">R6</span></div><div class="c md" style="grid-row:3;grid-column:5"><span class="rid">R3</span></div><div class="c hi" style="grid-row:3;grid-column:6"></div><div class="c hi" style="grid-row:3;grid-column:7"><span class="rid">R1</span></div>
+                        <!-- row L2 -->
+                        <div class="c lo" style="grid-row:4;grid-column:3"></div><div class="c lo" style="grid-row:4;grid-column:4"></div><div class="c lo" style="grid-row:4;grid-column:5"><span class="rid">R5</span></div><div class="c md" style="grid-row:4;grid-column:6"><span class="rid">R4</span></div><div class="c hi" style="grid-row:4;grid-column:7"></div>
+                        <!-- row L1 -->
+                        <div class="c lo" style="grid-row:5;grid-column:3"></div><div class="c lo" style="grid-row:5;grid-column:4"></div><div class="c lo" style="grid-row:5;grid-column:5"></div><div class="c lo" style="grid-row:5;grid-column:6"></div><div class="c lo" style="grid-row:5;grid-column:7"></div>
+                        <span class="ax" style="grid-row:6;grid-column:3">1</span><span class="ax" style="grid-row:6;grid-column:4">2</span><span class="ax" style="grid-row:6;grid-column:5">3</span><span class="ax" style="grid-row:6;grid-column:6">4</span><span class="ax" style="grid-row:6;grid-column:7">5</span>
+                        <div class="axt xt">Impact →</div>
+                    </div>
+                </div>
+                <div class="reveal" style="--i:2">
+                    <table class="fin">
+                        <colgroup><col style="width:70px"><col><col style="width:90px"><col style="width:100px"><col style="width:80px"><col style="width:400px"></colgroup>
+                        <thead><tr><th>ID</th><th style="text-align:left">Risk</th><th style="text-align:left">Owner</th><th>Score</th><th style="text-align:center">Trend</th><th style="text-align:left">Mitigation</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="rid">R1</span></td><td class="l">Top-10 renewal concentration (24% of ARR)</td><td class="l">CRO</td><td class="u">15</td><td style="text-align:center"><span class="delta up bad"></span></td><td class="l">Exec sponsor per account; 3 of 10 renewed early</td></tr>
+                            <tr><td><span class="rid">R2</span></td><td class="l">ERP cut-over slips into year-end close</td><td class="l">CFO</td><td class="u">12</td><td style="text-align:center"><span class="delta up bad"></span></td><td class="l">Parallel run; legacy close as fallback</td></tr>
+                            <tr><td><span class="rid">R3</span></td><td class="l">SMB churn rises after the price change</td><td class="l">CMO</td><td>9</td><td style="text-align:center"><span class="delta flat"></span></td><td class="l">12-month grandfathering; save-desk</td></tr>
+                            <tr><td><span class="rid">R4</span></td><td class="l">Attrition in the AI engineering team</td><td class="l">CTO</td><td>8</td><td style="text-align:center"><span class="delta down good"></span></td><td class="l">Retention grants approved in Q2</td></tr>
+                            <tr><td><span class="rid">R5</span></td><td class="l">EU data-transfer rules change</td><td class="l">GC</td><td class="f">6</td><td style="text-align:center"><span class="delta flat"></span></td><td class="l">Frankfurt region; DPA refresh</td></tr>
+                            <tr><td><span class="rid">R6</span></td><td class="l">Hosting cost inflation</td><td class="l">CTO</td><td class="f">6</td><td style="text-align:center"><span class="delta down good"></span></td><td class="l">Three-year reserved capacity</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="panel changes">
+                        <p class="label">Changes since the Q2 register</p>
+                        <ul>
+                            <li><span class="rid">R2</span><span>Raised from 8 to 12 after the integrator’s staffing gap (see page 9)</span></li>
+                            <li><span class="rid">R4</span><span>Lowered from 12 to 8; AI-team attrition fell to 4% after retention grants</span></li>
+                            <li><span class="rid" style="background:var(--faint)">R7</span><span>Closed: euro exposure now hedged for 18 months</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Score = likelihood × impact (1–5 each). High ≥ 10, medium 7–9, low ≤ 6. Trend vs. Q2 register.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 11. OUTLOOK ========================================= -->
+    <section class="slide" data-label="Outlook">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li>Financials</li><li>Execution</li><li class="on">Outlook</li></ol>
+        </header>
+        <p class="kicker">05 · Outlook</p>
+        <h2 class="title">We raise the FY27 ARR outlook to $196.5m and keep free cash flow ahead of plan</h2>
+        <div class="body">
+            <div style="display:grid; grid-template-columns: 1fr 600px; gap: 56px; height: 100%;">
+                <div class="reveal" style="--i:1">
+                    <p class="h3">FY27 full-year outlook</p>
+                    <p class="sub" style="margin-bottom:14px">USD m unless stated; base case is the management forecast</p>
+                    <table class="fin outlook">
+                        <colgroup><col style="width:300px"><col><col><col style="width:170px"><col><col style="width:170px"></colgroup>
+                        <thead><tr><th>Metric</th><th>Plan</th><th>Low</th><th style="background:var(--blue-tint);color:var(--blue)">Base</th><th>High</th><th>Base vs plan</th></tr></thead>
+                        <tbody>
+                            <tr><td>ARR, 31 December</td><td>192.0</td><td>193.0</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">196.5</td><td>199.0</td><td class="f">+2.3%</td></tr>
+                            <tr><td>Revenue</td><td>167.4</td><td>167.9</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">169.6</td><td>171.0</td><td class="f">+1.3%</td></tr>
+                            <tr><td>Gross margin</td><td>77.5%</td><td>77.8%</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">78.3%</td><td>78.6%</td><td class="f">+0.8 pts</td></tr>
+                            <tr><td>Operating margin</td><td>(9.5%)</td><td>(9.0%)</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">(8.2%)</td><td>(7.6%)</td><td class="f">+1.3 pts</td></tr>
+                            <tr><td>Free cash flow</td><td>(31.0)</td><td>(29.4)</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">(28.1)</td><td>(26.9)</td><td class="f">+2.9</td></tr>
+                            <tr><td>Headcount, year end</td><td>720</td><td>700</td><td style="background:var(--blue-tint);font-weight:700;color:var(--ink)">706</td><td>715</td><td class="n">−14 FTE</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="small" style="margin-top:20px">Low case: two of the top-10 renewals slip into Q1 FY28. High case: Q4 pipeline converts at the Q3 rate of 34%.</p>
+                </div>
+                <div class="reveal" style="--i:2">
+                    <div class="decide">
+                        <p class="label">For decision today</p>
+                        <ol>
+                            <li><span class="n">1</span><div><h4>FY28 plan envelope</h4><p>ARR growth 26–28%; FCF break-even Q4 FY28; detailed plan in December</p></div></li>
+                            <li><span class="n">2</span><div><h4>$4.5m ERP contingency</h4><p>Released only on CFO request; reported monthly to the audit committee</p></div></li>
+                            <li><span class="n">3</span><div><h4>EU-region pricing (+8%)</h4><p>For discussion now; for decision at the December meeting</p></div></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="foot"><span>Forecast as of 14 October 2027. Ranges are management estimates, not guidance to investors.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 12. APPENDIX ======================================== -->
+    <section class="slide" data-label="Appendix">
+        <header class="top">
+            <div class="brand"><span class="logo" aria-hidden="true"></span>Altamira<span>Q3 FY27 Board Review</span></div>
+            <ol class="sections"><li>Overview</li><li>Growth</li><li>Financials</li><li>Execution</li><li>Outlook</li></ol>
+        </header>
+        <p class="kicker"><span class="appx-tag">A1</span>Appendix</p>
+        <h2 class="title">Operating metrics, last five quarters</h2>
+        <div class="body">
+            <table class="fin dense reveal" style="--i:1">
+                <colgroup><col style="width:320px"><col><col><col><col><col style="width:150px"><col style="width:160px"><col style="width:520px"></colgroup>
+                <thead><tr><th>Metric</th><th>Q3 FY26</th><th>Q4 FY26</th><th>Q1 FY27</th><th>Q2 FY27</th><th style="color:var(--ink)">Q3 FY27</th><th>QoQ</th><th style="text-align:left; padding-left:24px">Definition</th></tr></thead>
+                <tbody>
+                    <tr><td>ARR, $m</td><td>140.9</td><td>151.2</td><td>162.4</td><td>171.4</td><td><b>184.6</b></td><td class="f">+7.7%</td><td class="l">Annualised contracted subscription value</td></tr>
+                    <tr><td>Net new ARR, $m</td><td>10.1</td><td>10.3</td><td>11.2</td><td>9.0</td><td><b>13.2</b></td><td class="f">+46.7%</td><td class="l">New + expansion − contraction − churn</td></tr>
+                    <tr><td>Net revenue retention</td><td>119%</td><td>121%</td><td>121%</td><td>120%</td><td><b>118%</b></td><td class="u">−2 pts</td><td class="l">Trailing 12 months, cohort ARR</td></tr>
+                    <tr><td>Gross revenue retention</td><td>93%</td><td>94%</td><td>94%</td><td>93%</td><td><b>92%</b></td><td class="u">−1 pt</td><td class="l">As NRR, excluding expansion</td></tr>
+                    <tr><td>Customers</td><td>2,412</td><td>2,530</td><td>2,655</td><td>2,748</td><td><b>2,871</b></td><td class="f">+4.5%</td><td class="l">Paying accounts at quarter end</td></tr>
+                    <tr><td>Customers &gt; $100k ARR</td><td>318</td><td>341</td><td>362</td><td>377</td><td><b>404</b></td><td class="f">+7.2%</td><td class="l">Accounts above $100k ARR</td></tr>
+                    <tr><td>Average new ACV, $k</td><td>48.2</td><td>51.0</td><td>52.4</td><td>49.8</td><td><b>55.1</b></td><td class="f">+10.6%</td><td class="l">First-year contract value, new logos</td></tr>
+                    <tr><td>CAC payback, months</td><td>21</td><td>20</td><td>19</td><td>22</td><td><b>18</b></td><td class="f">−4</td><td class="l">S&amp;M ÷ (net new ARR × gross margin)</td></tr>
+                    <tr><td>Burn multiple, ×</td><td>0.95</td><td>0.96</td><td>0.77</td><td>0.87</td><td><b>0.52</b></td><td class="f">−0.35</td><td class="l">Net burn ÷ net new ARR</td></tr>
+                    <tr><td>Gross logo churn</td><td>1.5%</td><td>1.6%</td><td>1.4%</td><td>1.5%</td><td><b>1.9%</b></td><td class="u">+0.4 pts</td><td class="l">Logos lost ÷ opening logos, quarterly</td></tr>
+                    <tr><td>Headcount, FTE</td><td>612</td><td>634</td><td>655</td><td>671</td><td><b>688</b></td><td class="n">+2.5%</td><td class="l">Full-time equivalents at quarter end</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <footer class="foot"><span>QoQ cells coloured by favourability (lower churn, payback and burn multiple are favourable). Unaudited.</span><span class="right"><span>Altamira · Q3 FY27 Board Review</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "7 / 12" in every footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const total = this.slides.length;
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = (i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

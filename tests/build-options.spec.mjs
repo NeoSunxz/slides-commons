@@ -126,7 +126,7 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     // And the env var form.
     fs.writeFileSync(path.join(d, 'zh.sources.json'), '{}');
     expect(run('i18n-sync', [], { env: { SC_I18N_DIR: d } }).status).toBe(0);
-    expect(Object.keys(JSON.parse(fs.readFileSync(path.join(d, 'zh.sources.json'), 'utf8')))).toHaveLength(34);
+    expect(Object.keys(JSON.parse(fs.readFileSync(path.join(d, 'zh.sources.json'), 'utf8')))).toHaveLength(ALL_SLUGS.length);
   });
 
   test('the flag beats the env var (both directions); relative paths resolve from the repo root', () => {
@@ -165,7 +165,11 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     fs.rmSync(path.join(root, 'src', 'i18n'), { recursive: true, force: true });
     fs.copyFileSync(path.join(ROOT, 'sources.json'), path.join(root, 'sources.json'));
     fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
-    try { fs.symlinkSync(path.join(ROOT, 'upstream'), path.join(root, 'upstream'), 'junction'); } catch (e) { test.skip(true, `cannot symlink upstream/: ${e.code}`); }
+    try {
+      fs.symlinkSync(path.join(ROOT, 'upstream'), path.join(root, 'upstream'), 'junction');
+      fs.symlinkSync(path.join(ROOT, 'collections'), path.join(root, 'collections'), 'junction');
+      fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(root, 'node_modules'), 'junction'); // Fontsource packages
+    } catch (e) { test.skip(true, `cannot symlink upstream/ or node_modules/: ${e.code}`); }
     const out = path.join(root, 'out-site');
     const r = run(path.join(root, 'scripts', 'build.mjs'), ['--out', out], { cwd: root });
     expect(r.status, r.out).toBe(0);
@@ -241,11 +245,11 @@ test.describe('--site-url / SC_SITE_URL', () => {
     }
     // Everything outside prompts / READMEs is byte-identical (previews, assets, gallery).
     const diffs = diffTrees(without, withUrl).map((d) => d.replace('differs: ', ''));
-    const unexpected = diffs.filter((f) => !/^zip\/|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
+    const unexpected = diffs.filter((f) => !/^zip\/|^index\.html$|^zh\/index\.html$|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
     expect(unexpected, 'unexpected differences').toEqual([]);
   });
 
-  test('all 34: page prompt == zip prompt (EN and ZH); URL, download chain order, safety sentence; README line only in this mode', () => {
+  test('all templates: page prompt == zip prompt (EN and ZH); URL, download chain order, safety sentence; README line only in this mode', () => {
     const bad = [];
     for (const slug of ALL_SLUGS) {
       const zipUrl = `${URL_BASE}zip/${slug}.zip`;

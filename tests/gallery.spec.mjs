@@ -1,11 +1,18 @@
 // Gallery (EN and ZH): cards, search, filters, hash state, language switch, no-JS, thumbnails, weight.
 import { test, expect } from './font-cache.mjs';
-import { ALL_SLUGS, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
+import { ALL_SLUGS, CATALOG, COLLECTION_SLUGS, COLLECTION_SOURCE_ID, SOURCES_JSON, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
 
 const META = ALL_SLUGS.map((slug) => ({ slug, ...upstreamMeta(slug) }));
 const searchText = (t) => [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
 const bySlugs = (list) => list.map((t) => t.slug).sort();
 const SCHEMES = ['light', 'dark', 'mixed'];
+const authorsOf = (slug) => {
+  const t = CATALOG.find((x) => x.slug === slug);
+  const meta = upstreamMeta(slug);
+  return meta.authors?.length ? meta.authors.map((x) => x.name) : [SOURCES_JSON.sources.find((x) => x.id === t.source).author];
+};
+const AUTHORS = new Map();
+for (const slug of ALL_SLUGS) for (const n of authorsOf(slug)) AUTHORS.set(n, [...(AUTHORS.get(n) ?? []), slug]);
 const count = (fn) => META.filter(fn).length;
 
 const LANGS = {
@@ -27,10 +34,10 @@ for (const [lang, L] of Object.entries(LANGS)) {
   test.describe(`gallery [${lang}]`, () => {
     test.beforeEach(async ({ page }) => { await page.goto(L.url); await expect(page.locator('#filters')).toBeVisible(); });
 
-    test('34 cards, each linking to its detail page; count text', async ({ page }) => {
-      expect(META).toHaveLength(34);
+    test('one card per template (all sources), each linking to its detail page; count text', async ({ page }) => {
+      expect(META.length).toBeGreaterThan(34);
       expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
-      await expect(page.locator('#fcount')).toHaveText(L.countRe(34));
+      await expect(page.locator('#fcount')).toHaveText(L.countRe(META.length));
       await expect(page.locator('#fclear')).toBeHidden();
     });
 
@@ -126,9 +133,69 @@ for (const [lang, L] of Object.entries(LANGS)) {
       expect(await visibleSlugs(page), 'after language switch').toEqual(before);
     });
 
-    test('source group is hidden while there is one source', async ({ page }) => {
-      await expect(page.locator('button.chip[data-group="source"]')).toHaveCount(0);
-      await expect(page.locator('button.chip[data-group="scheme"]')).not.toHaveCount(0);
+    test('author group lists each resolved author with its count and filters cards (hash round-trip)', async ({ page }) => {
+      expect(AUTHORS.size).toBeGreaterThan(1);
+      await expect(page.locator('button.chip[data-group="source"]'), 'no source chips any more').toHaveCount(0);
+      await expect(page.locator('button.chip[data-group="author"]')).toHaveCount(AUTHORS.size);
+      for (const [name, slugs] of AUTHORS) {
+        await expect(chip(page, 'author', name).locator('.n'), `${name} chip number`).toHaveText(String(slugs.length));
+        await chip(page, 'author', name).click();
+        expect(await visibleSlugs(page), `author ${name}`).toEqual([...slugs].sort());
+        await expect(page.locator('#fcount')).toHaveText(L.countRe(slugs.length));
+        const hash = new URL(page.url()).hash;
+        expect(hash).toMatch(/^#author=/);
+        expect(hash).not.toMatch(/source=/);
+        await page.reload();
+        await expect(chip(page, 'author', name)).toHaveAttribute('aria-pressed', 'true');
+        expect(await visibleSlugs(page), `author ${name} after reload`).toEqual([...slugs].sort());
+        await chip(page, 'author', name).click();
+        expect(new URL(page.url()).hash).toBe('');
+      }
+      // Several authors are ORed; the author group ANDs with scheme.
+      const names = [...AUTHORS.keys()];
+      for (const n of names) await chip(page, 'author', n).click();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
+      expect(new URL(page.url()).hash).toContain('author=');
+      await page.reload();
+      for (const n of names) await expect(chip(page, 'author', n)).toHaveAttribute('aria-pressed', 'true');
+      for (const n of names.slice(1)) await chip(page, 'author', n).click();
+      await chip(page, 'scheme', 'dark').click();
+      expect(await visibleSlugs(page)).toEqual(bySlugs(META.filter((t) => t.scheme === 'dark' && AUTHORS.get(names[0]).includes(t.slug))));
+    });
+
+    test('cards carry data-author (and data-source)', async ({ page }) => {
+      const got = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => [li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''), li.getAttribute('data-author'), li.getAttribute('data-source')]));
+      expect(got.length).toBe(META.length);
+      for (const [slug, author, source] of got) {
+        expect(author, slug).toBe(authorsOf(slug).join('|'));
+        expect(source, slug).toBe(CATALOG.find((t) => t.slug === slug).source);
+      }
+    });
+
+    test('old #source=<id> hash is ignored: page loads unfiltered, no chip pressed, no errors', async ({ page }) => {
+      const log = monitor(page);
+      await page.goto(`${L.url}#source=${COLLECTION_SOURCE_ID}`);
+      await expect(page.locator('#filters')).toBeVisible();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
+      await expect(page.locator('button.chip[aria-pressed="true"]')).toHaveCount(0);
+      await expect(page.locator('#fclear')).toBeHidden();
+      await expect(page.locator('#fcount')).toHaveText(L.countRe(META.length));
+      // A real filter still works afterwards.
+      const [name, slugs] = [...AUTHORS][0];
+      await chip(page, 'author', name).click();
+      expect(await visibleSlugs(page)).toEqual([...slugs].sort());
+      expect(log.consoleErrors).toEqual([]);
+    });
+
+    test('author hash from a link applies on load; unknown author shows nothing and Clear recovers', async ({ page }) => {
+      const [name, slugs] = [...AUTHORS][0];
+      await page.goto(`${L.url}#author=${encodeURIComponent(name)}`);
+      expect(await visibleSlugs(page)).toEqual([...slugs].sort());
+      await page.goto(`${L.url}#author=Nobody+Atall`);
+      await page.reload();
+      expect(await visibleSlugs(page)).toEqual([]);
+      await page.locator('#fclear').click();
+      expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
     });
 
     test('thumbnails load for every card after scrolling; no console errors', async ({ page }) => {
@@ -179,7 +246,7 @@ test('EN home: first load transfers less than 2.5 MB', async ({ page }) => {
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
   for (const [lang, L] of Object.entries(LANGS)) {
-    test(`[${lang}] all 34 cards are visible and the filter panel stays hidden`, async ({ page }) => {
+    test(`[${lang}] all cards are visible and the filter panel stays hidden`, async ({ page }) => {
       await page.goto(L.url);
       expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
       await expect(page.locator('#filters')).toBeHidden();

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
+### Added
+
+- Style Presets collection (16 templates): 12 based on frontend-slides STYLE_PRESETS.md by Zara Zhang, and 4 original white-background business templates (consulting-report, boardroom-quarterly, minimal-pitch, tech-blue-business).
+- Source filter in the gallery.
+- `npm run screenshots` to generate template screenshots.
+- `site/manifest.json` listing the built templates.
+- Fontshare fonts are allowed for neon-cyber.
+- Chinese translations for all new templates.
+- Community collection for contributed templates, with per-template authors and license.
+- `npm run new-template` scaffolds a new template.
+- Strict checks for collection templates.
+- CI guard job for pull requests.
+- Issue and PR templates, and CONTRIBUTING.md (EN/中文).
+- Latin web fonts are now self-hosted (Fontsource, SIL OFL 1.1): previews no longer need Google Fonts for Latin text.
+- Each pack ships `fonts/` (woff2 files, `OFL.txt`, `fonts.css`).
+- The prompt asks the agent to embed Latin fonts as base64 so decks work offline. CJK fonts still come from Google Fonts.
+
+### Changed
+- Gallery filter is now by author (Zara Zhang, slides-commons, contributors) instead of by source; the hash key is `author=`.
+- On the published site the zip download is a small "Offline? Download the pack (.zip)" link under Copy prompt; prompts quote the label the page shows.
+- Prompts give each template's concrete `--slide-bg` value from its design.md (41 of 50; the rest keep the generic rule).
+- Swiss Modern cover: the lone red circle is replaced by a top-right quarter circle with a black square.
+
+- Gallery cards have equal heights, two-line taglines and a one-line credit.
+- Own templates are credited as "slides-commons".
+- Detail pages wrap cleanly on narrow screens.
+- Pages check counts templates from the manifest instead of a hard-coded number.
+- The raw-grid prompt quotes its Noto Sans SC link for CJK text.
+- The prompt quotes a CJK-only Google Fonts link.
+- CJK family detection now covers ZCOOL, LXGW, Long Cang and similar families.
+- The prompt asks the agent to list any legibility deviations from design.md.
+- Prompt now drafts missing content itself instead of leaving placeholders, and lists every drafted item in the final reply.
+- When design.md contradicts itself, the prompt tells the agent to follow the stricter rule.
+- On the published site the usage steps are now "copy the prompt, paste it into your coding agent (it downloads the pack), answer its questions". Copy prompt is the primary button and the zip download is an offline fallback.
+- The pack README lists font licenses per family (Yellowtail is Apache 2.0).
+- Collection prompts include signature moves taken from design.md.
+- The Chinese prompt names the Chinese download button.
+- The CJK font-weight rule in the prompt now overrides design.md.
+- QR codes and links are only used when the user supplied a real link.
+- Section numbers must match page numbers.
+- `--slide-bg` wording clarified: it is the canvas background, not the panel color.
+- Unzip fallback order is now unzip, python, tar, Expand-Archive.
+
 ## [0.1.0] - 2026-11-12
 
 First public release (milestones M1 to M3): a static gallery of 34 HTML slide templates, each with a live preview, a copy-ready prompt and a downloadable pack for your own coding agent.
@@ -38,5 +83,6 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0

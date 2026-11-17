@@ -53,7 +53,7 @@ open HTML slide templates with prompts, for coding agents ／ 开放的 HTML 幻
 - `site-builder`：实现构建脚本和页面，只改 `scripts/`、`src/` 和 `.github/workflows/`（M3 起；维护者 2026-11-12 同意）
 - `site-tester`：构建并用 Playwright 验证，只写 `tests/`，只报告问题不修复
 - `release-manager`：提交、更新 CHANGELOG、准备发版，禁止 push 和改写历史
-- （M6 时新增）`template-designer`：只允许写 `collections/neosun/`
+- `template-designer`：设计和编写自有模板，只允许写 `collections/`（M4 起；维护者 2026-11-13 同意，原计划 M6 新增）
 
 每个里程碑顺序：site-builder → site-tester →（有问题回到 builder）→ release-manager。
 每个里程碑发版前停下等维护者确认；结束时把进度和下一步写进本文件"进度"一节。
@@ -179,7 +179,20 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-12：M2 经维护者实测通过。M3 开发：`.github/workflows/ci.yml`（pull_request→dev/main，validate + test，只读权限，Action 全部固定到提交哈希）与 `pages.yml`（push main → 构建并部署，构建时 `SC_SITE_URL=https://<owner>.github.io/<repo>/`，产物自检）。提示词自动下载素材包已实现：`SC_SITE_URL` / `--site-url`（未设置时产物与之前逐字节一致）；`SC_I18N_DIR` / `--i18n-dir` 使翻译缺失/过期/结构错误可测。`npm test` 371 通过 0 跳过（约 3.3 分钟）。
   - 工作流尚未在 GitHub 上实际运行过。Pages 检查里 zip 数量 34 是写死的，增减模板/来源时同步修改。
   - 维护者一次性设置：默认分支 dev；Pages source = GitHub Actions；main 分支保护（需 PR + 必过检查 `validate + test`，禁强推）。
-- 下一步：合并 M1–M3 的发版 PR（dev → main，因为 Pages 工作流需先存在于 main）；上线后做一次「只给提示词、不放 zip」的自动下载模拟验收；再做自托管字体与 M4。
+- 2026-11-13：v0.1.0 发布（PR #1 合并到 main，提交 97816b0；Pages 上线 https://neosunxz.github.io/slides-commons/ ，详情页路径 `t/<slug>/`；GitHub Release v0.1.0）。main 已保护（需 PR + 必过 `validate + test`），默认分支 dev。
+- 2026-11-13：「只给提示词、不放 zip」模拟验收通过（curl 下载 → python 解压 → 8 页中文演讲型）。据此改提示词（维护者确认）：缺内容由 agent 代写、页面不放占位、最终回复逐条列出代写内容；design.md 自相矛盾取更严格的规则；CJK 字重规则优先于 design.md；二维码/链接仅在用户给了真实链接时使用；章节编号与页码一致；`--slide-bg` 取画布底色而非面板色；解压顺序 unzip → python → tar → Expand-Archive。演讲型面板下限不设。`npm test` 374 通过。
+  - 待定：`--slide-bg` 目前是通用措辞，未按模板从数据推导具体色值。
+- 2026-11-13：自托管字体第一步完成（拉丁字体）：Fontsource npm 包（47 个 `@fontsource/*` + 5 个 `@fontsource-variable/*`，devDependencies）；`scripts/fonts.mjs` 从模板的 Google Fonts 链接解析字体族/字重。预览副本把拉丁字体以 data: URI 内联（沙箱 iframe 在 file:// 禁止加载本地文件、http 下 origin=null 会被 CORS 拦截，所以不能引用 `site/fonts/`），CJK 字体仍走只含 CJK 字体族的 Google 链接；`site/fonts/<family>/OFL.txt` 存协议。zip 增加 `fonts/`（woff2 + OFL.txt + `fonts.css`），总计 12.4MB。提示词要求把拉丁字体以 base64 嵌入成稿（latin + latin-ext 都嵌，可变字体只嵌一次），只有 CJK 用 Google 链接；为可读性偏离 design.md 配色/字号须在最终回复列出。模拟验收（signal，7 页英文，断网仍加载全部字体，成稿 481KB）通过。`npm test` 485 通过。CREDITS.md 已加 Web fonts 一节。
+  - 待处理：raw-grid 的 design.md 允许 CJK 用 Noto Sans SC（唯一例外），但提示词让它用系统 CJK 字体，应改为引用该链接。
+  - 新增模板若用了 Fontsource 没有的拉丁字体，校验会失败（可加到 `scripts/fonts.mjs` 的 `GOOGLE_FALLBACK`）。
+- 2026-11-13/14：M4 完成。新来源 `style-presets`（`collections/style-presets/`，本仓库内，`sources.json` 带 `repoPath`、`collection: true`、`packLicenseName: LICENSE`、`derivedFrom.slugs`）共 16 个模板：12 个改编自 frontend-slides `STYLE_PRESETS.md`（详情页/卡片/README 注明 "based on … by Zara Zhang"，并声明原作者未参与或背书），4 个原创白底商务模板（consulting-report、boardroom-quarterly、minimal-pitch、tech-blue-business，维护者要求加做并并入此集合，不带改编署名）。每模板 11–12 页，design.md 完整；截图用 `npm run screenshots` 生成后提交（只处理本仓库集合）。zip 带 LICENSE + LICENSE-skill（viewport-base.css 来自 frontend-slides）+ fonts/。neon-cyber 用 Fontshare（api/cdn.fontshare.com 白名单，不打包）。Yellowtail 字体是 Apache 2.0（其余 OFL）。Pages 自检改为对照 `site/manifest.json`，不再写死 34。zh.json 覆盖全部 50 个模板。raw-grid 提示词改为引用其 design.md 的 Noto Sans SC 链接。`npm test` 643 通过（`/tmp` 是 4.9GB tmpfs，满了会 ENOSPC，可设 `TMPDIR`）。
+  - 新增 `template-designer` 子 agent（只写 `collections/`）。
+- 2026-11-17：使用说明改为「复制提示词 → 粘贴给 coding agent（agent 自己下载素材包）→ 回答问题」（仅设置站点网址时；本地构建保留先下载的说明），复制提示词为主按钮、下载为次要并附离线说明；素材包 README 按实际协议文件写字体协议（Yellowtail 为 Apache 2.0）；无 preview.md 的模板从 design.md 的 Signature Treatments/Moves/Elements 一节提取标志性手法（最多 5 条，16 个均有）；中文提示词引用中文按钮名「下载素材包（.zip）」。`npm test` 666 通过。
+- 2026-11-17：M5 完成（随 v0.2.0 发布）：新来源 `community`（`collections/community/`，`perTemplateLicense: true`，每个模板自带 LICENSE 与 authors，允许 MIT / Apache-2.0 / CC-BY-4.0 / CC0-1.0）；`scripts/collection-checks.mjs` 对所有 `collection: true` 模板做严格校验（协议、作者链接、design.md 必要章节、无位图、3 张 1920×1080 截图、体积上限、无 TODO、derivedFrom 目标存在）；`npm run new-template -- <slug> [--collection X]` 脚手架；改编投稿的 zip 带 `LICENSE-original-<slug>`；CI 新增 `guard` 作业（非仓库所有者的 PR 改 `upstream/` 或 `.gitmodules` 即失败，改其他集合模板给警告）；`.github/` PR 模板与 3 个 Issue 表单；`CONTRIBUTING.md`（中英）。卡片：作者署名统一 `slides-commons`，卡片等高、简介最多两行、标签与署名一行；详情页署名 `by slides-commons · based on a style preset by Zara Zhang`；16 个集合模板简介缩短。窄屏下详情页各行可换行（CI 上 zh monochrome 曾溢出 3px）。`npm test` 775 通过。
+  - `guard` 已在 GitHub 跑通；加入 main 必过检查需维护者操作（自动模式拦截了 agent 改分支保护）。
+- 2026-11-17：v0.2.0 收尾：画廊筛选改为按作者（`author=`）；线上版下载改为复制按钮下的一行小字链接；提示词按模板写出 `--slide-bg` 具体色值（41/50，其余 9 个多底色或渐变保留通用说明，`deriveSlideBg()`）；swiss-modern 封面改为右上角红色四分之一圆 + 黑方块（避免像日本国旗）。
+  - 待办：中文字体按需嵌入（方案：本站托管 Fontsource 中文分片 + 素材包内零依赖 Node 脚本按用到的字挑分片并 base64 嵌入，下载失败回退 jsDelivr / Google 链接；有 fonttools 时再精确裁剪）。维护者 2026-11-17 决定延后。
+- 下一步：合并 v0.2.0（PR #2）→ 打标签发 Release → 线上模拟验收（只给提示词，用一个商务模板）；之后自托管字体第二步（CJK 裁剪）或 M6。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`

@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { test, expect } from './font-cache.mjs';
 import {
-  ROOT, SITE, ALL_SLUGS, ZH_JSON, ZH_SOURCES, upstreamMeta, readSiteZip, zhNameTokens, zhEnglishRuns,
+  ROOT, SITE, ALL_SLUGS, dirUrl, isUpstream, ZH_JSON, ZH_SOURCES, upstreamMeta, readSiteZip, zhNameTokens, zhEnglishRuns,
 } from './helpers.mjs';
 
 test.describe.configure({ mode: 'parallel' });
@@ -23,9 +23,9 @@ const zipFile = (slug, name) => readSiteZip(SITE, slug).entries.find((e) => e.na
 // 6. Structure of zh.json / zh.sources.json
 // ---------------------------------------------------------------------------
 test.describe('zh.json structure', () => {
-  test('covers exactly the 34 upstream templates', () => {
+  test('covers exactly the templates of all sources', () => {
     expect(Object.keys(ZH_JSON.templates).sort()).toEqual([...ALL_SLUGS]);
-    expect(ALL_SLUGS).toHaveLength(34);
+    expect(ALL_SLUGS).toHaveLength(ALL_SLUGS.length);
   });
 
   test('every mood and tone tag in use has a non-empty terms entry', () => {
@@ -85,7 +85,7 @@ test.describe('zh.json structure', () => {
 // ---------------------------------------------------------------------------
 // 1. Detail pages, all 34, Chinese and English
 // ---------------------------------------------------------------------------
-test('zh detail pages (all 34): upstream data is the zh.json translation, tags are terms, source note links upstream', async ({ page }) => {
+test('zh detail pages (all templates): upstream data is the zh.json translation, tags are terms, source note links upstream', async ({ page }) => {
   await page.goto('about:blank');
   const jobs = ALL_SLUGS.map((slug) => ({ slug, html: fs.readFileSync(path.join(SITE, 'zh', 't', slug, 'index.html'), 'utf8') }));
   const parsed = await page.evaluate((list) => list.map(({ slug, html }) => {
@@ -112,7 +112,7 @@ test('zh detail pages (all 34): upstream data is the zh.json translation, tags a
       tagLangs: [...d.querySelectorAll('dl.meta .tag')].map((e) => e.closest('[lang]')?.getAttribute('lang')),
     };
   }), jobs);
-  expect(parsed).toHaveLength(34);
+  expect(parsed).toHaveLength(ALL_SLUGS.length);
 
   const bad = [];
   for (const r of parsed) {
@@ -129,7 +129,7 @@ test('zh detail pages (all 34): upstream data is the zh.json translation, tags a
     if (JSON.stringify(r.mood) !== JSON.stringify(m.mood.map(term))) bad.push(`${r.slug} mood chips ${r.mood} != ${m.mood.map(term)}`);
     if (JSON.stringify(r.tone) !== JSON.stringify(m.tone.map(term))) bad.push(`${r.slug} tone chips ${r.tone} != ${m.tone.map(term)}`);
     if (!r.note || !/以下介绍由本站翻译，以英文原文为准。/.test(r.note)) bad.push(`${r.slug}: source note text "${r.note}"`);
-    const dir = `https://github.com/zarazhangrui/beautiful-html-templates/tree/main/templates/${r.slug}`;
+    const dir = dirUrl(r.slug);
     if (!r.noteLinks.includes(dir)) bad.push(`${r.slug}: source note does not link ${dir}`);
     if (r.enMarked.length !== 1 || !r.enMarked[0].startsWith('h1:')) bad.push(`${r.slug}: lang="en" blocks in main: ${r.enMarked.join(', ')}`);
     if (r.tagLangs.some((l) => l && l.startsWith('en'))) bad.push(`${r.slug}: tag chips marked English`);
@@ -137,7 +137,7 @@ test('zh detail pages (all 34): upstream data is the zh.json translation, tags a
   expect(bad).toEqual([]);
 });
 
-test('zh detail pages (all 34): no run of 3+ English words outside lang="en" / names', async ({ page }) => {
+test('zh detail pages (all templates): no run of 3+ English words outside lang="en" / names', async ({ page }) => {
   await page.goto('about:blank');
   const jobs = ALL_SLUGS.map((slug) => ({ slug, html: fs.readFileSync(path.join(SITE, 'zh', 't', slug, 'index.html'), 'utf8') }));
   const texts = await page.evaluate((list) => list.map(({ slug, html }) => {
@@ -154,7 +154,7 @@ test('zh detail pages (all 34): no run of 3+ English words outside lang="en" / n
   expect(bad).toEqual([]);
 });
 
-test('en detail pages (all 34): no CJK anywhere except the language switcher', async ({ page }) => {
+test('en detail pages (all templates): no CJK anywhere except the language switcher', async ({ page }) => {
   await page.goto('about:blank');
   const jobs = ALL_SLUGS.map((slug) => ({ slug, html: fs.readFileSync(path.join(SITE, 't', slug, 'index.html'), 'utf8') }));
   const found = await page.evaluate((list) => list.flatMap(({ slug, html }) => {
@@ -187,7 +187,7 @@ test.describe('zh gallery', () => {
       slug: li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''),
       tagline: li.querySelector('.card-body p:not(.by)').textContent.trim(),
     })));
-    expect(cards).toHaveLength(34);
+    expect(cards).toHaveLength(ALL_SLUGS.length);
     for (const c of cards) expect.soft(norm(c.tagline), `${c.slug} card tagline`).toBe(norm(tr(c.slug).tagline));
 
     const chips = await page.evaluate(() => [...document.querySelectorAll('button.chip[data-group="mood"]')].map((b) => ({
@@ -210,7 +210,7 @@ test.describe('zh gallery', () => {
       await page.locator('#q').fill(q);
       const vis = await visibleSlugs(page);
       expect(vis.length, `"${q}" shows some but not all`).toBeGreaterThanOrEqual(4);
-      expect(vis.length).toBeLessThan(34);
+      expect(vis.length).toBeLessThan(ALL_SLUGS.length);
       expect(must.filter((s) => !vis.includes(s)), `templates tagged for "${q}" missing from the results`).toEqual([]);
     }
   });
@@ -230,7 +230,7 @@ test.describe('zh gallery', () => {
 test('EN gallery: data-search attributes contain no CJK', async () => {
   const html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
   const attrs = [...html.matchAll(/data-search="([^"]*)"/g)].map((m) => m[1]);
-  expect(attrs).toHaveLength(34);
+  expect(attrs).toHaveLength(ALL_SLUGS.length);
   expect(attrs.filter((a) => CJK.test(a)).length).toBe(0);
   expect(CJK.test(html.replace(/<a[^>]*data-lang-switch[^>]*>[^<]*<\/a>/g, ''))).toBe(false);
 });
@@ -238,7 +238,7 @@ test('EN gallery: data-search attributes contain no CJK', async () => {
 // ---------------------------------------------------------------------------
 // 5. PROMPT.zh.md uses the translations; PROMPT.md is untouched English
 // ---------------------------------------------------------------------------
-test('zips (all 34): PROMPT.zh.md carries the zh.json strings (not marked 原文); signature moves stay marked 原文; PROMPT.md has no CJK', async () => {
+test('zips (all templates): PROMPT.zh.md carries the zh.json strings (not marked 原文); signature moves stay marked 原文; PROMPT.md has no CJK', async () => {
   const bad = [];
   for (const slug of ALL_SLUGS) {
     const zh = zipFile(slug, 'PROMPT.zh.md');
@@ -256,7 +256,8 @@ test('zips (all 34): PROMPT.zh.md carries the zh.json strings (not marked 原文
     if (!norm(palette).includes(norm(z.palette_description))) bad.push(`${slug}: palette 用法 line lacks the zh.json palette note`);
     if (/（原文）/.test(palette)) bad.push(`${slug}: palette line marked （原文）`);
     const moves = zh.split('\n').find((l) => l.startsWith('- **标志性手法**')) ?? '';
-    if (!/（原文）/.test(moves)) bad.push(`${slug}: signature moves line is not marked （原文）`);
+    // Collection templates have no preview.md, hence no signature-moves line in the prompt at all.
+    if (isUpstream(slug) ? !/（原文）/.test(moves) : (moves && !/（原文）/.test(moves))) bad.push(`${slug}: signature moves line is not marked （原文）`);
     const mood = line('- **情绪 / 语气**');
     for (const tag of [...upstreamMeta(slug).mood, ...upstreamMeta(slug).tone]) if (!mood.includes(term(tag))) bad.push(`${slug}: mood line lacks ${term(tag)}`);
   }

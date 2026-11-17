@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test, expect } from '@playwright/test';
-import { ROOT, TESTS } from './helpers.mjs';
+import { ROOT, TESTS, ALL_SLUGS } from './helpers.mjs';
 
 const FIX = path.join(TESTS, 'fixtures');
 const VALIDATE = path.join(ROOT, 'scripts', 'validate.mjs');
@@ -20,7 +20,7 @@ test('npm run validate exits 0 on the real sources', async () => {
     ? spawnSync(process.execPath, [npmCli, 'run', 'validate'], opts)
     : spawnSync('npm', ['run', 'validate'], { ...opts, shell: process.platform === 'win32' });
   expect(r.status, `${r.stdout}\n${r.stderr}`).toBe(0);
-  expect(r.stdout).toMatch(/ok: 34 template\(s\)/);
+  expect(r.stdout).toMatch(new RegExp(`ok: ${ALL_SLUGS.length} template\\(s\\)`));
 });
 
 test('validate leaves the repo untouched (site/ is not written)', async () => {

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from './font-cache.mjs';
 import {
-  SITE, ALL_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, EXTERNAL_WHITELIST,
+  SITE, ALL_SLUGS, UP_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, EXTERNAL_WHITELIST,
   UPSTREAM_TEMPLATES, UPSTREAM_SKILL, upstreamDir, skillDesign, readZip, readSiteZip, hostOf,
 } from './helpers.mjs';
 
@@ -17,7 +17,7 @@ const section = (md, n) => {
 // ---------------------------------------------------------------------------
 // 4. Zips
 // ---------------------------------------------------------------------------
-for (const slug of ALL_SLUGS) {
+for (const slug of UP_SLUGS) {
   test(`zip ${slug}: file list, integrity and byte-identical upstream files`, async () => {
     const { entries, problems } = readSiteZip(SITE, slug);
     expect(problems, 'zip integrity').toEqual([]);
@@ -28,7 +28,11 @@ for (const slug of ALL_SLUGS) {
       'template.html', 'design.md', 'viewport-base.css', 'LICENSE-templates', 'LICENSE-skill',
       'PROMPT.md', 'PROMPT.zh.md', 'README.md', ...siblings,
     ].map((f) => `${slug}/${f}`).sort();
-    expect(entries.filter((e) => !e.isDirectory && !e.isDir).map((e) => e.name).sort()).toEqual(expected);
+    // fonts/ is verified in fonts.spec.mjs; here only that it exists exactly for templates with web fonts.
+    const all = entries.filter((e) => !e.isDirectory && !e.isDir).map((e) => e.name).sort();
+    const nonFont = all.filter((n) => !n.startsWith(`${slug}/fonts/`));
+    expect(all.some((n) => n.startsWith(`${slug}/fonts/`)), `${slug}: fonts/ presence`).toBe(!NO_WEBFONT_SLUGS.includes(slug));
+    expect(nonFont).toEqual(expected);
     // deck-stage.js ships exactly for the deck-stage templates (and nothing else is a sibling).
     expect(siblings.filter((f) => f !== 'deck-stage.js'), 'unexpected sibling assets').toEqual([]);
     expect(siblings.includes('deck-stage.js')).toBe(DECK_STAGE_SLUGS.includes(slug));
@@ -99,14 +103,18 @@ test('prompts: templates without web fonts say system fonts are the design, no f
     expect.soft(en, `${slug} en: rule "Google Fonts or Fontshare" must be marked as not applying`).toMatch(/does not apply to this template/);
     expect.soft(zh, `${slug} zh`).toMatch(/系统字体就是设计本身/);
     for (const [lang, md] of [['en', en], ['zh', zh]]) {
-      const links = md.match(/<link[^>]+fonts\.(googleapis|gstatic)\.com[^>]*>/g) ?? [];
-      expect.soft(links, `${slug} ${lang}: prompt asks for a Google Fonts <link>`).toEqual([]);
+      // Only a CJK-family link (design.md's CJK exception) may remain; any Latin family link is a defect.
+      const links = (md.match(/<link[^>]+fonts\.(googleapis|gstatic)\.com[^>]*>/g) ?? []).filter((l) => {
+        const fams = new URL((l.match(/href="([^"]+)"/)?.[1] ?? 'https://x/').replace(/&amp;/g, '&')).searchParams.getAll('family');
+        return !fams.length || fams.some((f) => !/\b(SC|TC|HK|JP|KR|CJK)\b/.test(f.replace(/\+/g, ' ').split(':')[0]));
+      });
+      expect.soft(links, `${slug} ${lang}: prompt asks for a Latin Google Fonts <link>`).toEqual([]);
     }
   }
-  // And the converse: every template that has web fonts shows its font link.
-  for (const slug of ALL_SLUGS.filter((s) => !NO_WEBFONT_SLUGS.includes(s))) {
+  // And the converse: every template that has web fonts ships them in fonts/ (detail in fonts.spec.mjs).
+  for (const slug of ALL_SLUGS.filter((s) => !NO_WEBFONT_SLUGS.includes(s) && !FONTSHARE_SLUGS.includes(s))) {
     const en = zipFile(readSiteZip(SITE, slug).entries, slug, 'PROMPT.md').toString();
-    expect.soft(en, `${slug}: font link in the prompt`).toMatch(/<link[^>]+(fonts\.googleapis\.com|api\.fontshare\.com)/);
+    expect.soft(en, `${slug}: fonts/ in the prompt`).toMatch(/`fonts\/`/);
   }
 });
 
