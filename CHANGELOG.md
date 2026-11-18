@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New home page and a separate gallery page (`gallery/`) with a license filter and 12 mood groups (`src/tags.json`; original tags remain searchable).
+- GitHub icon in the header; footer lists every source with author and license plus a shortened disclaimer.
+- Overlay sources (`scripts/overlay.mjs`, `sources-meta/`): Guizang PPT Skill by 歸藏 (AGPL-3.0, read-only submodule `upstream/guizang`) adds 2 templates, with AGPL notices on the card, detail page, prompt, pack README and credits.
+- Reference-only submodule `upstream/html-ppt-skill` (lewislulu); no templates in the gallery.
+- Tests for the home page, redesign, Guizang source and validation.
+
+### Changed
+
+- Detail page rework: collapsible description, good-for/avoid-for cards, palette strip with hover values, typography specimen, screenshot click jumps to the preview, attribution card. Author label is now NeoSun.
+- Prompt: balanced density option and a CJK line-wrap hint.
+- Four business templates in Style Presets revised (design.md, template.html, screenshots).
+- Chinese translations updated.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added

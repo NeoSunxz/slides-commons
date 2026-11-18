@@ -193,6 +193,12 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-17：v0.2.0 收尾：画廊筛选改为按作者（`author=`）；线上版下载改为复制按钮下的一行小字链接；提示词按模板写出 `--slide-bg` 具体色值（41/50，其余 9 个多底色或渐变保留通用说明，`deriveSlideBg()`）；swiss-modern 封面改为右上角红色四分之一圆 + 黑方块（避免像日本国旗）。
   - 待办：中文字体按需嵌入（方案：本站托管 Fontsource 中文分片 + 素材包内零依赖 Node 脚本按用到的字挑分片并 base64 嵌入，下载失败回退 jsDelivr / Google 链接；有 fonttools 时再精确裁剪）。维护者 2026-11-17 决定延后。
 - 下一步：合并 v0.2.0（PR #2）→ 打标签发 Release → 线上模拟验收（只给提示词，用一个商务模板）；之后自托管字体第二步（CJK 裁剪）或 M6。
+- 2026-11-18：页面改版移植完成（新首页 `src/home.*`、独立 `gallery/`、`src/tags.json` 12 个情绪大类、协议筛选、页头 GitHub 图标、页脚列出各来源作者/协议、详情页折叠描述/适用对比卡/色带/字体实样/署名卡）。新增 overlay 来源 guizang（歸藏 Guizang PPT Skill，AGPL-3.0，只读 submodule `upstream/guizang`，`scripts/overlay.mjs` + `sources-meta/guizang/`，2 个模板；卡片角标、详情页、PROMPT 顶部、zip README、致谢均带 AGPL 提示）；`upstream/html-ppt-skill`（lewislulu）仅作参考资料，不入画廊（CREDITS.md 已注明）。共 52 个模板 / 4 个来源，`npm test` 891 通过。提示词增加均衡密度选项与 CJK 换行提示；4 个商务模板修订。
+  - 已知：guizang 滚轮翻页偶发失效（模板的流水线步骤所致）；file:// 下 `motion.min.js` 动态 import 失败时回退到 CDN。
+  - 下一步：维护者审阅改版与 `tags.json` 分组 → v0.3.0 PR（dev→main）。
+
+### 页面改版（维护者 2026-11-18）：已完成
+- 已从 `design/pages-refresh` 移植到 dev（新首页、`gallery/`、作者署名 NeoSun、页脚致谢与精简声明、12 大类情绪标签、详情页改版），详见 2026-11-18 进度。
 
 ### 编排经验
 - 子 agent 定义文件在会话启动后新增时不会被识别，需用 general-purpose 并让其先读 `.claude/agents/<name>.md`

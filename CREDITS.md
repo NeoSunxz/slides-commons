@@ -9,6 +9,7 @@ slides-commons is an independent community gallery. It is **not** an official pr
 | [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) | [Zara Zhang](https://github.com/zarazhangrui) | MIT (© 2026 Zara Zhang) | HTML slide templates, metadata, screenshots, per-template `design.md` (`upstream/templates`) |
 | [frontend-slides](https://github.com/zarazhangrui/frontend-slides) | [Zara Zhang](https://github.com/zarazhangrui) | MIT (© 2025 Zara Zhang) | Fixed-stage `design.md` variants, `preview.md` style cards, `viewport-base.css`, generation workflow (`upstream/skill`) |
 | [slides-commons Style Presets](https://github.com/NeoSunxz/slides-commons/tree/main/collections/style-presets) | NeoSunxz and slides-commons contributors | MIT | Full templates (layouts, demo content, `design.md`, screenshots) in `collections/style-presets` |
+| [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) | [歸藏 (Guizang)](https://github.com/op7418) | **AGPL-3.0** | 2 templates (`assets/template.html`, `assets/template-swiss.html`), `motion.min.js`, `SKILL.md` and `references/*.md` (`upstream/guizang`) |
 
 Both are included as read-only git submodules under `upstream/`. Every downloadable template pack ships with the corresponding `LICENSE` files.
 
@@ -19,6 +20,19 @@ Latin web fonts bundled in previews and template packs come from the [Fontsource
 ## Derivative collections
 
 The Style Presets collection (`collections/style-presets`) is a derivative work. Its visual direction (fonts, colors and signature elements of each template) is based on the 12 presets in [`STYLE_PRESETS.md`](https://github.com/zarazhangrui/frontend-slides/blob/main/STYLE_PRESETS.md) of [frontend-slides](https://github.com/zarazhangrui/frontend-slides) by [Zara Zhang](https://github.com/zarazhangrui) (MIT, © 2025 Zara Zhang). The layouts, demo content, extended tokens and `design.md` files were written by slides-commons contributors and are MIT licensed. These templates were not made, reviewed or endorsed by Zara Zhang. Their packs include this collection's `LICENSE`, frontend-slides' `LICENSE` (as `LICENSE-skill`) and `viewport-base.css` from frontend-slides.
+
+## html-ppt-skill (reference only)
+
+[html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) by [lewis](https://github.com/lewislulu) (MIT) is included as the read-only git submodule `upstream/html-ppt-skill` for future reference material. None of its files are currently shown on the site or shipped in packs.
+
+## Guizang PPT Skill
+
+Templates `guizang-editorial` and `guizang-swiss` come from [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) by [歸藏 (Guizang)](https://github.com/op7418), included as the read-only git submodule `upstream/guizang`.
+
+- **License: AGPL-3.0 (copyleft).** Every pack ships the full text as `LICENSE`. Decks built from these templates may be derivative works and may have to be released under the AGPL-3.0. This is general information, not legal advice.
+- Used files: `assets/template.html`, `assets/template-swiss.html`, `assets/motion.min.js`, `SKILL.md` and the `references/*.md` listed in `sources.json`, unmodified in the packs. The site preview is a modified copy (paging bridge, self-hosted fonts, demo slides); the modifications are published in this repository.
+- Third-party code inside the upstream template: Motion (`motion.min.js`, MIT, https://motion.dev); Lucide (ISC), which the packs do not load.
+- Metadata (`sources-meta/guizang/*.json`), demo slides and screenshots were written by slides-commons from the author's README and SKILL.md; the demo slides are adapted from the author's layout skeletons and are therefore also AGPL-3.0. They were not made or endorsed by the author.
 
 ## Derived content
 
