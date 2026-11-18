@@ -126,6 +126,10 @@ test.describe('--out guard', () => {
       fs.mkdirSync(path.join(root, d), { recursive: true });
       fs.writeFileSync(path.join(root, d, 'keep.txt'), 'keep');
     }
+    // The build embeds the site's own type from node_modules (@fontsource*): copy just those packages.
+    for (const pkg of ['@fontsource-variable/dm-sans', '@fontsource/barlow-condensed']) {
+      fs.cpSync(path.join(ROOT, 'node_modules', ...pkg.split('/')), path.join(root, 'node_modules', ...pkg.split('/')), { recursive: true });
+    }
     fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
     return root;
   }

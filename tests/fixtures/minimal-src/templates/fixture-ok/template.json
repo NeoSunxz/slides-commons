@@ -2,7 +2,7 @@
   "slug": "fixture-ok",
   "name": "Fixture OK",
   "tagline": "A tiny valid template used only by the test suite.",
-  "mood": ["plain"],
+  "mood": ["clean"],
   "occasion": ["testing"],
   "tone": ["neutral"],
   "formality": "medium",

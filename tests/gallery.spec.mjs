@@ -1,9 +1,19 @@
 // Gallery (EN and ZH): cards, search, filters, hash state, language switch, no-JS, thumbnails, weight.
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect } from './font-cache.mjs';
-import { ALL_SLUGS, CATALOG, COLLECTION_SLUGS, COLLECTION_SOURCE_ID, SOURCES_JSON, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
+import { ROOT, ALL_SLUGS, CATALOG, COLLECTION_SLUGS, COLLECTION_SOURCE_ID, SOURCES_JSON, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
 
-const META = ALL_SLUGS.map((slug) => ({ slug, ...upstreamMeta(slug) }));
-const searchText = (t) => [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
+const TAGS = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'tags.json'), 'utf8')).groups;
+const groupOfTag = new Map(TAGS.flatMap((g) => g.tags.map((tag) => [tag, g.id])));
+const META = ALL_SLUGS.map((slug) => {
+  const m = upstreamMeta(slug);
+  return { slug, ...m, groups: [...new Set(m.mood.map((x) => groupOfTag.get(x.toLowerCase())))] };
+});
+// Search matches the original mood/tone tags (not only the 12 groups), the name, tagline, best_for, slug and author.
+// The group part of the haystack is the group's label in the page language (English id, or the Chinese label).
+const groupLabel = (id, lang) => (lang === 'zh' ? TAGS.find((g) => g.id === id).zh : id);
+const searchTextFor = (lang) => (t) => [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug, ...t.groups.map((g) => groupLabel(g, lang)), ...authorsOf(t.slug)].join(' ').toLowerCase();
 const bySlugs = (list) => list.map((t) => t.slug).sort();
 const SCHEMES = ['light', 'dark', 'mixed'];
 const authorsOf = (slug) => {
@@ -16,22 +26,28 @@ for (const slug of ALL_SLUGS) for (const n of authorsOf(slug)) AUTHORS.set(n, [.
 const count = (fn) => META.filter(fn).length;
 
 const LANGS = {
-  en: { url: 'index.html', clear: 'Clear filters', countRe: (n) => new RegExp(`^${n} of ${META.length} templates$`), schemeLabel: { light: 'Light', dark: 'Dark', mixed: 'Mixed' } },
-  zh: { url: 'zh/index.html', clear: '清除筛选', countRe: (n) => new RegExp(`共 ${META.length} 个模板，显示 ${n} 个`) },
+  en: { url: 'gallery/', clear: 'Clear filters', countRe: (n) => new RegExp(`^${n} of ${META.length} templates$`), schemeLabel: { light: 'Light', dark: 'Dark', mixed: 'Mixed' } },
+  zh: { url: 'zh/gallery/', clear: '清除筛选', countRe: (n) => new RegExp(`共 ${META.length} 个模板，显示 ${n} 个`) },
 };
 
 const visibleSlugs = (page) => page.evaluate(() => [...document.querySelectorAll('#grid > li')]
   .filter((li) => !li.hidden && getComputedStyle(li).display !== 'none')
-  .map((li) => li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, '')).sort());
+  .map((li) => li.querySelector('a.card').getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, '')).sort());
 const chip = (page, group, value) => page.locator(`button.chip[data-group="${group}"][data-value="${value}"]`);
 
-// Moods: choose two common moods that give a non-trivial OR and AND.
-const moodCounts = new Map();
-for (const t of META) for (const m of t.mood.map((x) => x.toLowerCase())) moodCounts.set(m, (moodCounts.get(m) ?? 0) + 1);
-const MOODS = [...moodCounts].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([m]) => m);
+// Moods are the 12 groups of src/tags.json: choose two common groups that give a non-trivial OR and AND.
+const GROUP_IDS = TAGS.map((g) => g.id);
+const groupCounts = new Map(GROUP_IDS.map((id) => [id, META.filter((t) => t.groups.includes(id)).length]));
+const MOODS = [...groupCounts].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([m]) => m);
+// "More filters" (author, license) is a collapsed <details>: open it before touching those chips.
+const ensureMore = async (page) => {
+  const d = page.locator('details.filter-extra');
+  if (!(await d.evaluate((e) => e.open))) await d.locator('summary').click();
+};
 
 for (const [lang, L] of Object.entries(LANGS)) {
   test.describe(`gallery [${lang}]`, () => {
+    const searchText = searchTextFor(lang);
     test.beforeEach(async ({ page }) => { await page.goto(L.url); await expect(page.locator('#filters')).toBeVisible(); });
 
     test('one card per template (all sources), each linking to its detail page; count text', async ({ page }) => {
@@ -75,7 +91,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
 
     test('mood: OR inside the group, AND across groups; Clear filters resets', async ({ page }) => {
       const [m1, m2] = MOODS;
-      const has = (t, m) => t.mood.map((x) => x.toLowerCase()).includes(m);
+      const has = (t, m) => t.groups.includes(m);
       await chip(page, 'mood', m1).click();
       expect(await visibleSlugs(page), `mood ${m1}`).toEqual(bySlugs(META.filter((t) => has(t, m1))));
       await chip(page, 'mood', m2).click();
@@ -127,7 +143,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
       const sw = page.locator(`a[data-lang-switch="${other}"]`);
       expect(await sw.getAttribute('href')).toContain(hash);
       await sw.click();
-      await expect(page).toHaveURL(new RegExp(lang === 'en' ? '/zh/index\\.html' : '/index\\.html'));
+      await expect(page).toHaveURL(new RegExp(lang === 'en' ? '/zh/gallery/' : '/gallery/'));
       expect(new URL(page.url()).hash).toBe(hash);
       await expect(page.locator('#filters')).toBeVisible();
       expect(await visibleSlugs(page), 'after language switch').toEqual(before);
@@ -135,6 +151,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
 
     test('author group lists each resolved author with its count and filters cards (hash round-trip)', async ({ page }) => {
       expect(AUTHORS.size).toBeGreaterThan(1);
+      await ensureMore(page);
       await expect(page.locator('button.chip[data-group="source"]'), 'no source chips any more').toHaveCount(0);
       await expect(page.locator('button.chip[data-group="author"]')).toHaveCount(AUTHORS.size);
       for (const [name, slugs] of AUTHORS) {
@@ -164,7 +181,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
     });
 
     test('cards carry data-author (and data-source)', async ({ page }) => {
-      const got = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => [li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''), li.getAttribute('data-author'), li.getAttribute('data-source')]));
+      const got = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => [li.querySelector('a.card').getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, ''), li.getAttribute('data-author'), li.getAttribute('data-source')]));
       expect(got.length).toBe(META.length);
       for (const [slug, author, source] of got) {
         expect(author, slug).toBe(authorsOf(slug).join('|'));
@@ -181,6 +198,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
       await expect(page.locator('#fclear')).toBeHidden();
       await expect(page.locator('#fcount')).toHaveText(L.countRe(META.length));
       // A real filter still works afterwards.
+      await ensureMore(page);
       const [name, slugs] = [...AUTHORS][0];
       await chip(page, 'author', name).click();
       expect(await visibleSlugs(page)).toEqual([...slugs].sort());
@@ -229,11 +247,11 @@ for (const [lang, L] of Object.entries(LANGS)) {
   });
 }
 
-test('EN home: first load transfers less than 2.5 MB', async ({ page }) => {
+test('EN gallery: first load transfers less than 2.5 MB', async ({ page }) => {
   const requests = [];
   page.on('requestfinished', (r) => requests.push(r));
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('index.html');
+  await page.goto('gallery/');
   await expect(page.locator('#filters')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.readyState)).toBe('complete');
   await settled({ inflight: new Set(requests.filter((r) => !r.response)) }, expect).catch(() => {});
@@ -252,7 +270,7 @@ test.describe('without JavaScript', () => {
       await expect(page.locator('#filters')).toBeHidden();
       await expect(page.locator('#fnone')).toBeHidden();
       // Cards are plain links.
-      await expect(page.locator('#grid a.card').first()).toHaveAttribute('href', /^t\/.+\//);
+      await expect(page.locator('#grid a.card').first()).toHaveAttribute('href', /^(?:\.\.\/)+(?:zh\/)?t\/.+\//);
     });
   }
 });

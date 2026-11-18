@@ -55,7 +55,7 @@ for (const lang of ['en', 'zh']) {
       const r = await parseDetail(page, html);
       const derived = DERIVED_SLUGS.includes(slug);
       // Author line: the collection (slides-commons), linked to the template directory in this repo.
-      const who = 'slides-commons';
+      const who = 'NeoSun';
       if (derived) {
         const want = lang === 'en' ? `by ${who} · based on a style preset by Zara Zhang` : `${who} 出品 · 基于 Zara Zhang 的风格预设`;
         if (r.byText !== want) bad.push(`${slug}: byline is "${r.byText}", expected "${want}"`);
@@ -83,17 +83,17 @@ for (const lang of ['en', 'zh']) {
       // Footer: attribution of both sources, with the partial-derivation wording.
       if (!r.footerText.includes('Zara Zhang')) bad.push(`${slug}: footer lacks Zara Zhang`);
       if (!r.footerLinks.includes(STYLE_PRESETS_MD)) bad.push(`${slug}: footer lacks STYLE_PRESETS.md link`);
-      if (!(lang === 'en' ? /some are based on/ : /其中部分基于/).test(r.footerText)) bad.push(`${slug}: footer should say only some templates are derived: ${r.footerText.slice(0, 200)}`);
+      if (!(lang === 'en' ? /some based on/ : /部分基于/).test(r.footerText)) bad.push(`${slug}: footer should say only some templates are derived: ${r.footerText.slice(0, 200)}`);
     }
     expect(bad).toEqual([]);
   });
 }
 
 for (const lang of ['en', 'zh']) {
-  test(`[${lang}] gallery cards: short "by slides-commons" credit on every collection card`, async ({ page }) => {
-    await page.goto(lang === 'en' ? 'index.html' : 'zh/index.html');
+  test(`[${lang}] gallery cards: short "by NeoSun" credit on every collection card`, async ({ page }) => {
+    await page.goto(lang === 'en' ? 'gallery/' : 'zh/gallery/');
     const cards = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => ({
-      slug: li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''),
+      slug: li.querySelector('a.card').getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, ''),
       source: li.getAttribute('data-source'),
       by: li.querySelector('.by')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
     })));
@@ -103,7 +103,7 @@ for (const lang of ['en', 'zh']) {
       if (!c) { bad.push(`${slug}: no card`); continue; }
       if (c.source !== COLLECTION.id) bad.push(`${slug}: data-source=${c.source}`);
       // Cards carry the short credit only; the derivation is stated on the detail and credits pages.
-      const want = lang === 'en' ? 'by slides-commons' : 'slides-commons 出品';
+      const want = lang === 'en' ? 'by NeoSun' : 'NeoSun 出品';
       if (!c.by.endsWith(want)) bad.push(`${slug}: card credit is "${c.by}", expected it to end with "${want}"`);
       if (/STYLE_PRESETS|Zara|based on|基于/.test(c.by)) bad.push(`${slug}: card credit should not carry the derivation: ${c.by}`);
     }

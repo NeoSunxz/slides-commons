@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from './font-cache.mjs';
 import {
-  SITE, ALL_SLUGS, UP_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, EXTERNAL_WHITELIST,
+  SITE, ALL_SLUGS, isOverlay, UP_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, EXTERNAL_WHITELIST,
   UPSTREAM_TEMPLATES, UPSTREAM_SKILL, upstreamDir, skillDesign, readZip, readSiteZip, hostOf,
 } from './helpers.mjs';
 
@@ -75,7 +75,7 @@ test('prompts: file table mentions deck-stage.js exactly for the deck-stage temp
 test('prompts: CDN templates carry the Charts bullet, the others do not', async () => {
   expect(CDN_SLUGS.length).toBeGreaterThan(0);
   const wrong = [];
-  for (const slug of ALL_SLUGS) {
+  for (const slug of ALL_SLUGS.filter((s) => !isOverlay(s))) { // overlay prompts (guizang) forbid network requests in their own section 4
     const { entries } = readSiteZip(SITE, slug);
     const en = zipFile(entries, slug, 'PROMPT.md').toString();
     const zh = zipFile(entries, slug, 'PROMPT.zh.md').toString();

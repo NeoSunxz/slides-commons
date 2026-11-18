@@ -3,7 +3,7 @@
 import { test, expect } from './font-cache.mjs';
 import { CATALOG, SOURCES_JSON, monitor } from './helpers.mjs';
 
-const PAGES = { en: 'index.html', zh: 'zh/index.html' };
+const PAGES = { en: 'gallery/', zh: 'zh/gallery/' };
 const WIDTHS = [[1440, 900], [768, 1024], [390, 844]];
 
 async function cardFacts(page) {
@@ -24,7 +24,7 @@ async function cardFacts(page) {
       const credit = by.querySelector('.credit-line');
       const lineH = px(tcs.lineHeight, px(tcs.fontSize, 15) * 1.4);
       return {
-        slug: card.getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''),
+        slug: card.getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, ''),
         source: li.getAttribute('data-source'),
         liTop: Math.round(lr.top + window.scrollY), liH: lr.height, cardH: cr.height, cardRight: cr.right, cardLeft: cr.left,
         tagText: tag.textContent.trim(), tagTitle: tag.getAttribute('title'),
@@ -82,8 +82,12 @@ for (const [lang, url] of Object.entries(PAGES)) {
         const cards = await cardFacts(page);
         const bad = [];
         for (const c of cards) {
-          const [chip, credit] = c.kids;
-          if (c.kids.length !== 2 || !/scheme-chip/.test(chip?.cls) || credit?.cls !== 'credit-line') { bad.push(`${c.slug}: .by children are ${JSON.stringify(c.kids.map((k) => k.cls))}`); continue; }
+          const chip = c.kids[0];
+          const credit = c.kids[c.kids.length - 1];
+          // scheme chip, an optional license badge (AGPL templates), then the credit line.
+          const middle = c.kids.slice(1, -1);
+          if (c.kids.length < 2 || c.kids.length > 3 || !/scheme-chip/.test(chip?.cls) || credit?.cls !== 'credit-line' || middle.some((k) => !/license-chip/.test(k.cls))) { bad.push(`${c.slug}: .by children are ${JSON.stringify(c.kids.map((k) => k.cls))}`); continue; }
+          for (const k of middle) if (Math.abs(k.top - chip.top) > 6) bad.push(`${c.slug}: license badge wraps onto another line (top ${k.top.toFixed(0)} vs ${chip.top.toFixed(0)})`);
           if (Math.abs(chip.top - credit.top) > 6) bad.push(`${c.slug}: chip and credit on different lines (tops ${chip.top.toFixed(0)} / ${credit.top.toFixed(0)})`);
           if (c.byH > c.byLineH * 1.6) bad.push(`${c.slug}: meta row is ${c.byH.toFixed(0)}px tall (line ${c.byLineH.toFixed(0)}px)`);
           if (credit.right > c.cardRight + 0.5 || c.byScrollW > c.byClientW + 1) bad.push(`${c.slug}: credit "${credit.text}" runs past the card (right ${credit.right.toFixed(0)} > ${c.cardRight.toFixed(0)}; scrollW ${c.byScrollW} > ${c.byClientW})`);
@@ -98,15 +102,16 @@ for (const [lang, url] of Object.entries(PAGES)) {
         const cards = await cardFacts(page);
         const bad = [];
         for (const c of cards) {
-          const credit = c.kids[1]?.text ?? '';
+          const credit = c.kids.find((k) => k.cls === 'credit-line')?.text ?? '';
           const src = SOURCES_JSON.sources.find((s) => s.id === c.source);
           const author = src.author;
-          const authors = c.kids[1].text;
+          const authors = credit;
           const re = lang === 'en' ? /^by [^·]+$/ : /^[^·]+ 出品$/;
           if (!re.test(credit)) bad.push(`${c.slug}: credit "${credit}"`);
           if (/·|based on|基于|Adapted/.test(credit)) bad.push(`${c.slug}: credit carries more than the author: "${credit}"`);
-          if (c.source === 'style-presets' && !credit.includes('slides-commons')) bad.push(`${c.slug}: expected slides-commons in "${authors}" (source author ${author})`);
-          if (c.source === 'zarazhangrui' && !credit.includes('Zara Zhang')) bad.push(`${c.slug}: expected Zara Zhang in "${credit}"`);
+          const shown = lang === 'zh' ? (src.authorZh ?? author) : author;
+          // zh cards show the Latin name (Guizang) while the zh footer / home use 歸藏: either is accepted here.
+          if (!src.perTemplateLicense && !credit.includes(shown) && !credit.includes(author)) bad.push(`${c.slug}: expected "${shown}" in "${credit}" (authors "${authors}")`);
         }
         expect(bad).toEqual([]);
       });
@@ -135,7 +140,7 @@ for (const [lang, url] of Object.entries(PAGES)) {
 
 test('filtering keeps equal heights per row (the visible subset reflows)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('index.html#scheme=dark');
+  await page.goto('gallery/#scheme=dark');
   await expect(page.locator('#grid > li').first()).toBeVisible();
   const cards = await cardFacts(page);
   expect(cards.length).toBeGreaterThan(3);

@@ -197,15 +197,31 @@ const TDIR = path.join(UPSTREAM_TEMPLATES, 'templates');
 // which is rebuilt after the spec files are loaded).
 export const SOURCES_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources.json'), 'utf8'));
 const dirsOf = (src) => {
+  if (src.overlay) {
+    // Overlay sources keep metadata outside the (read-only) upstream tree: sources-meta/<id>/<slug>.json.
+    return Object.entries(src.overlay.templates).map(([slug, o]) => ({
+      slug, source: src.id, overlay: true,
+      dir: path.join(ROOT, src.overlay.metaDir),
+      metaPath: path.join(ROOT, src.overlay.metaDir, `${slug}.json`),
+      htmlPath: path.join(ROOT, src.path, o.html),
+    }));
+  }
   const dir = path.join(ROOT, src.path, src.layout.templatesDir);
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && fs.existsSync(path.join(dir, d.name, src.layout.metaFile)))
-    .map((d) => ({ slug: d.name, source: src.id, dir: path.join(dir, d.name) }));
+    .map((d) => ({
+      slug: d.name, source: src.id, dir: path.join(dir, d.name),
+      metaPath: path.join(dir, d.name, src.layout.metaFile),
+      htmlPath: path.join(dir, d.name, src.layout.htmlFile),
+    }));
 };
 export const CATALOG = SOURCES_JSON.sources.flatMap(dirsOf).sort((a, b) => a.slug.localeCompare(b.slug));
 export const UPSTREAM_SOURCE_ID = 'zarazhangrui';
 export const COLLECTION_SOURCE_ID = 'style-presets';
+export const OVERLAY_SOURCES = SOURCES_JSON.sources.filter((s) => s.overlay);
+export const OVERLAY_SLUGS = CATALOG.filter((t) => t.overlay).map((t) => t.slug);
+export const isOverlay = (slug) => OVERLAY_SLUGS.includes(slug);
 export const COLLECTION = SOURCES_JSON.sources.find((s) => s.id === COLLECTION_SOURCE_ID);
 export const ALL_SLUGS = CATALOG.map((t) => t.slug);
 export const UP_SLUGS = CATALOG.filter((t) => t.source === UPSTREAM_SOURCE_ID).map((t) => t.slug);
@@ -217,13 +233,16 @@ export const isUpstream = (slug) => sourceOf(slug) === UPSTREAM_SOURCE_ID;
 
 export const dirUrl = (slug) => {
   const src = SOURCES_JSON.sources.find((x) => x.id === sourceOf(slug));
+  if (src.overlay) return `${src.repo}/blob/${src.branch}/${src.overlay.templates[slug].link}`;
   const base = `${src.repo}/tree/${src.branch}/${src.repoPath ? `${src.repoPath}/` : ''}`;
   return `${base}${src.layout.templatesDir}/${slug}`;
 };
 export const upstreamDir = (slug) => CATALOG.find((t) => t.slug === slug).dir;
-export const upstreamMeta = (slug) => JSON.parse(fs.readFileSync(path.join(upstreamDir(slug), 'template.json'), 'utf8'));
-export const upstreamHtml = (slug) => fs.readFileSync(path.join(upstreamDir(slug), 'template.html'), 'utf8');
-export const hasDeckStageJs = (slug) => fs.existsSync(path.join(upstreamDir(slug), 'deck-stage.js'));
+export const upstreamMeta = (slug) => JSON.parse(fs.readFileSync(CATALOG.find((t) => t.slug === slug).metaPath, 'utf8'));
+export const upstreamHtml = (slug) => fs.readFileSync(CATALOG.find((t) => t.slug === slug).htmlPath, 'utf8');
+export const hasDeckStageJs = (slug) => !CATALOG.find((t) => t.slug === slug).overlay && fs.existsSync(path.join(upstreamDir(slug), 'deck-stage.js'));
+// Templates whose pack carries a design.md (all but overlay sources, which ship the author's SKILL.md instead).
+export const DESIGN_SLUGS = ALL_SLUGS.filter((s) => !CATALOG.find((t) => t.slug === s).overlay);
 export const DECK_STAGE_SLUGS = ALL_SLUGS.filter(hasDeckStageJs);
 export const CDN_SLUGS = ALL_SLUGS.filter((s) => /cdn\.jsdelivr\.net/.test(upstreamHtml(s)));
 export const GOOGLE_FONT_SLUGS = ALL_SLUGS.filter((s) => /fonts\.googleapis\.com/.test(upstreamHtml(s)));

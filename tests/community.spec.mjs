@@ -213,7 +213,7 @@ test.describe('empty community source', () => {
       expect(r.status, r.out).toBe(0);
       expect(r.out).toMatch(/built 2 template\(s\) from 3 source\(s\)/);
 
-      for (const [lang, idx, cred] of [['en', 'index.html', 'credits.html'], ['zh', path.join('zh', 'index.html'), path.join('zh', 'credits.html')]]) {
+      for (const [lang, idx, cred] of [['en', path.join('gallery', 'index.html'), 'credits.html'], ['zh', path.join('zh', 'gallery', 'index.html'), path.join('zh', 'credits.html')]]) {
         const gallery = readText(out, idx);
         expect(gallery, `${lang}: chip for the non-empty source A's author`).toMatch(/data-group="author" data-value="Fixture A"/);
         expect(gallery, `${lang}: chip for the non-empty source B's author`).toMatch(/data-group="author" data-value="Fixture B"/);
@@ -263,7 +263,7 @@ test.describe('empty community source', () => {
     const out = path.join(root, 'site');
     const r = run(SCRIPTS.build, ['--sources', sf, '--out', out]);
     expect(r.status, r.out).toBe(0);
-    expect(readText(out, 'index.html')).not.toMatch(/data-group="source"/);
+    expect(readText(out, 'gallery', 'index.html')).not.toMatch(/data-group="source"/);
   });
 
   test('validate also passes with the empty source present (real sources.json)', () => {

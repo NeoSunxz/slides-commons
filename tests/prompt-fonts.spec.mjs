@@ -2,7 +2,7 @@
 // display= preserved, CJK display families kept, C-rules present; isCjkFamily unit tests.
 import fs from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { SITE, ALL_SLUGS, NO_WEBFONT_SLUGS, upstreamHtml, skillDesign, readSiteZip } from './helpers.mjs';
+import { SITE, ALL_SLUGS, DESIGN_SLUGS, NO_WEBFONT_SLUGS, upstreamHtml, skillDesign, readSiteZip } from './helpers.mjs';
 import { isCjkFamily, cjkOnlyLinks } from '../scripts/fonts.mjs';
 
 // Independent classification (deliberately not the code under test).
@@ -47,7 +47,7 @@ test('cjkOnlyLinks: filters Latin, keeps display, drops all-Latin links', () => 
   expect(cjkOnlyLinks(['https://example.com/css2?family=Noto+Sans+SC'])).toEqual([]);
 });
 
-for (const slug of ALL_SLUGS) {
+for (const slug of DESIGN_SLUGS) { // (overlay packs have no design.md; see guizang.spec.mjs)
   test(`prompt font links and rules: ${slug}`, () => {
     const { entries } = readSiteZip(SITE, slug);
     const get = (n) => entries.find((e) => e.name === `${slug}/${n}`).data.toString('utf8');

@@ -53,10 +53,10 @@ test('detail page works from file://: paging, one visible slide, Space Grotesk',
 
 test('gallery card from file:// lands on t/<slug>/index.html', async ({ page, context }) => {
   const log = monitorContext(context);
-  await page.goto(fileUrl('index.html'));
+  await page.goto(fileUrl('gallery', 'index.html'));
   const card = page.locator(`a.card[href$="t/${SLUG}/index.html"]`);
   await expect(card).toHaveCount(1);
-  await expect(card).toHaveAttribute('href', `t/${SLUG}/index.html`);
+  await expect(card).toHaveAttribute('href', `../t/${SLUG}/index.html`);
   await card.click();
   await expect(page).toHaveURL(new RegExp(`/site/t/${SLUG}/index\\.html$`));
   await expect(page.locator('h1')).toHaveText(/Neo-Grid Bold/);

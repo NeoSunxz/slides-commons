@@ -66,7 +66,7 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     const coral = fs.readFileSync(path.join(out, 'zh', 't', 'coral', 'index.html'), 'utf8');
     const en = upstreamMeta('coral');
     expect(coral).toContain(`<p class="tagline" lang="en">${en.tagline}</p>`);
-    expect(coral).toMatch(/<p lang="en">A bold magazine-poster system/);
+    expect(coral).toMatch(/<p id="desc" lang="en">A bold magazine-poster system/);
     expect(coral).toMatch(/<p class="source-note">/);
     const other = fs.readFileSync(path.join(out, 'zh', 't', 'neo-grid-bold', 'index.html'), 'utf8');
     expect(other).not.toContain(upstreamMeta('neo-grid-bold').tagline);
@@ -168,6 +168,7 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     try {
       fs.symlinkSync(path.join(ROOT, 'upstream'), path.join(root, 'upstream'), 'junction');
       fs.symlinkSync(path.join(ROOT, 'collections'), path.join(root, 'collections'), 'junction');
+      fs.symlinkSync(path.join(ROOT, 'sources-meta'), path.join(root, 'sources-meta'), 'junction'); // overlay metadata
       fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(root, 'node_modules'), 'junction'); // Fontsource packages
     } catch (e) { test.skip(true, `cannot symlink upstream/ or node_modules/: ${e.code}`); }
     const out = path.join(root, 'out-site');
