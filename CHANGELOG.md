@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CJK font embedding: packs ship `fonts/embed-cjk.mjs` (zero-dependency Node script), `fonts/cjk-ranges.json` and `fonts/cjk-licenses/`. It embeds the Fontsource unicode-range shards a deck uses as base64 `@font-face` (site `fonts/cjk/` first, then jsDelivr), subsets with `pyftsubset` when available, verifies cmap coverage and keeps the Google link as fallback.
+- When a site URL is set, the build hosts the CJK shards at `site/fonts/cjk/` (about 67MB); seven `@fontsource` CJK packages added as devDependencies.
+- Tests for CJK embedding (`tests/cjk-embed.spec.mjs`).
 - New home page and a separate gallery page (`gallery/`) with a license filter and 12 mood groups (`src/tags.json`; original tags remain searchable).
 - GitHub icon in the header; footer lists every source with author and license plus a shortened disclaimer.
 - Overlay sources (`scripts/overlay.mjs`, `sources-meta/`): Guizang PPT Skill by 歸藏 (AGPL-3.0, read-only submodule `upstream/guizang`) adds 2 templates, with AGPL notices on the card, detail page, prompt, pack README and credits.
@@ -17,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Prompt: new "Embed the CJK fonts" step, an explicit exception for `fonts/embed-cjk.mjs` to the "pack is data" rule, trimming the CJK link to the families and weights actually used, and a TC-face rule for Simplified Chinese decks (8 LXGW WenKai TC templates).
 - Detail page rework: collapsible description, good-for/avoid-for cards, palette strip with hover values, typography specimen, screenshot click jumps to the preview, attribution card. Author label is now NeoSun.
 - Prompt: balanced density option and a CJK line-wrap hint.
 - Four business templates in Style Presets revised (design.md, template.html, screenshots).
