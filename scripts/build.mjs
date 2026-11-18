@@ -33,7 +33,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
-import { createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
+import { parseRequests, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
 import { checkCollectionTemplate } from './collection-checks.mjs';
 import { overlayPreviewHtml, metaFileOf, screenshotsDirOf, inlineLocalAssets as inlineLocal } from './overlay.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
@@ -769,6 +769,19 @@ function buildContext(t) {
     fontPlan = planTemplateFonts(html, FONT_STORE);
   }
 
+  const cjk = cjkFamiliesIn(ROOT, [fontText, designMd]);
+  // Weights of those families the template's links ask for (ranges expand to the published weights).
+  const cjkWeights = new Map();
+  for (const text of [fontText, designMd]) {
+    for (const req of parseRequests(text)) {
+      for (const fam of req.families) {
+        const e = cjk.get(fam.name);
+        if (!e) continue;
+        if (!cjkWeights.has(e.id)) cjkWeights.set(e.id, new Set());
+        for (const v of fam.variants) for (const w of e.weights) if (w >= v.wght[0] && w <= v.wght[1]) cjkWeights.get(e.id).add(w);
+      }
+    }
+  }
   const ctx = {
     slug: t.slug,
     name: t.name,
@@ -789,6 +802,8 @@ function buildContext(t) {
     localFonts: fontPlan.faces.length > 0,
     // Overlay: the CJK families the template itself requests (there is no design.md CJK section).
     cjkFontLinks: cjkOnlyLinks(fontLinks(ov ? fontText : cjkSection(designMd))),
+    // The pack carries fonts/embed-cjk.mjs when a CJK family Fontsource has is requested anywhere in the template or its design.md.
+    cjkEmbed: cjk.size > 0,
     signatureMoves: (preview.moves.length ? preview.moves : designSignatureMoves(designMd)).map((m) => resolveTokens(m, colorMap)),
     slideBg,
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
@@ -820,7 +835,7 @@ function buildContext(t) {
       : comp.repo,
   } : null;
 
-  return { ctx, fontPlan, designPath, designFrom, overlay: ov, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
+  return { ctx, cjk, cjkWeights, fontPlan, designPath, designFrom, overlay: ov, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
 }
 
 // ---------------------------------------------------------------------------
@@ -1093,6 +1108,37 @@ function packFontEntries(z, faces) {
   return out;
 }
 
+// fonts/embed-cjk.mjs + fonts/cjk-ranges.json (the shard table) + the families' licenses.
+// No font files: the script downloads the shards a finished deck needs (see src/embed-cjk.mjs).
+function packCjkEntries(z, cjk, siteUrl) {
+  if (!cjk.size) return [];
+  const out = [
+    { name: z + 'fonts/embed-cjk.mjs', data: fs.readFileSync(path.join(SRC, 'embed-cjk.mjs')) },
+    { name: z + 'fonts/cjk-ranges.json', data: Buffer.from(cjkRangesJson(cjk, siteUrl ?? null), 'utf8') },
+  ];
+  for (const [, e] of cjk) if (e.license) out.push({ name: `${z}fonts/cjk-licenses/${e.id}-${fontLicenseName({ license: e.license })}`, data: fs.readFileSync(e.license) });
+  return out;
+}
+
+// Shards the packs' embed script may fetch from this site (only when siteUrl is set; otherwise
+// jsDelivr is the only source). Only weights some template requests; written once per family.
+const hostedCjk = new Map();
+function hostCjk(e, weights) {
+  const done = hostedCjk.get(e.id) ?? new Set();
+  hostedCjk.set(e.id, done);
+  for (const w of [...(weights ?? [])].sort((a, b) => a - b)) {
+    if (done.has(w)) continue;
+    done.add(w);
+    for (const k of e.shardsByWeight[w]) {
+      const f = `${e.id}-${k}-${w}-normal.woff2`;
+      const dest = path.join(SITE, 'fonts', 'cjk', e.id, f);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(path.join(e.dir, 'files', f), dest);
+    }
+  }
+  if (e.license) writeFile(path.join(SITE, 'fonts', 'cjk', e.id, fontLicenseName({ license: e.license })), fs.readFileSync(e.license));
+}
+
 function main() {
   const started = Date.now();
   const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
@@ -1239,6 +1285,16 @@ function main() {
         url: 'https://fontsource.org',
       });
     }
+    if (info.cjk.size) {
+      credits.push({
+        what: 'CJK web fonts: `fonts/embed-cjk.mjs` downloads the pieces a finished deck needs (the pack holds only the script, a table of font slices and the licenses in `fonts/cjk-licenses/`)',
+        author: 'their respective authors (named in each font license)',
+        project: 'Fontsource',
+        license: fontLicenseSummary([...info.cjk].map(([family, e]) => ({ family, license: e.license }))).license,
+        licenseFile: fontLicenseSummary([...info.cjk].map(([family, e]) => ({ family, license: e.license }))).licenseFile?.replace(/fonts\/<family>\/(OFL|LICENSE)\.txt/g, 'fonts/cjk-licenses/<family>-$1.txt') ?? null,
+        url: 'https://fontsource.org',
+      });
+    }
     // Template-level derivedFrom: the original's LICENSE travels with the pack.
     const extraLicenses = [];
     if (t.derivedFrom) {
@@ -1271,6 +1327,7 @@ function main() {
         : undefined,
     }, credits, SITE_NAME);
 
+    if (siteUrl) for (const [, e] of info.cjk) hostCjk(e, info.cjkWeights.get(e.id));
     const z = `${t.slug}/`;
     const entries = [
       { name: z },
@@ -1280,6 +1337,7 @@ function main() {
       ...(t.overlay ? t.overlay.docs.map((d) => ({ name: z + d.path, data: fs.readFileSync(path.join(t.dir, ...d.path.split('/'))) })) : []),
       ...(info.viewportBasePath ? [{ name: z + 'viewport-base.css', data: fs.readFileSync(info.viewportBasePath) }] : []),
       ...packFontEntries(z, faces),
+      ...packCjkEntries(z, info.cjk, siteUrl),
       ...[...info.licenses, ...extraLicenses].map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
       { name: z + 'PROMPT.md', data: Buffer.from(en, 'utf8') },
       { name: z + 'PROMPT.zh.md', data: Buffer.from(zh, 'utf8') },

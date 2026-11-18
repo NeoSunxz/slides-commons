@@ -18,6 +18,7 @@ import { downloadLabel } from './pages.mjs';
 //   remoteFontLinks: [url],    // font stylesheets that cannot be self-hosted (Fontshare); kept as links
 //   localFonts: boolean,       // the pack has fonts/ (self-hosted Latin fonts + fonts.css)
 //   zh: { description, palette_description, typography_style } | null,  // Chinese translations (zh prompt only)
+//   cjkEmbed: boolean,         // the pack has fonts/embed-cjk.mjs + fonts/cjk-ranges.json (CJK fonts embedded on demand)
 //   cjkFontLinks: [url],       // the same, found in design.md's CJK section (may be empty)
 //   signatureMoves: [string],  // preview card "Preview Ingredients", tokens resolved
 //   stageBg: {name, value}|null,
@@ -29,8 +30,34 @@ import { downloadLabel } from './pages.mjs';
 const code = (s) => '`' + s + '`';
 
 // ---------------------------------------------------------------------------
+// CJK font embedding (packs with fonts/embed-cjk.mjs; ctx.cjkEmbed)
+// ---------------------------------------------------------------------------
+
+const cjkRowEn = () => [`${code('fonts/embed-cjk.mjs')}, ${code('fonts/cjk-ranges.json')}`, 'Only for a deck with CJK text: run `node fonts/embed-cjk.mjs <deck.html>` once the text is final; it embeds the CJK font pieces the deck needs (see “Fonts” in section 4). The JSON is the table of font slices; `fonts/cjk-licenses/` holds the font licenses. The pack holds no CJK font files.'];
+const cjkRowZh = () => [`${code('fonts/embed-cjk.mjs')}、${code('fonts/cjk-ranges.json')}`, '仅当幻灯片含 CJK 文字时使用：文字定稿后运行 `node fonts/embed-cjk.mjs <幻灯片.html>`，它会嵌入幻灯片所需的 CJK 字体分片（见第 4 节“字体”）。JSON 是字体分片表；`fonts/cjk-licenses/` 是字体许可证。素材包里没有字体文件。'];
+const cjkEmbedEn = (ctx) => ctx.cjkEmbed
+  ? `\n  - **Embed the CJK fonts (only if the deck has CJK text).** When the content is final,${cjkTrimEn} Then run ${code('node fonts/embed-cjk.mjs <path-to-your-deck>.html')} from the pack folder (Node 18+; it downloads font pieces over the network). It adds only the slices of the CJK font(s) your text needs, as base64 ${code('@font-face')} rules between two marker comments, so the deck keeps its CJK fonts offline and without Google Fonts. Keep the Google Fonts ${code('<link>')}: it stays as the fallback for characters added later. Re-run the script after every later text edit (it is idempotent and replaces its own block) and never edit its block by hand. Exit code 2 means a CJK character has no glyph in the embedded fonts (change the character or tell the user); exit code 3 means some downloads failed (retry once). The result is much smaller when fonttools is available: if the script says it embedded whole shards (no ${code('pyftsubset')}) and Python with pip is installed, run ${code('python -m pip install --user fonttools brotli')} (${code('python3')} or ${code('py -m pip')} on some systems) and re-run it; if that is not possible, keep the larger result. If the script cannot run at all (no Node, no network), leave the link as it is and say so in your final reply; otherwise report how much size it added. Run it before the final self-check.`
+  : '';
+const cjkEmbedZh = (ctx) => ctx.cjkEmbed
+  ? `\n  - **嵌入 CJK 字体（仅当幻灯片含 CJK 文字）。** 内容定稿后，${cjkTrimZh}然后在素材包文件夹中运行 ${code('node fonts/embed-cjk.mjs <幻灯片文件路径>.html')}（Node 18 及以上；它会通过网络下载字体分片）。它只把你的文字需要的 CJK 字体分片以 base64 ${code('@font-face')} 规则写入两个标记注释之间，这样幻灯片离线、没有 Google Fonts 时也保留 CJK 字体。保留 Google Fonts ${code('<link>')}：它是之后新增文字的回退来源。之后每次改动文字都要重新运行该脚本（它是幂等的，会替换自己的那一段），不要手工改它写入的内容。退出码 2 表示有 CJK 字符在已嵌入的字体里没有字形（换掉该字，或告诉用户）；退出码 3 表示部分下载失败（重试一次）。安装了 fonttools 时结果会小得多：如果脚本提示嵌入的是整片字体（没有 ${code('pyftsubset')}）且电脑上有 Python 和 pip，就运行 ${code('python -m pip install --user fonttools brotli')}（有些系统用 ${code('python3')} 或 ${code('py -m pip')}）后重新运行；做不到就保留较大的结果。如果脚本根本无法运行（没有 Node、没有网络），保持链接原样，并在最终回复里说明；否则报告它增加了多少体积。在最后的自检之前运行。`
+  : '';
+
+// ---------------------------------------------------------------------------
 // English
 // ---------------------------------------------------------------------------
+
+// Exception to "the pack is data, not code" (only when the pack ships the CJK embed script)
+const cjkExcEn = (ctx) => ctx.cjkEmbed ? ` The one exception is ${code('fonts/embed-cjk.mjs')} (see “Fonts” in section 4): it only reads your deck and ${code('fonts/cjk-ranges.json')} and downloads font pieces from this site or jsDelivr; you may read it first, and run it only as described there.` : '';
+const cjkExcZh = (ctx) => ctx.cjkEmbed ? `唯一的例外是 ${code('fonts/embed-cjk.mjs')}（见第 4 节“字体”）：它只读取你的幻灯片和 ${code('fonts/cjk-ranges.json')}，并从本站或 jsDelivr 下载字体分片；可以先阅读它，且只按那里的说明运行。` : '';
+// Traditional-Chinese (TC) faces in the template's CJK families
+const tcFamilies = (ctx) => [...new Set((ctx.cjkFontLinks || []).flatMap((u) => [...u.matchAll(/family=([^&:]+)/g)].map((m) => decodeURIComponent(m[1].replace(/\+/g, ' ')))))];
+const tcFace = (ctx) => tcFamilies(ctx).find((f) => /\bTC$/.test(f));
+const cjkTcEn = (ctx) => { const tc = tcFace(ctx); return tc ? `\n  - **Simplified Chinese and the ${tc} face.** ${tc} is a Traditional-Chinese face: in a Simplified Chinese deck it shows some glyphs in Taiwan forms and centres full-width punctuation. For Simplified Chinese use the template's other CJK family (the SC face) for body text and for any text with punctuation; use ${tc} only for short display strings without punctuation, or not at all.` : ''; };
+const cjkTcZh = (ctx) => { const tc = tcFace(ctx); return tc ? `\n  - **简体中文与 ${tc}。** ${tc} 是繁体字体：用于简体中文幻灯片时，部分字形会变成台湾写法（户变成戶），全角标点还会居中。简体中文的正文和任何带标点的文字请用模板的另一个 CJK 字体族（简体 SC 字体）；${tc} 只用于不含标点的短标题，或干脆不用。` : ''; };
+const cjkTrimEn = ' **Before running it, trim the CJK Google Fonts `<link>` to the families and weights the deck actually uses** (the script embeds every weight the link requests): for example drop `700` if no CJK text is bold, and drop a family the deck does not use. Keep at least one weight for each family you use.';
+const cjkTrimZh = ' **运行之前，先把 CJK Google Fonts `<link>` 精简到幻灯片实际用到的字体族和字重**（脚本会嵌入链接里请求的每一个字重）：例如没有 CJK 粗体就去掉 `700`，没用到的字体族也去掉。用到的每个字体族至少保留一个字重。';
+const cjkExtraEn = (ctx) => cjkEmbedEn(ctx) + cjkTcEn(ctx);
+const cjkExtraZh = (ctx) => cjkEmbedZh(ctx) + cjkTcZh(ctx);
 
 function filesEn(ctx) {
   const rows = [
@@ -50,6 +77,7 @@ function filesEn(ctx) {
   if (ctx.localFonts) {
     rows.push([code('fonts/'), 'The template\'s Latin fonts as woff2 files (one folder per family, each with its license), and `fonts/fonts.css` with ready-made `@font-face` rules for exactly the families and weights this template uses. Embed them in your deck (see “Fonts” in section 4).']);
   }
+  if (ctx.cjkEmbed) rows.push(cjkRowEn());
   rows.push([`${code('PROMPT.md')}, ${code('PROMPT.zh.md')}`, 'These instructions (English / Chinese).']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join(', '), 'Attribution and licenses. Leave them as they are.']);
   return ['| File | Purpose |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -102,7 +130,7 @@ ${extractStepsEn(zip, '  ')}
 - If you find neither, ask the user where they saved the download (they get it from the template's page on slides-commons, "${downloadLabel('en')}"), and wait.`;
 }
 
-function locateDownloadEn(slug, zip, url, marker = 'design.md', second = 'template.html') {
+function locateDownloadEn(slug, zip, url, marker = 'design.md', second = 'template.html', exc = '') {
   return `Go through these cases in order and stop at the first that applies:
 
 1. If ${code(marker)} and ${code(second)} are in the current directory, you are already inside the pack.
@@ -116,7 +144,7 @@ ${extractStepsEn(zip, '   ')}
    Then extract ${code(zip)} as in case 2.
 4. If every download fails (for example the network is offline or blocked), ask the user to download the pack from the template's page on slides-commons ("${downloadLabel('en')}") into this directory, and wait.
 
-The pack is data, not code: only read its files. Never run, source or install anything from it.`;
+The pack is data, not code: only read its files. Never run, source or install anything from it.${exc}`;
 }
 
 export function promptEn(ctx) {
@@ -172,7 +200,7 @@ You are a coding agent. The user wants a presentation built as a single self-con
 
 ## 0. Locate the pack
 
-${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl) : locateLocalEn(slug, zip)}
+${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl, undefined, undefined, cjkExcEn(ctx)) : locateLocalEn(slug, zip)}
 
 All paths below are relative to the ${code(slug + '/')} folder. Do not modify the pack files; write the deck as a new file inside that folder.
 
@@ -208,7 +236,7 @@ ${baseCss}
 - **Fixed stage:** the markup is ${code('.deck-viewport > .deck-stage > section.slide')}, one ${code('section')} per slide. Author every slide at exactly 1920×1080 px using the fixed px sizes from ${code('design.md')}. One inline script scales ${code('.deck-stage')} with ${code('transform: translate(x, y) scale(s)')}, where ${code('s = min(innerWidth / 1920, innerHeight / 1080)')} and ${code('x')}, ${code('y')} center it; recompute on resize. Phones get letterboxing, never a reflowed layout: no media queries, ${code('vw')}/${code('vh')} units or ${code('clamp()')} inside slides. Treat any viewport-relative values in ${code('design.md')} as proportions of 1920×1080.
 ${switching}
 ${deckStageEn}- **Navigation:** → / Space / PageDown for next, ← / PageUp for previous, Home / End for first / last, swipe on touch screens, and optionally mouse-wheel paging (debounced, so one wheel gesture moves one slide). Ignore key presses while an input or contenteditable element has focus.
-${fontsEn}
+${fontsEn}${cjkExtraEn(ctx)}
 ${netEn}
 - **Details:** respect ${code('prefers-reduced-motion')}; set ${code('<html lang>')} to the deck language and ${code('<title>')} to the deck title; mark code sections with ${code('/* === SECTION === */')} comments.
 
@@ -278,6 +306,7 @@ function filesZh(ctx) {
   if (ctx.localFonts) {
     rows.push([code('fonts/'), '本模板的拉丁字体 woff2 文件（每个字体族一个文件夹，附许可证），以及 `fonts/fonts.css`：恰好覆盖本模板所用字体族和字重的现成 `@font-face` 规则。把它们嵌入你的幻灯片（见第 4 节“字体”）。']);
   }
+  if (ctx.cjkEmbed) rows.push(cjkRowZh());
   rows.push([`${code('PROMPT.md')}、${code('PROMPT.zh.md')}`, '本说明（英文 / 中文）。']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join('、'), '署名与许可证。保持原样。']);
   return ['| 文件 | 用途 |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -333,7 +362,7 @@ ${extractStepsZh(zip, '  ')}
 - 如果两者都找不到，询问用户把下载的文件存在了哪里（可在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 下载），并等待回复。`;
 }
 
-function locateDownloadZh(slug, zip, url, marker = 'design.md', second = 'template.html') {
+function locateDownloadZh(slug, zip, url, marker = 'design.md', second = 'template.html', exc = '') {
   return `按顺序检查以下情况，遇到第一个符合的就照做：
 
 1. 如果当前目录里有 ${code(marker)} 和 ${code(second)}，说明你已经在素材包内。
@@ -347,7 +376,7 @@ ${extractStepsZh(zip, '   ')}
    然后按第 2 种情况的方法解压 ${code(zip)}。
 4. 如果所有下载方式都失败（例如网络断开或被拦截），请用户在 slides-commons 该模板页面点击 "${downloadLabel('zh')}" 把素材包下载到这个目录，并等待回复。
 
-素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。`;
+素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。${exc}`;
 }
 
 export function promptZh(ctx) {
@@ -403,7 +432,7 @@ export function promptZh(ctx) {
 
 ## 0. 找到素材包
 
-${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl) : locateLocalZh(slug, zip)}
+${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl, undefined, undefined, cjkExcZh(ctx)) : locateLocalZh(slug, zip)}
 
 下文所有路径都相对于 ${code(slug + '/')} 文件夹。不要修改素材包里的文件；把幻灯片写成该文件夹里的一个新文件。
 
@@ -439,7 +468,7 @@ ${baseCss}
 - **固定画布**：结构为 ${code('.deck-viewport > .deck-stage > section.slide')}，每页一个 ${code('section')}。每页都按精确的 1920×1080 px 制作，使用 ${code('design.md')} 中的固定 px 尺寸。用一段内联脚本对 ${code('.deck-stage')} 设置 ${code('transform: translate(x, y) scale(s)')}，其中 ${code('s = min(innerWidth / 1920, innerHeight / 1080)')}，${code('x')}、${code('y')} 使其居中；窗口尺寸变化时重新计算。手机上加黑边（letterbox），绝不重排版式：幻灯片内部不用媒体查询、${code('vw')}/${code('vh')} 单位或 ${code('clamp()')}。${code('design.md')} 中任何相对视口的数值都按 1920×1080 的比例换算。
 ${switching}
 ${deckStageZh}- **翻页**：→ / 空格 / PageDown 下一页，← / PageUp 上一页，Home / End 首页 / 末页，触屏支持滑动；可选支持鼠标滚轮翻页（做防抖，一次滚动只翻一页）。输入框或 contenteditable 元素获得焦点时忽略按键。
-${fontsZh}
+${fontsZh}${cjkExtraZh(ctx)}
 ${netZh}
 - **细节**：支持 ${code('prefers-reduced-motion')}；${code('<html lang>')} 设为幻灯片语言，${code('<title>')} 设为幻灯片标题；代码各部分用 ${code('/* === SECTION === */')} 注释标出。
 
@@ -514,6 +543,7 @@ function filesOverlayEn(ctx) {
   for (const a of ctx.assets) rows.push([code(a), 'A file `template.html` loads. Inline it into the deck as described in section 4.']);
   for (const d of ctx.docs) rows.push([code(d.path), d.en]);
   if (ctx.localFonts) rows.push([code('fonts/'), 'The template\'s Latin fonts as woff2 files (one folder per family, each with its license), and `fonts/fonts.css` with ready-made `@font-face` rules for exactly the families and weights this template uses. Embed them in your deck (see “Fonts” in section 4).']);
+  if (ctx.cjkEmbed) rows.push(cjkRowEn());
   rows.push([`${code('PROMPT.md')}, ${code('PROMPT.zh.md')}`, 'These instructions (English / Chinese).']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join(', '), 'Attribution and the license. Leave them as they are.']);
   return ['| File | Purpose |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -526,6 +556,7 @@ function filesOverlayZh(ctx) {
   for (const a of ctx.assets) rows.push([code(a), '`template.html` 加载的文件。按第 4 节的方法内联进幻灯片。']);
   for (const d of ctx.docs) rows.push([code(d.path), d.zh]);
   if (ctx.localFonts) rows.push([code('fonts/'), '本模板的拉丁字体 woff2 文件（每个字体族一个文件夹，附许可证），以及 `fonts/fonts.css`：恰好覆盖本模板所用字体族和字重的现成 `@font-face` 规则。把它们嵌入你的幻灯片（见第 4 节“字体”）。']);
+  if (ctx.cjkEmbed) rows.push(cjkRowZh());
   rows.push([`${code('PROMPT.md')}、${code('PROMPT.zh.md')}`, '本说明（英文 / 中文）。']);
   rows.push([[code('README.md'), ...ctx.licenses.map((l) => code(l.file))].join('、'), '署名与许可证。保持原样。']);
   return ['| 文件 | 用途 |', '|---|---|', ...rows.map(([f, p]) => `| ${f} | ${p} |`)].join('\n');
@@ -559,7 +590,7 @@ You are a coding agent. The user wants a presentation built as a single self-con
 
 ## 0. Locate the pack
 
-${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl, 'SKILL.md') : locateLocalEn(slug, zip, 'SKILL.md')}
+${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl, 'SKILL.md', undefined, cjkExcEn(ctx)) : locateLocalEn(slug, zip, 'SKILL.md')}
 
 All paths below are relative to the ${code(slug + '/')} folder. Do not modify the pack files; write the deck as a new file inside that folder.
 
@@ -601,7 +632,7 @@ ${L.join('\n')}
 - **Fonts:** the template requests its fonts with a Google Fonts ${code('<link>')} (and ${code('preconnect')} links) in ${code('<head>')}. Replace them as follows. Never link Google Fonts for the Latin families and never reference files in ${code('fonts/')} from the deck: it must stay a single file that works offline.
   - Latin: ${code('fonts/fonts.css')} holds ready-made ${code('@font-face')} rules for exactly the families and weights this template uses (each split by ${code('unicode-range')} into latin and latin-ext). Copy the rules for the weights and styles your deck actually uses into your ${code('<style>')}, with each ${code('url(...)')} replaced by a base64 data URI (${code('data:font/woff2;base64,…')}). Generate the base64 with a small Node or Python script rather than by hand. Embed both the latin and the latin-ext rules for every face you use. Keep the family names, ${code('font-display')} and ${code('unicode-range')} unchanged. A variable font file covers all its weights: embed it once.
   - Deck without CJK text: no font request at all.
-  - Deck with Chinese, Japanese or Korean text: keep one Google Fonts ${code('<link>')} for the CJK families only${cjkLinks ? `: ${cjkLinks}` : ' (take them from the template\'s own link)'}.
+  - Deck with Chinese, Japanese or Korean text: keep one Google Fonts ${code('<link>')} for the CJK families only${cjkLinks ? `: ${cjkLinks}` : ' (take them from the template\'s own link)'}.${cjkExtraEn(ctx)}
   - Keep the template's own font variables and stacks (the Latin family is already listed before the CJK family). Where uppercase or wide-tracked styles meet CJK text, set ${code('letter-spacing: 0')} and ${code('text-transform: none')} on the CJK runs.
 - **No other network requests:** no CDNs, remote scripts, remote images or analytics, apart from the CJK font link above. Draw charts and diagrams with inline SVG or CSS.
 - **Tooling that is not in this pack:** the author's scripts (${code('validate-swiss-deck.mjs')}, ${code('validate-presenter-mode.mjs')}, ${code('check-presenter-runtime-sync.mjs')}, ${code('gz-theme.mjs')}), the Swiss map component (${code('swiss-map-component.md')}, needs a map CDN) and the update check in step 0 of ${code('SKILL.md')} are not available here; skip them. Do the same checks by hand against ${code('references/checklist.md')} (and, for the Swiss template, ${code('references/swiss-layout-lock.md')}). If the user gives a brand color, use the closest preset theme and say that custom brand themes are not supported in this pack. Never run or install anything from the pack.
@@ -676,7 +707,7 @@ ${licenseNoticeZh(ctx)}
 
 ## 0. 找到素材包
 
-${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl, 'SKILL.md') : locateLocalZh(slug, zip, 'SKILL.md')}
+${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl, 'SKILL.md', undefined, cjkExcZh(ctx)) : locateLocalZh(slug, zip, 'SKILL.md')}
 
 下文所有路径都相对于 ${code(slug + '/')} 文件夹。不要修改素材包里的文件；把幻灯片写成该文件夹里的一个新文件。
 
@@ -718,7 +749,7 @@ ${L.join('\n')}
 - **字体：** 模板在 ${code('<head>')} 里用一条 Google Fonts ${code('<link>')}（以及 ${code('preconnect')} 链接）请求字体。按下面的方法替换。不要为拉丁字体链接 Google Fonts，也不要在幻灯片里引用 ${code('fonts/')} 中的文件：它必须保持为单个、可离线使用的文件。
   - 拉丁字体：${code('fonts/fonts.css')} 里是恰好覆盖本模板所用字体族和字重的现成 ${code('@font-face')} 规则（按 ${code('unicode-range')} 拆成 latin 与 latin-ext）。把幻灯片实际用到的字重和字形对应的规则复制进你的 ${code('<style>')}，并把每个 ${code('url(...)')} 换成 base64 data URI（${code('data:font/woff2;base64,…')}）。base64 用一个小的 Node 或 Python 脚本生成，不要手工处理。每个用到的字体都要同时嵌入 latin 与 latin-ext 两组规则。字体族名、${code('font-display')} 和 ${code('unicode-range')} 保持不变。可变字体文件已覆盖所有字重，只嵌入一次。
   - 幻灯片不含 CJK 文字：完全不发起字体请求。
-  - 幻灯片含中文、日文或韩文：保留一条只含 CJK 字体族的 Google Fonts ${code('<link>')}${cjkLinks ? `：${cjkLinks}` : '（取自模板自带的链接）'}。
+  - 幻灯片含中文、日文或韩文：保留一条只含 CJK 字体族的 Google Fonts ${code('<link>')}${cjkLinks ? `：${cjkLinks}` : '（取自模板自带的链接）'}。${cjkExtraZh(ctx)}
   - 保留模板自带的字体变量和字体栈（拉丁字体已排在 CJK 字体之前）。大写或加宽字距的样式遇到 CJK 文字时，对 CJK 文字设 ${code('letter-spacing: 0')} 和 ${code('text-transform: none')}。
 - **不发起其他网络请求**：除上面的 CJK 字体链接外，不用 CDN、远程脚本、远程图片或统计代码。图表和示意图用内联 SVG 或 CSS 绘制。
 - **本素材包里没有的工具：** 作者的脚本（${code('validate-swiss-deck.mjs')}、${code('validate-presenter-mode.mjs')}、${code('check-presenter-runtime-sync.mjs')}、${code('gz-theme.mjs')}）、瑞士风地图组件（${code('swiss-map-component.md')}，需要地图 CDN）以及 ${code('SKILL.md')} 第 0 步的更新检查在这里都不可用，直接跳过。对照 ${code('references/checklist.md')}（瑞士风模板还要对照 ${code('references/swiss-layout-lock.md')}）手工完成同样的检查。如果用户给了品牌色，就用最接近的预设主题，并说明本素材包不支持自定义品牌主题。绝不运行或安装素材包里的任何内容。
@@ -811,6 +842,7 @@ function filesSkillDeck(ctx, zh) {
   if (ctx.localFonts) rows.push([code('fonts/'), zh
     ? '本模板的拉丁字体 woff2 文件（每个字体族一个文件夹，附许可证），以及 `fonts/fonts.css`：恰好覆盖本模板所用字体族和字重的现成 `@font-face` 规则。把它们嵌入你的幻灯片（见第 4 节“字体”）。'
     : 'The deck\'s Latin fonts as woff2 files (one folder per family, each with its license), and `fonts/fonts.css` with ready-made `@font-face` rules for exactly the families and weights this deck uses. Embed them in your deck (see “Fonts” in section 4).']);
+  if (ctx.cjkEmbed) rows.push(zh ? cjkRowZh() : cjkRowEn());
   rows.push(zh
     ? [`${code('PROMPT.md')}、${code('PROMPT.zh.md')}`, '本说明（英文 / 中文）。']
     : [`${code('PROMPT.md')}, ${code('PROMPT.zh.md')}`, 'These instructions (English / Chinese).']);
@@ -851,7 +883,7 @@ You are a coding agent. The user wants a presentation built as a single self-con
 
 ## 0. Locate the pack
 
-${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl, 'SKILL.md', dir + '/index.html') : locateLocalEn(slug, zip, 'SKILL.md', dir + '/index.html')}
+${ctx.zipUrl ? locateDownloadEn(slug, zip, ctx.zipUrl, 'SKILL.md', dir + '/index.html', cjkExcEn(ctx)) : locateLocalEn(slug, zip, 'SKILL.md', dir + '/index.html')}
 
 All paths below are relative to the ${code(slug + '/')} folder. The pack keeps the author's folder layout, so the deck's relative links (${code('../../../assets/…')}) resolve as they are. Do not modify the pack's files; write your files as new files.
 
@@ -893,7 +925,7 @@ ${L.join('\n')}
 - **Fonts.** Never link Google Fonts for the Latin families and never reference files in ${code('fonts/')} from the deck: it must stay one file that works offline.
   - Latin: ${code('fonts/fonts.css')} holds ready-made ${code('@font-face')} rules for exactly the families and weights this deck uses (each split by ${code('unicode-range')} into latin and latin-ext). Copy the rules for the weights and styles your deck actually uses into a ${code('<style>')} block (in the position of the removed ${code('fonts.css')} link), with each ${code('url(...)')} replaced by a base64 data URI (${code('data:font/woff2;base64,…')}); let the script do it. Embed both the latin and the latin-ext rules for every face you use. Keep the family names, ${code('font-display')} and ${code('unicode-range')} unchanged. A variable font file covers all its weights: embed it once.
   - Deck without CJK text: no font request at all.
-  - Deck with Chinese, Japanese or Korean text: add Google Fonts ${code('<link>')} tags for the CJK families only${cjkLinks ? `: ${cjkLinks}` : ''}.
+  - Deck with Chinese, Japanese or Korean text: add Google Fonts ${code('<link>')} tags for the CJK families only${cjkLinks ? `: ${cjkLinks}` : ''}.${cjkExtraEn(ctx)}
   - Keep the deck's own font variables and stacks (the Latin family is already listed before the CJK family). Where uppercase or wide-tracked styles meet CJK text, set ${code('letter-spacing: 0')} and ${code('text-transform: none')} on the CJK runs.
 - **No other network requests:** no CDNs, remote scripts, remote images or analytics, apart from the CJK font links above. Draw charts, icons and diagrams with inline SVG or CSS.
 - **Images and logo:** only files the user supplies, embedded as data URIs, downscaled to about twice their displayed size (JPEG or WebP; keep the deck under roughly 8 MB). A logo is declared with ${code('data-logo')} on ${code('<body>')} as the author's guide describes, with a data URI as its value. The author's demo images, image layouts and the ${code('assets/demo-images/')} folder are not part of this pack. A slide that needs an image but has none: use a text or graphic layout of the example deck, or build the graphic from CSS or inline SVG; never leave a placeholder.
@@ -971,7 +1003,7 @@ export function promptSkillDeckZh(ctx) {
 
 ## 0. 找到素材包
 
-${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl, 'SKILL.md', dir + '/index.html') : locateLocalZh(slug, zip, 'SKILL.md', dir + '/index.html')}
+${ctx.zipUrl ? locateDownloadZh(slug, zip, ctx.zipUrl, 'SKILL.md', dir + '/index.html', cjkExcZh(ctx)) : locateLocalZh(slug, zip, 'SKILL.md', dir + '/index.html')}
 
 下文所有路径都相对于 ${code(slug + '/')} 文件夹。素材包保留了作者的文件夹结构，所以幻灯片里的相对链接（${code('../../../assets/…')}）原样可用。不要修改素材包里的文件；你写的文件都作为新文件创建。
 
@@ -1013,7 +1045,7 @@ ${L.join('\n')}
 - **字体。** 不要为拉丁字体链接 Google Fonts，也不要在幻灯片里引用 ${code('fonts/')} 中的文件：它必须保持为单个、可离线使用的文件。
   - 拉丁字体：${code('fonts/fonts.css')} 里是恰好覆盖本幻灯片所用字体族和字重的现成 ${code('@font-face')} 规则（按 ${code('unicode-range')} 拆成 latin 与 latin-ext）。把幻灯片实际用到的字重和字形对应的规则复制进一个 ${code('<style>')} 块（放在被移除的 ${code('fonts.css')} 链接原来的位置），并把每个 ${code('url(...)')} 换成 base64 data URI（${code('data:font/woff2;base64,…')}）；让脚本来做。每个用到的字体都要同时嵌入 latin 与 latin-ext 两组规则。字体族名、${code('font-display')} 和 ${code('unicode-range')} 保持不变。可变字体文件已覆盖所有字重，只嵌入一次。
   - 幻灯片不含 CJK 文字：完全不发起字体请求。
-  - 幻灯片含中文、日文或韩文：只为 CJK 字体族添加 Google Fonts ${code('<link>')}${cjkLinks ? `：${cjkLinks}` : ''}。
+  - 幻灯片含中文、日文或韩文：只为 CJK 字体族添加 Google Fonts ${code('<link>')}${cjkLinks ? `：${cjkLinks}` : ''}。${cjkExtraZh(ctx)}
   - 保留这套幻灯片自带的字体变量和字体栈（拉丁字体已排在 CJK 字体之前）。大写或加宽字距的样式遇到 CJK 文字时，对 CJK 文字设 ${code('letter-spacing: 0')} 和 ${code('text-transform: none')}。
 - **不发起其他网络请求**：除上面的 CJK 字体链接外，不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。
 - **图片与徽标：** 只使用用户提供的文件，以 data URI 嵌入，缩小到约为显示尺寸的两倍（JPEG 或 WebP；整份文件控制在约 8 MB 内）。徽标按作者指南的方式在 ${code('<body>')} 上用 ${code('data-logo')} 声明，值为 data URI。作者的演示图片、图片版式和 ${code('assets/demo-images/')} 文件夹不在本素材包里。需要图片但没有图片的页面：改用示例幻灯片里的文字或图形版式，或用 CSS / 内联 SVG 做图形；绝不留占位符。

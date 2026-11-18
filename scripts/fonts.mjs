@@ -233,3 +233,66 @@ export function rewriteGoogleFonts(html, requests, localNames) {
   }
   return out;
 }
+
+// --- CJK shards (for fonts/embed-cjk.mjs in the packs) --------------------------------------
+//
+// CJK fonts are far too big to ship whole, so the packs carry only a table of the Fontsource
+// shards (unicode-range slices, the same slicing Google Fonts uses) and a script that embeds the
+// shards a finished deck actually needs. This builds that table from the installed
+// @fontsource/<family> packages: { id, version, weights, shards: {key: range}, shardsByWeight:
+// {weight: [key]}, license }. A shard's file is `<id>-<key>-<weight>-normal.woff2`.
+
+export function cjkFamilyEntry(root, name) {
+  const id = slugify(name);
+  const dir = path.join(root, 'node_modules', '@fontsource', id);
+  let meta;
+  try { meta = JSON.parse(fs.readFileSync(path.join(dir, 'metadata.json'), 'utf8')); } catch { return null; }
+  const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+  const shards = {};
+  const shardsByWeight = {};
+  const fileRe = new RegExp(`^${id}-(.+)-(\\d+)-normal\\.woff2$`);
+  for (const weight of meta.weights) {
+    const cssFile = path.join(dir, `${weight}.css`);
+    if (!fs.existsSync(cssFile)) throw new Error(`${name}: ${weight}.css missing in @fontsource/${id}`);
+    const keys = [];
+    for (const block of fs.readFileSync(cssFile, 'utf8').split('@font-face').slice(1)) {
+      if (!/font-style:\s*normal/.test(block)) continue;
+      const w = block.match(/font-weight:\s*(\d+)/)?.[1];
+      const url = block.match(/url\(\.\/files\/([^)]+\.woff2)\)/)?.[1];
+      const m = url?.match(fileRe);
+      if (!m || w !== String(weight) || m[2] !== String(weight)) throw new Error(`${name}: cannot read a shard in ${weight}.css`);
+      if (!fs.existsSync(path.join(dir, 'files', url))) throw new Error(`${name}: ${url} missing in @fontsource/${id}`);
+      const range = block.match(/unicode-range:\s*([^;]+);/)?.[1].trim() ?? 'U+0-10FFFF';
+      if (shards[m[1]] !== undefined && shards[m[1]] !== range) throw new Error(`${name}: shard ${m[1]} has different ranges at different weights`);
+      shards[m[1]] = range;
+      keys.push(m[1]);
+    }
+    shardsByWeight[weight] = keys;
+  }
+  const license = ['LICENSE', 'LICENSE.txt'].map((f) => path.join(dir, f)).find((f) => fs.existsSync(f)) ?? null;
+  return { id, dir, version: pkg.version, weights: meta.weights, shards, shardsByWeight, license };
+}
+
+// CJK families (known to Fontsource) requested anywhere in the given texts.
+export function cjkFamiliesIn(root, texts) {
+  const out = new Map();
+  for (const text of texts) {
+    for (const req of parseRequests(text)) {
+      for (const fam of req.families) {
+        if (!isCjkFamily(fam.name) || out.has(fam.name)) continue;
+        const e = cjkFamilyEntry(root, fam.name);
+        if (e) out.set(fam.name, e);
+      }
+    }
+  }
+  return out;
+}
+
+// cjk-ranges.json for one pack. `siteBase` is the site URL (with trailing slash) or null.
+export function cjkRangesJson(entries, siteBase) {
+  const families = {};
+  for (const [name, e] of [...entries].sort((a, b) => a[0].localeCompare(b[0]))) {
+    families[name] = { id: e.id, version: e.version, weights: e.weights, shards: e.shards, shardsByWeight: e.shardsByWeight };
+  }
+  return JSON.stringify({ schema: 1, cdn: 'https://cdn.jsdelivr.net/npm', siteBase: siteBase ?? null, families }) + '\n';
+}
