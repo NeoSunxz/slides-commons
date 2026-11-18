@@ -235,17 +235,23 @@ test.describe('--site-url / SC_SITE_URL', () => {
     withUrl = outDir('sc-url-');
     const r = run('build', ['--out', withUrl], { env: { SC_SITE_URL: URL_BASE } });
     expect(r.status, r.out).toBe(0);
-    expect(walk(withUrl)).toEqual(walk(without));
+    // The only extra files in URL mode are the CJK font shards (and licenses) the site hosts for fonts/embed-cjk.mjs.
+    const extra = walk(withUrl).filter((f) => !walk(without).includes(f));
+    expect(extra.filter((f) => !/^fonts\/cjk\//.test(f)), 'files added by URL mode outside fonts/cjk/').toEqual([]);
+    expect(extra.length, 'URL mode hosts CJK shards').toBeGreaterThan(0);
+    expect(walk(without).filter((f) => !walk(withUrl).includes(f)), 'files lost in URL mode').toEqual([]);
+    expect(walk(without).some((f) => f.startsWith('fonts/cjk/')), 'default build must not host shards').toBe(false);
     for (const slug of ALL_SLUGS) {
       const a = readZip(fs.readFileSync(path.join(without, 'zip', `${slug}.zip`)));
       const b = readZip(fs.readFileSync(path.join(withUrl, 'zip', `${slug}.zip`)));
       expect(b.problems, `${slug} zip integrity`).toEqual([]);
       expect(b.entries.map((e) => e.name), `${slug} zip listing`).toEqual(a.entries.map((e) => e.name));
+      const slugChanged = (sl) => ['PROMPT.md', 'PROMPT.zh.md', 'README.md', ...(a.entries.some((e) => e.name === `${sl}/fonts/cjk-ranges.json`) ? ['cjk-ranges.json'] : [])].sort();
       const changed = b.entries.filter((e, i) => Buffer.compare(e.data, a.entries[i].data) !== 0).map((e) => e.name.split('/').pop()).sort();
-      expect(changed, `${slug}: files that differ between modes`).toEqual(['PROMPT.md', 'PROMPT.zh.md', 'README.md']);
+      expect(changed, `${slug}: files that differ between modes`).toEqual(slugChanged(slug));
     }
     // Everything outside prompts / READMEs is byte-identical (previews, assets, gallery).
-    const diffs = diffTrees(without, withUrl).map((d) => d.replace('differs: ', ''));
+    const diffs = diffTrees(without, withUrl).filter((d) => !d.startsWith('file lists differ')).map((d) => d.replace('differs: ', '')); // list differences were checked above
     const unexpected = diffs.filter((f) => !/^zip\/|^index\.html$|^zh\/index\.html$|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
     expect(unexpected, 'unexpected differences').toEqual([]);
   });

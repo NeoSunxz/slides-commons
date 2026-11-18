@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { test as base, expect } from '@playwright/test';
-import { SITE, ALL_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, upstreamHtml, readSiteZip, hostOf, EXTERNAL_WHITELIST } from './helpers.mjs';
+import { SITE, ALL_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, isCjkPackFile, cjkFamiliesRequested, upstreamHtml, readSiteZip, hostOf, EXTERNAL_WHITELIST } from './helpers.mjs';
 
 // NOTE: deliberately the plain Playwright test (no Google font cache): Google must be unreachable.
 const test = base;
@@ -107,7 +107,8 @@ for (const slug of ALL_SLUGS) {
   test(`[fonts zip] ${slug}: fonts.css urls resolve, OFL per family, no unused woff2`, async () => {
     const { entries } = readSiteZip(SITE, slug);
     const names = entries.filter((e) => !e.isDir && !e.isDirectory).map((e) => e.name);
-    const fontFiles = names.filter((n) => n.startsWith(`${slug}/fonts/`));
+    // fonts/embed-cjk.mjs, cjk-ranges.json and cjk-licenses/ are CJK tooling (see cjk-embed.spec.mjs), not bundled fonts.
+    const fontFiles = names.filter((n) => n.startsWith(`${slug}/fonts/`) && !isCjkPackFile(n));
     if (NO_WEBFONT_SLUGS.includes(slug) || FONTSHARE_SLUGS.includes(slug)) {
       // System-font templates and Fontshare-only templates (Fontshare is not in Fontsource) ship no fonts/.
       expect(fontFiles, `${slug} must have no fonts/`).toEqual([]);
@@ -154,8 +155,13 @@ test('[fonts prompt] Latin-font templates mention fonts/ and base64 (EN+ZH); raw
     const en = entries.find((e) => e.name === `${slug}/PROMPT.md`).data.toString();
     const zh = entries.find((e) => e.name === `${slug}/PROMPT.zh.md`).data.toString();
     if (NO_WEBFONT_SLUGS.includes(slug) || FONTSHARE_SLUGS.includes(slug)) {
-      if (/fonts\/|base64/.test(en)) bad.push(`${slug} en mentions fonts/ or base64`);
-      if (/fonts\/|base64/.test(zh)) bad.push(`${slug} zh mentions fonts/ or base64`);
+      // Only the CJK embed tooling (fonts/embed-cjk.mjs ...) may be mentioned; no bundled Latin fonts folder.
+      const latinFonts = /`fonts\/`|fonts\/fonts\.css|woff2|fonts\/(?!embed-cjk\.mjs|cjk-ranges\.json|cjk-licenses\/)/;
+      if (!cjkFamiliesRequested(entries, slug).length) {
+        if (/fonts\/|base64/.test(en) || /fonts\/|base64/.test(zh)) bad.push(`${slug}: no CJK tooling, yet the prompt mentions fonts/ or base64`);
+      }
+      if (latinFonts.test(en)) bad.push(`${slug} en mentions the bundled fonts/ folder`);
+      if (latinFonts.test(zh)) bad.push(`${slug} zh mentions the bundled fonts/ folder`);
       continue;
     }
     if (!/`fonts\/`/.test(en) || !/fonts\/fonts\.css/.test(en) || !/base64/.test(en)) bad.push(`${slug} en lacks fonts/ or base64`);

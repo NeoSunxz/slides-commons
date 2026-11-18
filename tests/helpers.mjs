@@ -301,3 +301,32 @@ export function zhNameTokens(slugs = ALL_SLUGS) {
   }
   return [...out];
 }
+
+// ---------------------------------------------------------------------------
+// CJK embed tooling in the packs: fonts/embed-cjk.mjs, fonts/cjk-ranges.json, fonts/cjk-licenses/
+// ---------------------------------------------------------------------------
+export const CJK_PACK_FILE_RE = /(^|\/)fonts\/(embed-cjk\.mjs|cjk-ranges\.json|cjk-licenses\/[^/]+)$/;
+/** Zip names that are CJK tooling rather than bundled Latin fonts. */
+export const isCjkPackFile = (name) => CJK_PACK_FILE_RE.test(name);
+const CJK_NAME_RE = /\b(SC|TC|HK|JP|KR)\b|^(ZCOOL|LXGW|Long Cang|Ma Shan Zheng)/;
+/**
+ * CJK Google Fonts families (that @fontsource also ships) that a pack's template.html or design.md asks for,
+ * computed independently of the build from the zip's own files.
+ */
+export function cjkFamiliesRequested(entries, slug) {
+  const out = new Set();
+  for (const f of ['template.html', 'design.md']) {
+    const e = entries.find((x) => x.name === `${slug}/${f}`);
+    if (!e) continue;
+    const text = e.data.toString('utf8');
+    for (const m of text.matchAll(/https:\/\/fonts\.googleapis\.com\/css2?\?[^"'`\s)<>]+/g)) {
+      let u;
+      try { u = new URL(m[0].replace(/&amp;/g, '&')); } catch { continue; }
+      for (const p of u.searchParams.getAll('family')) {
+        const name = p.split(':')[0].replace(/\+/g, ' ');
+        if (CJK_NAME_RE.test(name) && fs.existsSync(path.join(ROOT, 'node_modules', '@fontsource', name.toLowerCase().replace(/\s+/g, '-'), 'metadata.json'))) out.add(name);
+      }
+    }
+  }
+  return [...out].sort();
+}

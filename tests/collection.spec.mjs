@@ -8,6 +8,7 @@ import {
   ROOT, SITE, TESTS, COLLECTION, COLLECTION_SLUGS, DERIVED_SLUGS, ORIGINAL_SLUGS, FONTSHARE_SLUGS, GOOGLE_FONT_SLUGS,
   NO_WEBFONT_SLUGS, EXTERNAL_WHITELIST, dirUrl, upstreamDir, upstreamMeta, readSiteZip, readZip, makeTempDir,
   monitor, settled, hostOf,
+  isCjkPackFile,
 } from './helpers.mjs';
 
 const REPO_DIR = (slug) => `https://github.com/NeoSunxz/slides-commons/tree/main/collections/style-presets/templates/${slug}`;
@@ -138,7 +139,7 @@ for (const slug of COLLECTION_SLUGS) {
     expect(nonFont).toEqual(['LICENSE', 'LICENSE-skill', 'PROMPT.md', 'PROMPT.zh.md', 'README.md', 'design.md', 'template.html', 'viewport-base.css'].map((f) => `${slug}/${f}`).sort());
     expect(all.some((n) => n.endsWith('LICENSE-templates')), 'LICENSE-templates must not be in a collection pack').toBe(false);
     expect(all.some((n) => n.endsWith('deck-stage.js')), 'deck-stage.js must not be in a collection pack').toBe(false);
-    const hasFonts = all.some((n) => n.startsWith(`${slug}/fonts/`));
+    const hasFonts = all.some((n) => n.startsWith(`${slug}/fonts/`) && !isCjkPackFile(n)); // CJK tooling is covered by cjk-embed.spec.mjs
     if (GOOGLE_FONT_SLUGS.includes(slug)) {
       expect(all, `${slug}: fonts/fonts.css`).toContain(`${slug}/fonts/fonts.css`);
       expect(all.some((n) => n.endsWith('.woff2'))).toBe(true);
