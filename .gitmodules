@@ -6,3 +6,11 @@
 	path = upstream/skill
 	url = https://github.com/zarazhangrui/frontend-slides.git
 	shallow = true
+[submodule "upstream/guizang"]
+	path = upstream/guizang
+	url = https://github.com/op7418/guizang-ppt-skill.git
+	shallow = true
+[submodule "upstream/html-ppt-skill"]
+	path = upstream/html-ppt-skill
+	url = https://github.com/lewislulu/html-ppt-skill.git
+	shallow = true
