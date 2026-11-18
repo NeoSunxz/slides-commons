@@ -12,11 +12,13 @@ const UPSTREAM_DIR = `https://github.com/zarazhangrui/beautiful-html-templates/t
 const PAGES = {
   en: [
     ['home', 'index.html', ['index.html']],
+    ['gallery', 'gallery/', ['gallery', 'index.html']],
     ['credits', 'credits.html', ['credits.html']],
     ['detail', `t/${SLUG}/`, ['t', SLUG, 'index.html']],
   ],
   zh: [
     ['home', 'zh/index.html', ['zh', 'index.html']],
+    ['gallery', 'zh/gallery/', ['zh', 'gallery', 'index.html']],
     ['credits', 'zh/credits.html', ['zh', 'credits.html']],
     ['detail', `zh/t/${SLUG}/`, ['zh', 't', SLUG, 'index.html']],
   ],
@@ -174,7 +176,7 @@ test('language choice: 中文 is remembered for "/", detail pages never redirect
 
   // Detail and credits pages never redirect: they carry no redirect code at all
   // (deterministic), and loading them with 'zh' stored keeps the URL.
-  for (const parts of [['t', SLUG, 'index.html'], ['credits.html'], ['zh', 'index.html'], ['zh', 't', SLUG, 'index.html'], ['zh', 'credits.html']]) {
+  for (const parts of [['gallery', 'index.html'], ['zh', 'gallery', 'index.html'], ['t', SLUG, 'index.html'], ['credits.html'], ['zh', 'index.html'], ['zh', 't', SLUG, 'index.html'], ['zh', 'credits.html']]) {
     const html = fs.readFileSync(path.join(SITE, ...parts), 'utf8');
     expect(html, `${parts.join('/')} contains redirect code`).not.toMatch(/location\.(replace|assign|href\s*=)|slides-commons:lang/);
   }
@@ -221,7 +223,7 @@ test('zh detail: paging 1/12 → 12/12, 演示页数, Chinese attribution, upstr
   await expect(attr).toContainText('不是原作者的官方站点');
   expect(await attr.locator(`a[href="${UPSTREAM_DIR}"]`).count()).toBeGreaterThan(0);
   expect(await page.locator('a[href^="https://github.com/zarazhangrui/frontend-slides"]').count()).toBeGreaterThan(0);
-  await expect(page.locator('footer.site-footer')).toContainText('与原作者无关联');
+  await expect(page.locator('section.attribution')).toContainText('不是原作者的官方站点');
 
   const text = await page.locator('body').innerText();
   const claims = text.split(/(?<=[。.!?])|\n/).filter((s) => /官方/.test(s) && !/不是|无关联|非/.test(s));

@@ -1,0 +1,48 @@
+{
+  "slug": "notebook-tabs",
+  "name": "Notebook Tabs",
+  "tagline": "A cream paper sheet with binder holes on a dark desk, pastel section tabs with vertical labels on the right edge, and Bodoni headlines. Adapted from the Notebook Tabs preset in frontend-slides.",
+  "mood": [
+    "editorial",
+    "organized",
+    "elegant",
+    "tactile"
+  ],
+  "occasion": [
+    "research readout",
+    "report briefing",
+    "course or workshop",
+    "project plan",
+    "board paper",
+    "editorial review"
+  ],
+  "tone": [
+    "thoughtful",
+    "structured",
+    "warm",
+    "precise"
+  ],
+  "formality": "medium",
+  "density": "medium-high",
+  "palette": {
+    "bg-outer": "#2d2d2d",
+    "bg-page": "#f8f6f1",
+    "text-primary": "#1a1a1a",
+    "tab-1": "#98d4bb",
+    "tab-2": "#c7b8ea",
+    "tab-3": "#f4b8c5",
+    "tab-4": "#a8d8ea",
+    "tab-5": "#ffe6a7",
+    "description": "a cream paper sheet with a soft shadow on a charcoal desk, near-black type, and five pastel tab colors (mint, lavender, pink, sky, cream) — one per section — used for the tabs, highlighter marks, chart highlights and section cards"
+  },
+  "typography": {
+    "display": "Bodoni Moda",
+    "body": "DM Sans",
+    "style": "high-contrast Bodoni Moda (700 headlines with 400 italic phrases) for an editorial feel, paired with a clean DM Sans for body text, item titles and tracked uppercase labels"
+  },
+  "scheme": "light",
+  "best_for": "Research readouts, report briefings, courses and workshops, project plans, board papers and editorial reviews — decks with clear sections that people may page back through. Strong for contents pages, findings, tables, checklists and quotes.",
+  "avoid_for": "High-energy launches, keynotes on huge stages and very dark rooms. The paper sheet and pastel tabs read as calm and studious, not loud.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

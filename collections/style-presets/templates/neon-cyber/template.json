@@ -1,0 +1,45 @@
+{
+  "slug": "neon-cyber",
+  "name": "Neon Cyber",
+  "tagline": "Deep navy with cyan and magenta neon, a faint grid, drifting CSS particles and bracket-cornered HUD panels. Adapted from the Neon Cyber preset in frontend-slides.",
+  "mood": [
+    "futuristic",
+    "techy",
+    "confident",
+    "electric"
+  ],
+  "occasion": [
+    "developer keynote",
+    "product launch",
+    "tech demo day",
+    "infrastructure briefing",
+    "hackathon kickoff",
+    "investor demo"
+  ],
+  "tone": [
+    "technical",
+    "bold",
+    "sleek",
+    "high-contrast"
+  ],
+  "formality": "medium",
+  "density": "medium",
+  "palette": {
+    "navy": "#0a0f1c",
+    "cyan": "#00ffcc",
+    "magenta": "#ff00aa",
+    "navy-2": "#0f1729",
+    "ink": "#e6f0ff",
+    "description": "deep navy ground with a faint cyan grid; cyan is the primary signal and glows, magenta marks the contrast (the old way, the competitor, the warning); text is a blue-tinted white"
+  },
+  "typography": {
+    "display": "Clash Display",
+    "body": "Satoshi",
+    "style": "wide geometric display in sentence case at 500/600 with tight tracking, paired with a clean grotesque body and wide-tracked uppercase cyan labels; both families from Fontshare"
+  },
+  "scheme": "dark",
+  "best_for": "Developer conferences, infrastructure and AI product launches, demo days and technical briefings where the audience should feel the product is fast and new. Strong for latency and performance numbers, before/after architecture, gauges and line charts.",
+  "avoid_for": "Traditional, conservative or print-first settings, long reading documents, and sensitive or sombre topics. Glow and particles read as playful sci-fi in the wrong room.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

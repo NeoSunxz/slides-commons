@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<!--
+  Notebook Tabs — slides-commons style-preset template.
+  A slides-commons derivative of the "Notebook Tabs" preset in frontend-slides'
+  STYLE_PRESETS.md (MIT, (c) 2025 Zara Zhang). Not an official frontend-slides file.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notebook Tabs — The Reading Room Study</title>
+
+<!-- Fonts: Bodoni Moda (display 400/700 + italic) + DM Sans (body 400/500) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;1,6..96,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   The eight preset colors come first; the rest are derived from them.
+   =========================================== */
+:root {
+    /* Preset colors (Notebook Tabs) */
+    --bg-outer: #2d2d2d;
+    --bg-page: #f8f6f1;
+    --text-primary: #1a1a1a;
+    --tab-1: #98d4bb; /* Mint */
+    --tab-2: #c7b8ea; /* Lavender */
+    --tab-3: #f4b8c5; /* Pink */
+    --tab-4: #a8d8ea; /* Sky */
+    --tab-5: #ffe6a7; /* Cream */
+
+    /* Derived tokens (transparencies of the preset colors, no new hues) */
+    --text-muted: rgba(26, 26, 26, 0.66);   /* body copy on paper */
+    --text-faint: rgba(26, 26, 26, 0.44);   /* chrome, axis labels */
+    --rule: rgba(26, 26, 26, 0.14);         /* hairlines, ruling */
+    --rule-strong: rgba(26, 26, 26, 0.8);   /* 2px heads */
+    --track: rgba(26, 26, 26, 0.10);        /* neutral chart bars */
+    --margin-line: rgba(244, 184, 197, 0.9);/* the notebook margin rule (tab-3) */
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #1f1f1f;
+    --slide-bg: var(--bg-outer);
+
+    /* Typography (authored at 1920x1080) */
+    --font-display: 'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
+    --font-body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Layout (authored at 1920x1080) */
+    --paper-x: 120px;       /* left edge of the paper */
+    --paper-right: 176px;   /* gap between paper and stage right edge (room for tabs) */
+    --paper-y: 64px;
+    --pad-left: 200px;      /* inside the paper: clears holes + margin rule */
+    --pad-right: 112px;
+    --pad-top: 136px;
+    --pad-bottom: 120px;
+
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur: 0.7s;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SLIDE BASE
+   Dark desk, one cream paper sheet per slide.
+   =========================================== */
+.slide {
+    background: var(--bg-outer);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+.d { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; font-optical-sizing: auto; }
+.d.light { font-weight: 400; }
+.d em, em.d { font-style: italic; font-weight: 400; }
+
+/* ===========================================
+   PAPER: the sheet, its binder holes and margin rule
+   =========================================== */
+.paper {
+    position: absolute;
+    z-index: 2;
+    left: var(--paper-x);
+    right: var(--paper-right);
+    top: var(--paper-y);
+    bottom: var(--paper-y);
+    background: var(--bg-page);
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 22px 48px rgba(0, 0, 0, 0.32);
+}
+/* Binder holes: five punched circles down the left edge */
+.paper::before {
+    content: "";
+    position: absolute;
+    left: 44px;
+    top: 50%;
+    width: 30px;
+    height: 30px;
+    margin-top: -15px;
+    border-radius: 50%;
+    background: var(--bg-outer);
+    box-shadow:
+        inset 0 2px 3px rgba(0, 0, 0, 0.45),
+        0 -180px 0 0 var(--bg-outer), 0 180px 0 0 var(--bg-outer),
+        0 -360px 0 0 var(--bg-outer), 0 360px 0 0 var(--bg-outer);
+}
+/* Margin rule */
+.paper::after {
+    content: "";
+    position: absolute;
+    left: 128px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--margin-line);
+}
+.sheet { position: absolute; inset: 0; padding: var(--pad-top) var(--pad-right) var(--pad-bottom) var(--pad-left); display: flex; flex-direction: column; }
+
+/* ===========================================
+   TABS: colored section tabs on the right edge, vertical text.
+   The current section's tab sits in front of the paper and sticks out further.
+   =========================================== */
+.tabs { position: absolute; z-index: 1; top: 128px; right: calc(var(--paper-right) - 64px); width: 64px; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.tabs li {
+    height: 150px;
+    width: 52px;
+    border-radius: 0 10px 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 18px;            /* fixed stage: authored size, scales with the stage */
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+.tabs li:nth-child(1) { background: var(--tab-1); }
+.tabs li:nth-child(2) { background: var(--tab-2); }
+.tabs li:nth-child(3) { background: var(--tab-3); }
+.tabs li:nth-child(4) { background: var(--tab-4); }
+.tabs li:nth-child(5) { background: var(--tab-5); }
+.tabs li.on { width: 64px; position: relative; z-index: 3; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3); }
+.tabs li:not(.on) { opacity: 0.8; }
+
+/* Section color for the current slide: set --sec on the slide */
+.slide { --sec: var(--tab-1); }
+
+/* ===========================================
+   PAPER CHROME: running head and foot inside the sheet
+   =========================================== */
+.head-run, .foot-run {
+    position: absolute;
+    left: var(--pad-left);
+    right: var(--pad-right);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+.head-run { top: 56px; padding-bottom: 18px; border-bottom: 1px solid var(--rule); }
+.foot-run { bottom: 48px; }
+.head-run b { color: var(--text-primary); font-weight: 500; }
+.chip { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: var(--sec); margin-right: 12px; vertical-align: -1px; }
+.pagenum { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.pagenum span { color: var(--text-faint); }
+
+/* ===========================================
+   TYPE SCALE
+   =========================================== */
+.label { font-size: 18px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.t-hero    { font-size: 152px; line-height: 0.98; }
+.t-display { font-size: 112px; line-height: 1.0; }
+.t-stmt    { font-size: 80px;  line-height: 1.14; font-weight: 400; }
+.t-title   { font-size: 72px;  line-height: 1.04; }
+.t-sub     { font-size: 44px;  line-height: 1.12; }
+.h3        { font-family: var(--font-body); font-size: 30px; line-height: 1.2; font-weight: 500; }
+.lede      { font-family: var(--font-display); font-style: italic; font-size: 40px; line-height: 1.3; font-weight: 400; }
+.body      { font-size: 26px; line-height: 1.55; color: var(--text-muted); }
+.small     { font-size: 22px; line-height: 1.5;  color: var(--text-muted); }
+.label + .d { margin-top: 24px; }
+.d + .body, .d + .lede { margin-top: 28px; }
+
+/* Highlighter: the lower part of a phrase marked in the section color */
+.hl { background: linear-gradient(transparent 58%, var(--sec) 58%, var(--sec) 92%, transparent 92%); padding: 0 0.06em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+/* Pill tag in a tab color */
+.tag { display: inline-block; align-self: flex-start; padding: 8px 16px 7px; border-radius: 6px; font-size: 18px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; background: var(--sec); }
+
+/* ===========================================
+   SLIDE 1 — COVER
+   =========================================== */
+.s-cover .sheet { justify-content: space-between; }
+.s-cover .lede { max-width: 1100px; color: var(--text-muted); }
+.meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; border-top: 2px solid var(--rule-strong); padding-top: 28px; }
+.meta dd { font-size: 26px; line-height: 1.4; margin-top: 10px; }
+.swatches { display: flex; gap: 10px; margin-top: 36px; }
+.swatches i { width: 56px; height: 14px; border-radius: 3px; }
+
+/* ===========================================
+   SLIDE 2 — CONTENTS
+   =========================================== */
+.s-contents .sheet { flex-direction: row; gap: 112px; }
+.s-contents .intro { width: 440px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.toc { list-style: none; flex: 1; display: grid; grid-template-rows: repeat(5, 1fr); }
+.toc li { display: grid; grid-template-columns: 36px auto 1fr auto; align-items: baseline; gap: 20px; border-bottom: 1px solid var(--rule); padding-top: 36px; }
+.toc li:first-child { border-top: 2px solid var(--rule-strong); }
+.toc .sw { width: 22px; height: 22px; border-radius: 4px; align-self: start; margin-top: 16px; }
+.toc .name { font-family: var(--font-display); font-size: 44px; line-height: 1.1; font-weight: 400; }
+.toc .name small { display: block; font-family: var(--font-body); font-size: 20px; color: var(--text-muted); margin-top: 6px; }
+.toc .leader { border-bottom: 2px dotted var(--text-faint); transform: translateY(-10px); }
+.toc .pg { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* ===========================================
+   SLIDE 3 — SECTION DIVIDER
+   =========================================== */
+.s-divider .sheet { flex-direction: row; gap: 96px; padding-top: 136px; }
+.divider-card { width: 600px; flex: none; background: var(--sec); border-radius: 6px; padding: 48px 56px; display: flex; flex-direction: column; justify-content: space-between; }
+.divider-card .num { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 360px; line-height: 0.78; letter-spacing: -0.03em; }
+.s-divider .side { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+.s-divider .side .body { max-width: 760px; }
+
+/* ===========================================
+   SLIDE 4 — STATEMENT
+   =========================================== */
+.s-statement .sheet { justify-content: center; }
+.s-statement .t-stmt { max-width: 1320px; margin-top: 32px; }
+.s-statement .small { margin-top: 48px; color: var(--text-faint); }
+
+/* ===========================================
+   SLIDE 5 — LIST (index cards, 2 x 2)
+   =========================================== */
+.s-list .sheet { flex-direction: row; gap: 96px; }
+.s-list .intro { width: 460px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.cards { flex: 1; list-style: none; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 28px; }
+.cards li { background: #fff; border: 1px solid var(--rule); border-top: 10px solid var(--c); border-radius: 4px; padding: 32px 36px; display: flex; flex-direction: column; }
+.cards .n { font-family: var(--font-display); font-style: italic; font-size: 40px; line-height: 1; }
+.cards .h3 { margin-top: auto; }
+.cards .small { margin-top: 10px; }
+
+/* ===========================================
+   SLIDE 6 — TWO COLUMNS on ruled paper
+   =========================================== */
+.s-two .grid2 { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 96px; margin-top: 48px; }
+.s-two .col { display: flex; flex-direction: column; min-width: 0; }
+.ruled { list-style: none; margin-top: 28px; background: repeating-linear-gradient(to bottom, transparent 0, transparent 71px, var(--rule) 71px, var(--rule) 72px); border-top: 2px solid var(--rule-strong); }
+.ruled li { height: 72px; display: flex; align-items: center; gap: 18px; font-size: 26px; }
+.ruled li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.35); }
+.col.assumed .ruled li { color: var(--text-muted); }
+
+/* ===========================================
+   SLIDE 7 — BIG NUMBER + STATS
+   =========================================== */
+.s-stats .sheet { flex-direction: row; gap: 96px; }
+.s-stats .hero { flex: 1.1; display: flex; flex-direction: column; justify-content: flex-end; }
+.stat-xl { font-family: var(--font-display); font-weight: 700; font-size: 280px; line-height: 0.82; letter-spacing: -0.03em; }
+.sec-bar { display: block; width: 240px; height: 16px; border-radius: 3px; background: var(--sec); margin-top: 28px; box-shadow: inset 0 0 0 1.5px rgba(26, 26, 26, 0.55); }
+.s-stats .hero .lede { margin-top: 28px; max-width: 720px; }
+.s-stats .rows { flex: 1; display: grid; grid-template-rows: repeat(3, 1fr); }
+.s-stats .row { display: flex; flex-direction: column; justify-content: center; border-top: 1px solid var(--rule); }
+.s-stats .row:first-child { border-top: 2px solid var(--rule-strong); }
+.s-stats .row .num { font-family: var(--font-display); font-weight: 700; font-size: 88px; line-height: 1; letter-spacing: -0.02em; }
+.s-stats .row .small { margin-top: 8px; }
+
+/* ===========================================
+   SLIDE 8 — HORIZONTAL BAR CHART (pure CSS)
+   =========================================== */
+.s-chart .sheet { flex-direction: row; gap: 96px; }
+.s-chart .intro { width: 440px; flex: none; display: flex; flex-direction: column; justify-content: flex-end; }
+.hchart { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
+.hchart .axis-head { display: grid; grid-template-columns: 340px 1fr 96px; padding-bottom: 14px; border-bottom: 2px solid var(--rule-strong); color: var(--text-faint); }
+.hchart .axis-head span:last-child { text-align: right; }
+.hrow { display: grid; grid-template-columns: 340px 1fr 96px; align-items: center; height: 84px; border-bottom: 1px solid var(--rule); }
+.hrow .name { font-size: 24px; }
+.hrow .track { height: 32px; }
+.hrow .bar { height: 100%; width: var(--w); background: var(--track); border-radius: 0 4px 4px 0; transform-origin: left; }
+.hrow .val { text-align: right; font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.hrow.hi .name { font-weight: 500; }
+.hrow.hi .bar { background: var(--sec); box-shadow: inset 0 0 0 1.5px rgba(26, 26, 26, 0.55); }
+.hrow.hi .val { font-family: var(--font-display); font-weight: 700; font-size: 40px; }
+
+/* ===========================================
+   SLIDE 9 — COMPARISON TABLE
+   =========================================== */
+.s-compare .top-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.s-compare .table-wrap { flex: 1; margin-top: 48px; }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; padding: 0 28px; border-bottom: 1px solid var(--rule); }
+thead th { height: 72px; font-size: 18px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--rule-strong); }
+thead th.us { background: var(--sec); color: var(--text-primary); border-radius: 6px 6px 0 0; }
+tbody th { font-family: var(--font-display); font-weight: 400; font-size: 34px; }
+tbody td { font-size: 24px; color: var(--text-muted); }
+tbody td.us { background: #fff; color: var(--text-primary); font-weight: 500; }
+tbody tr:last-child td.us { border-radius: 0 0 6px 6px; }
+th:first-child { width: 28%; padding-left: 0; }
+.score { display: inline-flex; gap: 6px; vertical-align: -2px; margin-right: 14px; }
+.score i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text-primary); }
+.score i.f { background: var(--text-primary); }
+
+/* ===========================================
+   SLIDE 10 — QUOTE
+   =========================================== */
+.s-quote .sheet { justify-content: center; }
+.qmark { font-family: var(--font-display); font-weight: 700; font-size: 280px; line-height: 0.62; height: 120px; color: var(--text-primary); }
+.s-quote blockquote { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 68px; line-height: 1.2; max-width: 1300px; margin-top: 28px; }
+.s-quote .who { display: flex; align-items: center; gap: 20px; margin-top: 48px; }
+.s-quote .who .name { font-size: 26px; font-weight: 500; }
+
+/* ===========================================
+   SLIDE 11 — CLOSING (checklist)
+   =========================================== */
+.s-close .sheet { flex-direction: row; gap: 112px; }
+.s-close .intro { width: 600px; flex: none; display: flex; flex-direction: column; justify-content: space-between; }
+.s-close .contact p { font-size: 24px; line-height: 1.55; }
+.s-close .contact p + p { color: var(--text-muted); }
+.checks { list-style: none; flex: 1; display: grid; grid-template-rows: repeat(4, 1fr); border-top: 2px solid var(--rule-strong); }
+.checks li { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--rule); }
+.box { width: 32px; height: 32px; border: 2px solid var(--text-primary); border-radius: 5px; position: relative; }
+.box.done { background: var(--tab-1); }
+.box.done::after { content: ""; position: absolute; left: 9px; top: 3px; width: 9px; height: 17px; border: solid var(--text-primary); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.checks .h3 { font-size: 30px; }
+.checks .small { margin-top: 4px; }
+.checks .when { font-family: var(--font-display); font-style: italic; font-size: 32px; }
+
+/* ===========================================
+   ANIMATIONS
+   Triggered by .visible on the active slide. --i sets the stagger step.
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--dur) var(--ease-out-expo), transform var(--dur) var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 90ms + 120ms);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+
+/* The current tab slides out from behind the paper */
+.tabs li.on { transform: translateX(-24px); transition: transform 0.7s var(--ease-out-expo) 0.2s; }
+.slide.visible .tabs li.on { transform: none; }
+
+/* Highlighter strokes draw left to right */
+.hl { background-size: 0% 100%; background-repeat: no-repeat; transition: background-size 0.9s var(--ease-out-expo) 0.5s; }
+.slide.visible .hl { background-size: 100% 100%; }
+
+/* Bars grow from the axis */
+.grow { transform: scaleX(0); transition: transform 0.9s var(--ease-out-expo); transition-delay: calc(var(--i, 0) * 70ms + 200ms); }
+.slide.visible .grow { transform: scaleX(1); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide s-cover active visible" style="--sec:var(--tab-1)" data-label="Cover">
+        <ol class="tabs" aria-hidden="true"><li class="on">Context</li><li>Findings</li><li>Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div>
+                    <p class="label reveal">UX research · April 2027</p>
+                    <h1 class="d t-hero reveal" style="--i:1">The Reading<br>Room Study</h1>
+                    <p class="lede reveal" style="--i:2">How twelve hundred people really use a quiet room — and what they wish it did.</p>
+                </div>
+                <dl class="meta reveal" style="--i:3">
+                    <div><dt class="label">Prepared by</dt><dd>Library UX Research, with the Reference team</dd></div>
+                    <div><dt class="label">Method</dt><dd>46 interviews and nine weeks of seat counts</dd></div>
+                    <div><dt class="label">For</dt><dd>The Board of Trustees, draft 2</dd></div>
+                </dl>
+            </div>
+            <div class="foot-run"><span>Context</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 2. CONTENTS ========================================= -->
+    <section class="slide s-contents" style="--sec:var(--tab-1)" data-label="Contents">
+        <ol class="tabs" aria-hidden="true"><li class="on">Context</li><li>Findings</li><li>Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="intro">
+                    <p class="label reveal">In this notebook</p>
+                    <h2 class="d t-display reveal" style="--i:1">Contents</h2>
+                    <p class="body reveal" style="--i:2">Five sections, each with its own tab on the right.</p>
+                </div>
+                <ol class="toc">
+                    <li class="reveal" style="--i:1"><i class="sw" style="background:var(--tab-1)"></i><span class="name">Context<small>Why we studied the reading room</small></span><i class="leader"></i><span class="pg">02</span></li>
+                    <li class="reveal" style="--i:2"><i class="sw" style="background:var(--tab-2)"></i><span class="name">Findings<small>What 46 people told us</small></span><i class="leader"></i><span class="pg">03</span></li>
+                    <li class="reveal" style="--i:3"><i class="sw" style="background:var(--tab-3)"></i><span class="name">Patterns<small>Where our assumptions were wrong</small></span><i class="leader"></i><span class="pg">06</span></li>
+                    <li class="reveal" style="--i:4"><i class="sw" style="background:var(--tab-4)"></i><span class="name">Evidence<small>Seat counts, surveys and one quote</small></span><i class="leader"></i><span class="pg">07</span></li>
+                    <li class="reveal" style="--i:5"><i class="sw" style="background:var(--tab-5)"></i><span class="name">Next<small>Four changes for the autumn</small></span><i class="leader"></i><span class="pg">11</span></li>
+                </ol>
+            </div>
+            <div class="foot-run"><span>Context</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 3. SECTION DIVIDER ================================== -->
+    <section class="slide s-divider" style="--sec:var(--tab-2)" data-label="Section 2">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li class="on">Findings</li><li>Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="divider-card reveal">
+                    <p class="label" style="color:var(--text-primary)">Section</p>
+                    <div class="num">II</div>
+                </div>
+                <div class="side">
+                    <p class="label reveal" style="--i:1">Three pages</p>
+                    <h2 class="d t-display reveal" style="--i:2">What we<br><em>found</em></h2>
+                    <p class="body reveal" style="--i:3">People don't come to the reading room for the books. They come for permission to stay.</p>
+                </div>
+            </div>
+            <div class="foot-run"><span>Findings</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 4. STATEMENT ======================================== -->
+    <section class="slide s-statement" style="--sec:var(--tab-2)" data-label="Statement">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li class="on">Findings</li><li>Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <p class="label reveal">The headline finding</p>
+                <h2 class="d t-stmt reveal" style="--i:1">Most visitors never open a library book. They come for <span class="hl">a quiet seat, a plug and no time limit</span>.</h2>
+                <p class="small reveal" style="--i:2">Seat-level observation, 1,214 visits, 3 February – 6 April 2027.</p>
+            </div>
+            <div class="foot-run"><span>Findings</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 5. LIST ============================================= -->
+    <section class="slide s-list" style="--sec:var(--tab-2)" data-label="Four needs">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li class="on">Findings</li><li>Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="intro">
+                    <p class="label reveal">What we heard</p>
+                    <h2 class="d t-title reveal" style="--i:1">Four needs, in their <em>own words</em></h2>
+                    <p class="body reveal" style="--i:2">Grouped from 46 interviews; each card was raised by at least a third of people.</p>
+                </div>
+                <ol class="cards">
+                    <li class="reveal" style="--i:2;--c:var(--tab-1)"><span class="n">i.</span><h3 class="h3">Stay all day</h3><p class="small">“I need to know nobody will ask me to move after two hours.”</p></li>
+                    <li class="reveal" style="--i:3;--c:var(--tab-2)"><span class="n">ii.</span><h3 class="h3">Power at every seat</h3><p class="small">“I pick my seat by where the sockets are, not the light.”</p></li>
+                    <li class="reveal" style="--i:4;--c:var(--tab-3)"><span class="n">iii.</span><h3 class="h3">Real silence</h3><p class="small">“Quiet means no calls. Whispering is fine, phones are not.”</p></li>
+                    <li class="reveal" style="--i:5;--c:var(--tab-4)"><span class="n">iv.</span><h3 class="h3">Somewhere to eat</h3><p class="small">“I leave at lunch and lose my seat. So I don't eat.”</p></li>
+                </ol>
+            </div>
+            <div class="foot-run"><span>Findings</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 6. TWO COLUMNS ====================================== -->
+    <section class="slide s-two" style="--sec:var(--tab-3)" data-label="Assumed and found">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li class="on">Patterns</li><li>Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <p class="label reveal">Patterns</p>
+                <h2 class="d t-title reveal" style="--i:1">What we assumed, <em>what we found</em></h2>
+                <div class="grid2">
+                    <div class="col assumed reveal" style="--i:2;--c:var(--bg-page)">
+                        <span class="tag" style="background:var(--tab-4)">We assumed</span>
+                        <ul class="ruled">
+                            <li>Visitors are mostly students</li>
+                            <li>Busiest in exam season</li>
+                            <li>People want more books on the shelves</li>
+                            <li>Two-hour limits keep seats fair</li>
+                        </ul>
+                    </div>
+                    <div class="col reveal" style="--i:3;--c:var(--tab-3)">
+                        <span class="tag">We found</span>
+                        <ul class="ruled">
+                            <li>58% are remote workers or job-seekers</li>
+                            <li>Full every weekday from 10 am</li>
+                            <li>People want power, light and tables</li>
+                            <li>Limits push people out at lunch</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="foot-run"><span>Patterns</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 7. BIG NUMBER + STATS =============================== -->
+    <section class="slide s-stats" style="--sec:var(--tab-4)" data-label="Key numbers">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li>Patterns</li><li class="on">Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="hero">
+                    <p class="label reveal">Evidence · seat counts</p>
+                    <div class="stat-xl reveal" style="--i:1;margin-top:40px">94%</div>
+                    <i class="sec-bar reveal" style="--i:2" aria-hidden="true"></i>
+                    <p class="lede reveal" style="--i:2">of seats taken by 11 am on a weekday, against 61% in the main hall.</p>
+                </div>
+                <div class="rows">
+                    <div class="row reveal" style="--i:3"><span class="num">3 h 40</span><p class="small">median stay, nearly twice the posted limit</p></div>
+                    <div class="row reveal" style="--i:4"><span class="num">1 in 5</span><p class="small">visitors leave because they can't find a socket</p></div>
+                    <div class="row reveal" style="--i:5"><span class="num">8%</span><p class="small">of visits involve a library book</p></div>
+                </div>
+            </div>
+            <div class="foot-run"><span>Evidence</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 8. BAR CHART ======================================== -->
+    <section class="slide s-chart" style="--sec:var(--tab-4)" data-label="Reasons chart">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li>Patterns</li><li class="on">Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="intro">
+                    <p class="label reveal">Evidence · exit survey</p>
+                    <h2 class="d t-title reveal" style="--i:1">Why people <em>came in</em></h2>
+                    <p class="body reveal" style="--i:2">Work beats reading by almost three to one.</p>
+                </div>
+                <div class="hchart" role="img" aria-label="Horizontal bar chart of main reasons for visiting: work or study on own laptop 46%, reading own book 17%, printing or forms 12%, borrowing books 9%, meeting someone 8%, somewhere warm 8%.">
+                    <div class="axis-head label reveal" style="--i:1"><span>Main reason for the visit</span><span>Share of 612 respondents</span><span>%</span></div>
+                    <!-- Bar width = share / 50 (the axis maximum) -->
+                    <div class="hrow hi reveal" style="--i:2"><span class="name">Work or study on own laptop</span><div class="track"><div class="bar grow" style="--w:92%;--i:2"></div></div><span class="val">46</span></div>
+                    <div class="hrow reveal" style="--i:2"><span class="name">Reading their own book</span><div class="track"><div class="bar grow" style="--w:34%;--i:3"></div></div><span class="val">17</span></div>
+                    <div class="hrow reveal" style="--i:3"><span class="name">Printing or forms</span><div class="track"><div class="bar grow" style="--w:24%;--i:4"></div></div><span class="val">12</span></div>
+                    <div class="hrow reveal" style="--i:3"><span class="name">Borrowing books</span><div class="track"><div class="bar grow" style="--w:18%;--i:5"></div></div><span class="val">9</span></div>
+                    <div class="hrow reveal" style="--i:4"><span class="name">Meeting someone</span><div class="track"><div class="bar grow" style="--w:16%;--i:6"></div></div><span class="val">8</span></div>
+                    <div class="hrow reveal" style="--i:4"><span class="name">Somewhere warm</span><div class="track"><div class="bar grow" style="--w:16%;--i:7"></div></div><span class="val">8</span></div>
+                </div>
+            </div>
+            <div class="foot-run"><span>Evidence</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 9. COMPARISON TABLE ================================= -->
+    <section class="slide s-compare" style="--sec:var(--tab-4)" data-label="Rooms compared">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li>Patterns</li><li class="on">Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="top-row">
+                    <div>
+                        <p class="label reveal">Evidence · three rooms</p>
+                        <h2 class="d t-title reveal" style="--i:1">How the rooms <em>compare</em></h2>
+                    </div>
+                    <p class="small reveal" style="--i:2">Satisfaction: ● = 1 point out of 5</p>
+                </div>
+                <div class="table-wrap reveal" style="--i:3">
+                    <table>
+                        <thead><tr><th>&nbsp;</th><th>Main hall</th><th class="us">Reading room</th><th>Study pods</th></tr></thead>
+                        <tbody>
+                            <tr><th>Seats</th><td>140</td><td class="us">64</td><td>12</td></tr>
+                            <tr><th>Median stay</th><td>1 h 55</td><td class="us">3 h 40</td><td>2 h 00 (booked)</td></tr>
+                            <tr><th>Sockets per seat</th><td>0.2</td><td class="us">0.4</td><td>2.0</td></tr>
+                            <tr><th>Satisfaction</th><td><span class="score"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span>3.1</td><td class="us"><span class="score"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span>4.2</td><td><span class="score"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span>3.8</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="foot-run"><span>Evidence</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 10. QUOTE =========================================== -->
+    <section class="slide s-quote" style="--sec:var(--tab-4)" data-label="Participant quote">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li>Patterns</li><li class="on">Evidence</li><li>Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="qmark reveal" aria-hidden="true">“</div>
+                <blockquote class="reveal" style="--i:1">This is the only room in the city where I can sit for a whole day without buying anything.</blockquote>
+                <div class="who reveal" style="--i:2"><span class="tag">P14</span><span class="name">Freelance translator, visits four days a week</span></div>
+            </div>
+            <div class="foot-run"><span>Evidence</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+    <!-- ============== 11. CLOSING ========================================= -->
+    <section class="slide s-close" style="--sec:var(--tab-5)" data-label="Next steps">
+        <ol class="tabs" aria-hidden="true"><li>Context</li><li>Findings</li><li>Patterns</li><li>Evidence</li><li class="on">Next</li></ol>
+        <div class="paper">
+            <div class="head-run"><span><i class="chip"></i><b>Hollis Public Library</b></span><span>Research readout</span></div>
+            <div class="sheet">
+                <div class="intro">
+                    <div>
+                        <p class="label reveal">Next</p>
+                        <h2 class="d t-display reveal" style="--i:1;font-size:96px">Four changes <em>for&nbsp;autumn</em></h2>
+                    </div>
+                    <div class="contact reveal" style="--i:2">
+                        <p>Questions: Ruth Adeyemi, UX Research</p>
+                        <p>ruth.adeyemi@hollis-library.example</p>
+                    </div>
+                </div>
+                <ol class="checks">
+                    <li class="reveal" style="--i:2"><i class="box done"></i><div><h3 class="h3">Share findings with trustees</h3><p class="small">This readout, with the full notes attached</p></div><span class="when">Today</span></li>
+                    <li class="reveal" style="--i:3"><i class="box"></i><div><h3 class="h3">Drop the two-hour limit</h3><p class="small">Six-week trial in the reading room</p></div><span class="when">1 June</span></li>
+                    <li class="reveal" style="--i:4"><i class="box"></i><div><h3 class="h3">Add power to every table</h3><p class="small">64 seats, quote from facilities due in May</p></div><span class="when">August</span></li>
+                    <li class="reveal" style="--i:5"><i class="box"></i><div><h3 class="h3">Open a lunch corner</h3><p class="small">Next to the reading room, seats held for 45 min</p></div><span class="when">September</span></li>
+                </ol>
+            </div>
+            <div class="foot-run"><span>Next</span><span class="pagenum" data-pagenum></span></div>
+        </div>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</body>
+</html>

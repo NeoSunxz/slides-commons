@@ -9,6 +9,7 @@
   panel.hidden = false;
 
   var input = document.getElementById('q');
+  input.closest('.fsearch').hidden = false;
   var countEl = document.getElementById('fcount');
   var clearBtn = document.getElementById('fclear');
   var noneEl = document.getElementById('fnone');
@@ -72,6 +73,8 @@
     countEl.textContent = countEl.getAttribute('data-template').replace('{n}', shown).replace('{total}', total);
     var active = Boolean(state.q || state.source.length || state.scheme.length || state.mood.length);
     clearBtn.hidden = !active;
+    var extra = panel.querySelector('.filter-extra');
+    if (extra && (state.source.length || state.mood.length)) extra.open = true;
     noneEl.hidden = shown !== 0;
     // A chip hidden inside a closed "more" list must not hide an active filter.
     var more = panel.querySelector('details.more');

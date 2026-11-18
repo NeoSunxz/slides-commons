@@ -1,0 +1,51 @@
+{
+  "slug": "boardroom-quarterly",
+  "name": "Boardroom Quarterly",
+  "tagline": "Calm, high-density board and quarterly business review deck on white: KPI cards with deltas, SVG trend charts, conditionally coloured tables, RAG status and a risk register. Original slides-commons design.",
+  "mood": [
+    "calm",
+    "corporate",
+    "trustworthy",
+    "data-dense"
+  ],
+  "occasion": [
+    "board meeting",
+    "quarterly business review",
+    "investor update",
+    "monthly business review",
+    "operating review",
+    "budget review"
+  ],
+  "tone": [
+    "formal",
+    "factual",
+    "transparent",
+    "measured"
+  ],
+  "formality": "high",
+  "density": "high",
+  "palette": {
+    "paper": "#FFFFFF",
+    "ink": "#0F172A",
+    "text": "#1E293B",
+    "muted": "#475569",
+    "line": "#CBD5E1",
+    "panel": "#F8FAFC",
+    "blue": "#2357C6",
+    "blue-tint": "#EEF3FD",
+    "good": "#157F3B",
+    "warn": "#A15C00",
+    "bad": "#B42318",
+    "description": "white canvas with slate neutrals, one calm corporate blue for the brand and the actual-data series, and semantic green / amber / red used only for status, favourable / unfavourable variances and the risk heat scale"
+  },
+  "typography": {
+    "display": "Hanken Grotesk",
+    "body": "Hanken Grotesk",
+    "style": "one clean grotesque family at 400-700 for everything, tight bold titles, uppercase tracked labels and tabular lining figures in every number"
+  },
+  "scheme": "light",
+  "best_for": "Board packs, quarterly and monthly business reviews, investor updates and operating reviews: KPI scorecards, actual-vs-plan trends, P&L variance tables, segment bullet charts, regional heatmaps, initiative RAG status, risk registers, outlook ranges and appendix metric tables.",
+  "avoid_for": "Pitches, keynotes and storytelling decks with few numbers; creative or consumer audiences. The system expects real data on most slides and looks bare without it.",
+  "slide_count": 12,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

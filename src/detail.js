@@ -84,6 +84,36 @@
     document.addEventListener('webkitfullscreenchange', fit);
   }
 
+  if (box) {
+    var previewSection = box.closest('.preview');
+    var detailHeading = document.querySelector('.hero');
+    var previewControls = previewSection.querySelector('.controls');
+    var previewHint = previewSection.querySelector('.hint');
+    var fitFrame = 0;
+    function fitFirstScreen() {
+      fitFrame = 0;
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      var controlsStyle = getComputedStyle(previewControls);
+      var hintStyle = getComputedStyle(previewHint);
+      var reserved = previewControls.offsetHeight + parseFloat(controlsStyle.marginTop) + previewHint.offsetHeight + parseFloat(hintStyle.marginTop) + 20;
+      var available = innerHeight - (previewSection.getBoundingClientRect().top + scrollY) - reserved;
+      if (innerWidth > 1000 && available >= 240) previewSection.style.setProperty('--preview-fit-width', Math.floor(available * 16 / 9) + 'px');
+      else previewSection.style.removeProperty('--preview-fit-width');
+    }
+    function scheduleFirstScreen() {
+      if (!fitFrame) fitFrame = requestAnimationFrame(fitFirstScreen);
+    }
+    if (window.ResizeObserver) {
+      var firstScreenObserver = new ResizeObserver(scheduleFirstScreen);
+      [detailHeading, previewControls, previewHint].forEach(function (element) { firstScreenObserver.observe(element); });
+    }
+    window.addEventListener('resize', scheduleFirstScreen);
+    document.addEventListener('fullscreenchange', scheduleFirstScreen);
+    document.addEventListener('webkitfullscreenchange', scheduleFirstScreen);
+    document.fonts.ready.then(scheduleFirstScreen);
+    fitFirstScreen();
+  }
+
   // --- Fullscreen ------------------------------------------------------------
   // Fullscreen the frame's container (not the iframe, which would need allow="fullscreen").
   // The deck inside letterboxes itself. Esc exits (browser default).

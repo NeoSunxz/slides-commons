@@ -1,0 +1,45 @@
+{
+  "slug": "bold-signal",
+  "name": "Bold Signal",
+  "tagline": "One vivid orange card on a dark gradient, with big section numbers and breadcrumb navigation. Adapted from the Bold Signal preset in frontend-slides.",
+  "mood": [
+    "confident",
+    "bold",
+    "modern",
+    "high-impact"
+  ],
+  "occasion": [
+    "product launch",
+    "sales kickoff",
+    "founder pitch",
+    "all-hands",
+    "conference talk",
+    "results review"
+  ],
+  "tone": [
+    "bold",
+    "direct",
+    "graphic",
+    "high-contrast"
+  ],
+  "formality": "medium",
+  "density": "medium",
+  "palette": {
+    "bg-primary": "#1a1a1a",
+    "bg-gradient": "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)",
+    "card-bg": "#FF5722",
+    "text-primary": "#ffffff",
+    "text-on-card": "#1a1a1a",
+    "description": "near-black diagonal gradient, one vivid orange card per slide as the focal point, white type on dark and near-black type on orange"
+  },
+  "typography": {
+    "display": "Archivo Black",
+    "body": "Space Grotesk",
+    "style": "heavy single-weight grotesque display in sentence case with tight tracking, paired with a geometric sans for body and wide-tracked uppercase labels"
+  },
+  "scheme": "dark",
+  "best_for": "Decks that need to land a few points hard: product launches, sales kickoffs, founder pitches, all-hands updates and results reviews. Strong for big-number stats, section-by-section stories and before/after comparisons.",
+  "avoid_for": "Quiet, academic or traditional settings, and long reading documents with many paragraphs. The orange card and heavy display face make every slide loud.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

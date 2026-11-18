@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<!--
+  Terminal Green — slides-commons style-preset template.
+  A slides-commons derivative of the "Terminal Green" preset in frontend-slides'
+  STYLE_PRESETS.md (MIT, (c) 2025 Zara Zhang). Not an official frontend-slides file.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal Green — ci-speedrun: Platform All-Hands</title>
+
+<!-- Font: JetBrains Mono only (400/500/700/800 + 400 italic for comments) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES (THEME)
+   The two preset colors come first; the rest are derived from them.
+   =========================================== */
+:root {
+    /* Preset colors (Terminal Green) */
+    --bg: #0d1117;          /* GitHub dark */
+    --green: #39d353;       /* terminal green */
+
+    /* Derived: GitHub-dark neutral steps */
+    --surface: #161b22;     /* title bar, status bar, code panels */
+    --surface-2: #1c2128;   /* highlighted row */
+    --border: #30363d;      /* panel borders, table rules */
+    --text: #e6edf3;        /* primary text */
+    --muted: #8b949e;       /* comments, secondary text */
+    --faint: #6e7681;       /* line numbers, axis labels */
+
+    /* Derived: green ramp (darker steps of the preset green) */
+    --green-1: #0e4429;     /* selection / added-line background */
+    --green-2: #006d32;
+    --green-3: #26a641;     /* markdown markers, secondary bars */
+    --green-soft: #9be9a8;  /* strings in code */
+
+    /* Derived: one error hue, for removed diff lines and failures only */
+    --red: #f85149;
+    --red-bg: rgba(248, 81, 73, 0.12);
+
+    /* Stage colors used by viewport-base.css */
+    --stage-bg: #010409;
+    --slide-bg: var(--bg);
+
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+    /* Layout (authored at 1920x1080) */
+    --pad-x: 120px;
+    --frame-top: 160px;
+    --frame-bottom: 136px;
+    --gutter: 32px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* The cursor blink and scan-line drift stop completely under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    .cursor, .slide::after { animation: none !important; }
+}
+
+/* ===========================================
+   SLIDE BASE
+   GitHub-dark background, a faint green glow from the top,
+   and scan lines over everything.
+   =========================================== */
+.slide {
+    background:
+        radial-gradient(1400px 600px at 50% -10%, rgba(57, 211, 83, 0.06), transparent 70%),
+        var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-variant-ligatures: contextual;
+    -webkit-font-smoothing: antialiased;
+}
+/* Scan lines: 1px dark line every 4px, plus a soft vignette. Above content, never interactive. */
+.slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 4px),
+        radial-gradient(ellipse 90% 85% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+}
+.slide.active::after { animation: scan 9s linear infinite; }
+@keyframes scan { to { background-position: 0 64px, 0 0; } }
+
+.titlebar, .status, .frame { position: absolute; z-index: 2; }
+
+/* ===========================================
+   CHROME: terminal title bar on top, tmux-style status line at the bottom.
+   =========================================== */
+.titlebar {
+    top: 0; left: 0; right: 0;
+    height: 72px;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 20px;
+    color: var(--muted);
+}
+.dots { display: flex; gap: 12px; }
+.dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); }
+.dots i:first-child { background: var(--border); }
+.titlebar .path { flex: 1; }
+.titlebar .path b { color: var(--text); font-weight: 500; }
+.titlebar .dim { color: var(--faint); }
+
+.status {
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    padding: 0 40px 0 0;
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 19px;
+    color: var(--muted);
+}
+.status .session { background: var(--green); color: var(--bg); font-weight: 700; height: 100%; display: flex; align-items: center; padding: 0 24px 0 40px; margin-right: 28px; }
+.status ol { list-style: none; display: flex; gap: 6px; flex: 1; }
+.status li { padding: 4px 14px; }
+.status li.on { background: var(--green-1); color: var(--green); font-weight: 700; }
+.status li.on::after { content: "*"; }
+.status .right { display: flex; gap: 28px; }
+.pagenum { color: var(--text); font-variant-numeric: tabular-nums; }
+.pagenum span { color: var(--faint); }
+
+/* ===========================================
+   FRAME: 12 x 6 grid, 1680 x 784 px, 32px gutters
+   =========================================== */
+.frame {
+    top: var(--frame-top);
+    left: var(--pad-x);
+    right: var(--pad-x);
+    bottom: var(--frame-bottom);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: var(--gutter);
+}
+.stack { display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
+
+/* ===========================================
+   TYPE: one family, hierarchy from size, weight and color
+   =========================================== */
+.t-hero    { font-size: 136px; line-height: 1.0;  font-weight: 800; letter-spacing: -0.03em; }
+.t-display { font-size: 104px; line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
+.t-stmt    { font-size: 68px;  line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; }
+.t-title   { font-size: 60px;  line-height: 1.12; font-weight: 700; letter-spacing: -0.02em; }
+.lede  { font-size: 30px; line-height: 1.5;  color: var(--text); }
+.body  { font-size: 26px; line-height: 1.55; color: var(--muted); }
+.small { font-size: 21px; line-height: 1.5;  color: var(--muted); }
+.cmt   { color: var(--muted); font-style: italic; }   /* # comment / label */
+.label { font-size: 20px; line-height: 1.3; color: var(--muted); font-style: italic; }
+.label::before { content: "# "; color: var(--faint); font-style: normal; }
+.label + h1, .label + h2 { margin-top: 24px; }
+h1 + .body, h2 + .body, h1 + .lede, h2 + .lede { margin-top: 28px; }
+
+/* Markdown heading markers and accents */
+.md { color: var(--green-3); font-weight: 400; margin-right: 0.15em; }
+.g  { color: var(--green); }
+.sel { background: var(--green-1); color: var(--green); box-shadow: 0 0 0 0.08em var(--green-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.prompt { color: var(--green); font-weight: 700; }
+.cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.9em;
+    margin-left: 0.08em;
+    vertical-align: -0.06em;
+    background: var(--green);
+    box-shadow: 0 0 18px rgba(57, 211, 83, 0.45);
+    animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Code panel: a pane with a header tab and line numbers */
+.pane { background: var(--surface); border: 1px solid var(--border); min-width: 0; display: flex; flex-direction: column; }
+.pane-head { display: flex; justify-content: space-between; align-items: center; height: 56px; padding: 0 28px; border-bottom: 1px solid var(--border); font-size: 19px; color: var(--muted); }
+.pane-head b { color: var(--text); font-weight: 500; }
+.code { list-style: none; padding: 20px 0; font-size: 26px; line-height: 1.75; counter-reset: ln; flex: 1; }
+.code li { display: grid; grid-template-columns: 64px 32px 1fr; padding-right: 24px; white-space: pre; counter-increment: ln; }
+.code li::before { content: counter(ln); text-align: right; padding-right: 18px; color: var(--faint); }
+.code li .mk { color: var(--faint); }
+.code li.add { background: rgba(57, 211, 83, 0.1); }
+.code li.add .mk { color: var(--green); }
+.code li.del { background: var(--red-bg); }
+.code li.del .mk { color: var(--red); }
+/* syntax */
+.k { color: var(--green); font-weight: 700; }      /* key / keyword */
+.s { color: var(--green-soft); }                   /* string */
+.n { color: var(--text); text-decoration: underline; text-decoration-color: var(--green-3); text-underline-offset: 5px; } /* number */
+.c { color: var(--muted); font-style: italic; }    /* comment */
+.p { color: var(--faint); }                        /* punctuation */
+
+/* ===========================================
+   SLIDE 1 — COVER (a terminal session)
+   =========================================== */
+.s-cover .main { grid-column: 1 / span 8; grid-row: 1 / span 6; justify-content: space-between; }
+.cmdline { font-size: 26px; line-height: 1.6; }
+.cmdline .out { color: var(--muted); }
+.cmdline .ok { color: var(--green); }
+.s-cover .lede { margin-top: 32px; max-width: 1040px; }
+.s-cover .meta { grid-column: 9 / span 4; grid-row: 3 / span 4; }
+.yaml { font-size: 24px; line-height: 1.8; white-space: pre; }
+.yaml .k { font-weight: 500; }
+
+/* ===========================================
+   SLIDE 2 — AGENDA (ls -l)
+   =========================================== */
+.s-agenda .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.ls { grid-column: 5 / span 8; grid-row: 1 / span 6; display: flex; flex-direction: column; justify-content: flex-end; }
+.ls .cmdline { margin-bottom: 20px; }
+.ls ul { list-style: none; border-top: 1px solid var(--border); }
+.ls li {
+    display: grid;
+    grid-template-columns: 210px 120px 1fr;
+    align-items: baseline;
+    padding: 22px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 26px;
+}
+.ls li .perm { color: var(--faint); font-size: 22px; }
+.ls li .dur { color: var(--green-3); }
+.ls li .name { color: var(--text); font-weight: 500; }
+.ls li .name i { display: block; font-style: italic; font-weight: 400; color: var(--muted); font-size: 21px; margin-top: 6px; }
+.ls li.on { background: var(--surface-2); box-shadow: inset 4px 0 0 var(--green); }
+.ls li.on .name, .ls li.on .dur { color: var(--green); }
+
+/* ===========================================
+   SLIDE 3 — SECTION DIVIDER (cd)
+   =========================================== */
+.s-divider .num { grid-column: 1 / span 6; grid-row: 1 / span 6; justify-content: flex-end; }
+.bignum { font-size: 400px; line-height: 0.78; font-weight: 800; letter-spacing: -0.05em; color: var(--green); text-shadow: 0 0 40px rgba(57, 211, 83, 0.25); }
+.bignum span { color: var(--green-2); }
+.s-divider .side { grid-column: 7 / span 6; grid-row: 1 / span 6; }
+.bar-line { font-size: 24px; margin-top: 40px; color: var(--muted); white-space: pre; }
+.bar-line b { color: var(--green); font-weight: 400; }
+
+/* ===========================================
+   SLIDE 4 — STATEMENT (quoted output)
+   =========================================== */
+.s-statement .stmt { grid-column: 1 / span 11; grid-row: 1 / span 6; }
+.s-statement .quoted { padding-left: 40px; border-left: 4px solid var(--green-3); }
+.s-statement .small { margin-top: 40px; }
+
+/* ===========================================
+   SLIDE 5 — LIST (git log --oneline)
+   =========================================== */
+.s-list .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.log { grid-column: 5 / span 8; grid-row: 1 / span 6; display: flex; flex-direction: column; justify-content: flex-end; }
+.log ul { list-style: none; }
+.log li { display: grid; grid-template-columns: 56px 160px 1fr auto; align-items: baseline; padding: 26px 0; border-top: 1px solid var(--border); font-size: 26px; }
+.log li:last-child { border-bottom: 1px solid var(--border); }
+.log .graph { color: var(--green); font-weight: 700; }
+.log .hash { color: var(--green-3); }
+.log .msg b { color: var(--text); font-weight: 500; }
+.log .msg i { display: block; font-size: 21px; color: var(--muted); margin-top: 8px; }
+.log .delta { color: var(--green); font-weight: 700; padding-left: 24px; }
+
+/* ===========================================
+   SLIDE 6 — TWO COLUMNS (diff)
+   =========================================== */
+.s-two .head { grid-column: 1 / span 12; grid-row: 1 / span 2; flex-direction: row; justify-content: space-between; align-items: flex-end; }
+.s-two .before { grid-column: 1 / span 6; grid-row: 3 / span 4; }
+.s-two .after  { grid-column: 7 / span 6; grid-row: 3 / span 4; }
+.diffstat { font-size: 22px; color: var(--muted); padding-bottom: 8px; }
+.diffstat .plus { color: var(--green); } .diffstat .minus { color: var(--red); }
+
+/* ===========================================
+   SLIDE 7 — STATS (big number + meters)
+   =========================================== */
+.s-stats .hero { grid-column: 1 / span 6; grid-row: 1 / span 6; }
+.stat-xl { font-size: 232px; line-height: 0.86; font-weight: 800; letter-spacing: -0.05em; color: var(--green); text-shadow: 0 0 48px rgba(57, 211, 83, 0.25); }
+.stat-xl small { font-size: 0.42em; letter-spacing: -0.02em; color: var(--green-3); }
+.s-stats .hero .lede { margin-top: 28px; max-width: 760px; }
+.meters { grid-column: 7 / span 6; grid-row: 1 / span 6; display: flex; flex-direction: column; justify-content: flex-end; gap: 44px; }
+.meter .row1 { display: flex; justify-content: space-between; align-items: baseline; font-size: 24px; }
+.meter .row1 b { font-size: 56px; font-weight: 800; letter-spacing: -0.03em; }
+.meter .track { display: flex; align-items: center; gap: 12px; margin-top: 14px; font-size: 32px; color: var(--faint); }
+.meter .cells { flex: 1; height: 26px; background: repeating-linear-gradient(90deg, var(--border) 0 14px, transparent 14px 20px); position: relative; }
+.meter .cells i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--v); background: repeating-linear-gradient(90deg, var(--green) 0 14px, transparent 14px 20px); }
+.meter .cells i.dim { background: repeating-linear-gradient(90deg, var(--green-3) 0 14px, transparent 14px 20px); }
+.meter p { font-size: 21px; color: var(--muted); margin-top: 10px; }
+
+/* ===========================================
+   SLIDE 8 — BAR CHART (segmented blocks, pure CSS)
+   =========================================== */
+.s-chart .intro { grid-column: 1 / span 4; grid-row: 1 / span 6; }
+.chart { grid-column: 5 / span 8; grid-row: 1 / span 6; display: grid; grid-template-columns: 76px 1fr; grid-template-rows: 1fr 52px; padding-top: 16px; }
+.y-axis { position: relative; }
+.y-axis span { position: absolute; right: 18px; transform: translateY(50%); font-size: 18px; color: var(--faint); }
+.y-axis span.g { color: var(--green-3); font-weight: 700; }
+.plot { position: relative; border-left: 1px solid var(--border); border-bottom: 1px solid var(--muted); }
+.plot .grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); }
+.bars { position: absolute; inset: 0 20px 0 20px; display: flex; align-items: flex-end; gap: 22px; }
+.bar { flex: 1; position: relative; height: var(--h); background: repeating-linear-gradient(0deg, var(--green-2) 0 14px, transparent 14px 18px); transform-origin: bottom; }
+.bar.hi { background: repeating-linear-gradient(0deg, var(--green) 0 14px, transparent 14px 18px); box-shadow: 0 0 24px rgba(57, 211, 83, 0.18); }
+.bar b { position: absolute; left: -10px; right: -10px; bottom: 100%; padding-bottom: 10px; text-align: center; font-size: 19px; font-weight: 500; color: var(--muted); }
+.bar.hi b { color: var(--green); font-size: 30px; font-weight: 800; }
+.x-axis { grid-column: 2; display: flex; gap: 22px; padding: 14px 20px 0; }
+.x-axis span { flex: 1; text-align: center; font-size: 18px; color: var(--faint); }
+.x-axis span.on { color: var(--green); }
+.marker { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--green-3); }
+
+/* ===========================================
+   SLIDE 9 — TABLE (box-drawn benchmark output)
+   =========================================== */
+.s-compare .head { grid-column: 1 / span 12; grid-row: 1 / span 2; }
+.table-wrap { grid-column: 1 / span 12; grid-row: 3 / span 4; }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid var(--border); }
+th, td { text-align: left; padding: 0 28px; border: 1px solid var(--border); font-size: 24px; }
+thead th { height: 60px; font-size: 19px; font-weight: 500; color: var(--muted); background: var(--surface); }
+thead th.num, td.num { text-align: right; }
+tbody th { font-weight: 500; color: var(--text); }
+tbody td { color: var(--muted); font-variant-numeric: tabular-nums; }
+tbody td.after { color: var(--text); }
+tbody td.delta { color: var(--green); font-weight: 700; }
+tbody tr.total th, tbody tr.total td { background: var(--surface-2); color: var(--text); font-weight: 700; }
+tbody tr.total td.delta { color: var(--green); }
+th:first-child { width: 34%; }
+
+/* ===========================================
+   SLIDE 10 — QUOTE (comment block)
+   =========================================== */
+.s-quote .q { grid-column: 1 / span 12; grid-row: 1 / span 6; justify-content: center; }
+.cblock { font-size: 30px; color: var(--faint); line-height: 1.6; }
+.s-quote blockquote { font-size: 60px; line-height: 1.32; font-style: italic; font-weight: 400; color: var(--text); padding: 16px 0 16px 1.6em; letter-spacing: -0.01em; position: relative; }
+.s-quote blockquote::before { content: "*"; position: absolute; left: 0.4em; top: 16px; color: var(--faint); font-style: normal; }
+.s-quote blockquote .g { font-style: italic; }
+.attrib { font-size: 26px; padding-left: 2.4em; color: var(--muted); margin-top: 12px; }
+.attrib b { color: var(--green); font-weight: 700; }
+
+/* ===========================================
+   SLIDE 11 — CLOSING (checklist + exit)
+   =========================================== */
+.s-close .main { grid-column: 1 / span 7; grid-row: 1 / span 6; }
+.s-close .todo { grid-column: 8 / span 5; grid-row: 1 / span 6; justify-content: flex-end; }
+.todo ul { list-style: none; margin-top: 20px; }
+.todo li { display: grid; grid-template-columns: 76px 1fr; font-size: 26px; line-height: 1.4; padding: 22px 0; border-top: 1px solid var(--border); }
+.todo li .box { color: var(--faint); }
+.todo li.done .box { color: var(--green); font-weight: 700; }
+.todo li.done b { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); font-weight: 500; }
+.todo li b { font-weight: 500; }
+.todo li i { display: block; font-size: 21px; color: var(--muted); margin-top: 6px; }
+.todo li.done i { color: var(--faint); }
+
+/* ===========================================
+   ANIMATIONS
+   Lines "print" in order, like terminal output.
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.45s steps(4, end), transform 0.45s ease-out;
+    transition-delay: calc(var(--i, 0) * 110ms + 100ms);
+}
+.slide.visible .reveal { opacity: 1; transform: none; }
+.type { clip-path: inset(0 100% 0 0); transition: clip-path 0.9s steps(28, end) 0.15s; }
+.slide.visible .type { clip-path: inset(0 0 0 0); }
+.grow { transform: scaleY(0); transition: transform 0.6s steps(10, end); transition-delay: calc(var(--i, 0) * 70ms + 250ms); }
+.slide.visible .grow { transform: scaleY(1); }
+.fill { transform: scaleX(0); transform-origin: left; transition: transform 0.8s steps(16, end) 0.4s; }
+.slide.visible .fill { transform: scaleX(1); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <!-- ============== 1. COVER ============================================ -->
+    <section class="slide s-cover active visible" data-label="Cover">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 00-cover.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack main">
+                <div class="cmdline">
+                    <p class="type"><span class="prompt">$</span> ./present ci-speedrun --to all-hands</p>
+                    <p class="out reveal" style="--i:4">loading 11 slides … <span class="ok">done</span> (0.04s)</p>
+                </div>
+                <div>
+                    <h1 class="t-hero reveal" style="--i:5">From 41 to<br><span class="g">6 minutes</span><span class="cursor" aria-hidden="true"></span></h1>
+                    <p class="lede reveal" style="--i:6">How the platform team cut median CI time by 85%, and what changes for you on Monday.</p>
+                </div>
+            </div>
+            <div class="stack meta">
+                <pre class="yaml reveal" style="--i:7"><span class="c"># talk.yml</span>
+<span class="k">speaker</span><span class="p">:</span> <span class="s">Priya Raman</span>
+<span class="k">role</span><span class="p">:</span>    <span class="s">Platform lead</span>
+<span class="k">event</span><span class="p">:</span>   <span class="s">Eng all-hands</span>
+<span class="k">date</span><span class="p">:</span>    <span class="n">2027-02-09</span></pre>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li class="on">0:intro</li><li>1:problem</li><li>2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 2. AGENDA =========================================== -->
+    <section class="slide s-agenda" data-label="Agenda">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 01-agenda.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack intro">
+                <p class="label reveal">30 minutes, then AMA</p>
+                <h2 class="t-display reveal" style="--i:1"><span class="md">#</span>agenda</h2>
+                <p class="body reveal" style="--i:2">Five directories. We are in the first one.</p>
+            </div>
+            <div class="ls">
+                <p class="cmdline type"><span class="prompt">$</span> ls -l agenda/</p>
+                <ul>
+                    <li class="on reveal" style="--i:2"><span class="perm">drwxr-xr-x</span><span class="dur">3m</span><span class="name">01-why-ci-is-slow/<i>where the 41 minutes went</i></span></li>
+                    <li class="reveal" style="--i:3"><span class="perm">drwxr-xr-x</span><span class="dur">5m</span><span class="name">02-the-problem/<i>4 hours a week, per engineer</i></span></li>
+                    <li class="reveal" style="--i:4"><span class="perm">drwxr-xr-x</span><span class="dur">10m</span><span class="name">03-what-we-changed/<i>four commits, one config diff</i></span></li>
+                    <li class="reveal" style="--i:5"><span class="perm">drwxr-xr-x</span><span class="dur">7m</span><span class="name">04-results/<i>twelve weeks of numbers</i></span></li>
+                    <li class="reveal" style="--i:6"><span class="perm">drwxr-xr-x</span><span class="dur">5m</span><span class="name">05-next/<i>flaky tests and the merge queue</i></span></li>
+                </ul>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li class="on">0:intro</li><li>1:problem</li><li>2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 3. SECTION DIVIDER ================================== -->
+    <section class="slide s-divider" data-label="Section 02">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 02-the-problem/</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack num deco" aria-hidden="true"><div class="bignum reveal">02<span>/</span></div></div>
+            <div class="stack side">
+                <p class="cmdline type"><span class="prompt">$</span> cd 02-the-problem</p>
+                <h2 class="t-display reveal" style="--i:3"><span class="md">#</span>the<br>problem</h2>
+                <p class="body reveal" style="--i:4">CI was not broken. It was slow in ways nobody owned, so nobody fixed it.</p>
+                <p class="bar-line reveal" style="--i:5">[<b>████████</b>░░░░░░░░░░░░] 2/5</p>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li class="on">1:problem</li><li>2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 4. STATEMENT ======================================== -->
+    <section class="slide s-statement" data-label="Statement">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 02-the-problem/cost.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack stmt">
+                <div class="quoted">
+                <p class="label reveal">the cost of waiting</p>
+                <h2 class="t-stmt reveal" style="--i:1">Every engineer waited for CI six times a day. That added up to <span class="sel">4&nbsp;hours&nbsp;a&nbsp;week</span> of <span class="g">git&nbsp;push&nbsp;&amp;&amp;&nbsp;sleep</span>.</h2>
+                <p class="small reveal" style="--i:2">Source: CI logs for 212 engineers, Q4 2026. Demo figures.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li class="on">1:problem</li><li>2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 5. LIST ============================================= -->
+    <section class="slide s-list" data-label="What we changed">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 03-what-we-changed/</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack intro">
+                <p class="label reveal">what we changed</p>
+                <h2 class="t-title reveal" style="--i:1"><span class="md">##</span>Four commits</h2>
+                <p class="body reveal" style="--i:2">Each one shipped on its own, behind a flag, in one sprint.</p>
+            </div>
+            <div class="log">
+                <p class="cmdline type"><span class="prompt">$</span> git log --oneline ci/</p>
+                <ul>
+                    <li class="reveal" style="--i:2"><span class="graph">*</span><span class="hash">a3f9c21</span><span class="msg"><b>Remote build cache for every job</b><i>Bazel cache on shared storage, keyed by input hash</i></span><span class="delta">−18m</span></li>
+                    <li class="reveal" style="--i:3"><span class="graph">*</span><span class="hash">7be04d2</span><span class="msg"><b>Run only the tests you touched</b><i>Dependency graph picks affected targets</i></span><span class="delta">−9m</span></li>
+                    <li class="reveal" style="--i:4"><span class="graph">*</span><span class="hash">e51c8a0</span><span class="msg"><b>Split the suite across 12 shards</b><i>Balanced by last week's timings</i></span><span class="delta">−6m</span></li>
+                    <li class="reveal" style="--i:5"><span class="graph">*</span><span class="hash">0d6f3b9</span><span class="msg"><b>Warm runners, pre-pulled images</b><i>No more 90-second container start</i></span><span class="delta">−2m</span></li>
+                </ul>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li class="on">2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 6. TWO COLUMNS ====================================== -->
+    <section class="slide s-two" data-label="Config diff">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 03-what-we-changed/diff.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack head">
+                <div>
+                    <p class="label reveal">before and after</p>
+                    <h2 class="t-title reveal" style="--i:1"><span class="md">##</span>One config diff</h2>
+                </div>
+                <p class="diffstat reveal" style="--i:2">.ci/pipeline.yml · <span class="plus">+7</span> <span class="minus">−5</span></p>
+            </div>
+            <div class="pane before reveal" style="--i:2">
+                <div class="pane-head"><b>main@{12 weeks ago}</b><span>41m 08s median</span></div>
+                <ol class="code">
+                    <li><span class="mk"> </span><span><span class="k">test</span><span class="p">:</span></span></li>
+                    <li class="del"><span class="mk">−</span><span>  <span class="k">runner</span><span class="p">:</span> <span class="s">"ubuntu-cold"</span></span></li>
+                    <li class="del"><span class="mk">−</span><span>  <span class="k">shards</span><span class="p">:</span> <span class="n">1</span></span></li>
+                    <li class="del"><span class="mk">−</span><span>  <span class="k">cache</span><span class="p">:</span> <span class="s">none</span></span></li>
+                    <li><span class="mk"> </span><span>  <span class="k">steps</span><span class="p">:</span></span></li>
+                    <li class="del"><span class="mk">−</span><span>    <span class="p">-</span> <span class="s">make test-all</span></span></li>
+                    <li class="del"><span class="mk">−</span><span>    <span class="c"># ~41 min, every push</span></span></li>
+                </ol>
+            </div>
+            <div class="pane after reveal" style="--i:3">
+                <div class="pane-head"><b>main</b><span class="g">6m 12s median</span></div>
+                <ol class="code">
+                    <li><span class="mk"> </span><span><span class="k">test</span><span class="p">:</span></span></li>
+                    <li class="add"><span class="mk">+</span><span>  <span class="k">runner</span><span class="p">:</span> <span class="s">"warm-pool"</span></span></li>
+                    <li class="add"><span class="mk">+</span><span>  <span class="k">shards</span><span class="p">:</span> <span class="n">12</span></span></li>
+                    <li class="add"><span class="mk">+</span><span>  <span class="k">cache</span><span class="p">:</span> <span class="s">remote://bazel</span></span></li>
+                    <li><span class="mk"> </span><span>  <span class="k">steps</span><span class="p">:</span></span></li>
+                    <li class="add"><span class="mk">+</span><span>    <span class="p">-</span> <span class="s">ci affected --since main</span></span></li>
+                    <li class="add"><span class="mk">+</span><span>    <span class="p">-</span> <span class="s">bazel test $TARGETS</span></span></li>
+                </ol>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li class="on">2:fix</li><li>3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 7. STATS ============================================ -->
+    <section class="slide s-stats" data-label="Results">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 04-results/</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack hero">
+                <p class="label reveal">median CI time, last 14 days</p>
+                <div class="stat-xl reveal" style="--i:1">6m<small>12s</small></div>
+                <p class="lede reveal" style="--i:2">down from 41m 08s. The slowest 5% of runs now finish in under 11 minutes.</p>
+            </div>
+            <div class="meters">
+                <div class="meter reveal" style="--i:3">
+                    <div class="row1"><span>cache hit rate</span><b class="g">87%</b></div>
+                    <div class="track">[<span class="cells"><i class="fill" style="--v:87%"></i></span>]</div>
+                    <p>targets restored from the remote cache</p>
+                </div>
+                <div class="meter reveal" style="--i:4">
+                    <div class="row1"><span>tests skipped as unaffected</span><b>64%</b></div>
+                    <div class="track">[<span class="cells"><i class="fill dim" style="--v:64%"></i></span>]</div>
+                    <p>median per pull request</p>
+                </div>
+                <div class="meter reveal" style="--i:5">
+                    <div class="row1"><span>runner cost vs. Q4</span><b>−38%</b></div>
+                    <div class="track">[<span class="cells"><i class="fill dim" style="--v:38%"></i></span>]</div>
+                    <p>fewer, warmer machines doing less work</p>
+                </div>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li>2:fix</li><li class="on">3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 8. BAR CHART ======================================== -->
+    <section class="slide s-chart" data-label="Weekly chart">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 04-results/weekly.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack intro">
+                <p class="label reveal">median CI minutes, by week · target 10</p>
+                <h2 class="t-title reveal" style="--i:1"><span class="md">##</span>Twelve weeks down</h2>
+                <p class="body reveal" style="--i:2">The cache did most of the work in week 3. Sharding took us under the 10-minute line in week 7.</p>
+            </div>
+            <div class="chart" role="img" aria-label="Bar chart of median CI minutes per week over 12 weeks, falling from 41 to 6.">
+                <div class="y-axis"><span style="bottom:0%">0</span><span class="g" style="bottom:20%">10</span><span style="bottom:40%">20</span><span style="bottom:60%">30</span><span style="bottom:80%">40</span><span style="bottom:100%">50</span></div>
+                <div class="plot">
+                    <div class="grid-line" style="bottom:40%"></div><div class="grid-line" style="bottom:60%"></div><div class="grid-line" style="bottom:80%"></div><div class="grid-line" style="bottom:100%"></div>
+                    <!-- Bar height = minutes / 50 (top of the y-axis). Only the first and the highlighted bar carry value labels. -->
+                    <div class="bars" style="top:0">
+                        <div class="bar grow" style="--h:82%;--i:0"><b>41</b></div>
+                        <div class="bar grow" style="--h:78%;--i:1"></div>
+                        <div class="bar grow" style="--h:46%;--i:2"></div>
+                        <div class="bar grow" style="--h:42%;--i:3"></div>
+                        <div class="bar grow" style="--h:32%;--i:4"></div>
+                        <div class="bar grow" style="--h:28%;--i:5"></div>
+                        <div class="bar grow" style="--h:18%;--i:6"></div>
+                        <div class="bar grow" style="--h:16%;--i:7"></div>
+                        <div class="bar grow" style="--h:16%;--i:8"></div>
+                        <div class="bar grow" style="--h:14%;--i:9"></div>
+                        <div class="bar grow" style="--h:14%;--i:10"></div>
+                        <div class="bar grow hi" style="--h:12%;--i:11"><b>6m</b></div>
+                    </div>
+                    <div class="marker" style="bottom:20%"></div>
+                </div>
+                <div class="x-axis"><span>w01</span><span>w02</span><span>w03</span><span>w04</span><span>w05</span><span>w06</span><span>w07</span><span>w08</span><span>w09</span><span>w10</span><span>w11</span><span class="on">w12</span></div>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li>2:fix</li><li class="on">3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 9. TABLE ============================================ -->
+    <section class="slide s-compare" data-label="Benchmark table">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 04-results/by-job.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack head">
+                <p class="label reveal">median duration per job</p>
+                <h2 class="t-title reveal" style="--i:1"><span class="md">##</span>Where the minutes went</h2>
+                <p class="cmdline type" style="margin-top:20px"><span class="prompt">$</span> ci-bench compare main@{12.weeks.ago} main</p>
+            </div>
+            <div class="table-wrap reveal" style="--i:3">
+                <table>
+                    <thead><tr><th>job</th><th class="num">before</th><th class="num">after</th><th class="num">delta</th></tr></thead>
+                    <tbody>
+                        <tr><th>checkout + setup</th><td class="num">2m 40s</td><td class="num after">0m 22s</td><td class="num delta">−86%</td></tr>
+                        <tr><th>build</th><td class="num">14m 05s</td><td class="num after">1m 48s</td><td class="num delta">−87%</td></tr>
+                        <tr><th>unit tests</th><td class="num">16m 30s</td><td class="num after">2m 31s</td><td class="num delta">−85%</td></tr>
+                        <tr><th>integration tests</th><td class="num">7m 53s</td><td class="num after">1m 31s</td><td class="num delta">−81%</td></tr>
+                        <tr class="total"><th>total (median)</th><td class="num">41m 08s</td><td class="num after">6m 12s</td><td class="num delta">−85%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li>2:fix</li><li class="on">3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 10. QUOTE =========================================== -->
+    <section class="slide s-quote" data-label="Quote">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 04-results/feedback.md</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <figure class="stack q">
+                <p class="cblock reveal" aria-hidden="true">/*</p>
+                <blockquote class="reveal" style="--i:1">I stopped opening Slack while CI runs. <span class="g">It finishes before I get bored.</span></blockquote>
+                <figcaption class="attrib reveal" style="--i:2">— <b>Tomás Ferreira</b>, mobile team, in the February dev survey</figcaption>
+                <p class="cblock reveal" style="--i:3" aria-hidden="true">&nbsp;*/</p>
+            </figure>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li>2:fix</li><li class="on">3:results</li><li>4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+    <!-- ============== 11. CLOSING ========================================= -->
+    <section class="slide s-close" data-label="Closing">
+        <header class="titlebar" data-chrome><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">~/talks/<b>ci-speedrun</b> — 05-next/</span><span class="dim">zsh · 196×54</span></header>
+        <div class="frame">
+            <div class="stack main">
+                <p class="label reveal">thanks for listening</p>
+                <h2 class="t-hero reveal" style="--i:1">Push.<br><span class="g">Don't wait.</span><span class="cursor" aria-hidden="true"></span></h2>
+                <p class="lede reveal" style="--i:2">Questions: <span class="g">#platform-help</span><br>Runbook: go/ci-speedrun</p>
+            </div>
+            <div class="stack todo">
+                <p class="cmdline type"><span class="prompt">$</span> cat NEXT.md</p>
+                <ul>
+                    <li class="done reveal" style="--i:3"><span class="box">[x]</span><span><b>Remote cache in every repo</b><i>shipped 2 Feb</i></span></li>
+                    <li class="reveal" style="--i:4"><span class="box">[ ]</span><span><b>Quarantine flaky tests</b><i>March · auto-retry, then auto-ticket</i></span></li>
+                    <li class="reveal" style="--i:5"><span class="box">[ ]</span><span><b>Merge queue for main</b><i>April · no more red main</i></span></li>
+                </ul>
+            </div>
+        </div>
+        <footer class="status" data-chrome><span class="session">[fernwood]</span><ol><li>0:intro</li><li>1:problem</li><li>2:fix</li><li>3:results</li><li class="on">4:next</li></ol><span class="right"><span>platform-team</span><span class="pagenum" data-pagenum></span></span></footer>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Stage scaling, paging (keys, wheel, click, swipe), page numbers.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.stage = document.getElementById('deckStage');
+        this.slides = Array.from(this.stage.querySelectorAll(':scope > .slide'));
+        this.current = 0;
+        this.fillPageNumbers();
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupPointerNav();
+        this.show(0);
+    }
+
+    /* "04 / 11" in every slide footer, so adding or removing slides never needs manual renumbering */
+    fillPageNumbers() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const total = pad(this.slides.length);
+        this.slides.forEach((slide, i) => {
+            slide.querySelectorAll('[data-pagenum]').forEach((el) => {
+                el.innerHTML = pad(i + 1) + ' <span>/ ' + total + '</span>';
+            });
+        });
+    }
+
+    /* Scale the 1920x1080 stage uniformly and centre it (letterbox / pillarbox) */
+    setupStageScale() {
+        const fit = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        fit();
+        window.addEventListener('resize', fit);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.go(this.current + (e.shiftKey && e.key === ' ' ? -1 : 1)); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.go(this.current - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); this.go(0); }
+            else if (e.key === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
+        });
+    }
+
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    setupWheelNav() {
+        let acc = 0, last = 0, lockUntil = 0;
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) return;
+            e.preventDefault();
+            const now = performance.now();
+            if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+            if (now - last > 200) acc = 0;
+            last = now;
+            acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(acc) >= 40) {
+                this.go(this.current + (acc > 0 ? 1 : -1));
+                acc = 0;
+                lockUntil = now + 650;
+            }
+        }, { passive: false });
+    }
+
+    /* Click: left third goes back, elsewhere goes forward. Swipe: horizontal, 50px. */
+    setupPointerNav() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('a, button, input, [contenteditable="true"]')) return;
+            if (window.getSelection && String(window.getSelection())) return;
+            this.go(this.current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+        });
+        let x0 = null, y0 = null;
+        document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            const dy = e.changedTouches[0].clientY - y0;
+            x0 = null;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+        });
+    }
+
+    go(index) {
+        const i = Math.max(0, Math.min(index, this.slides.length - 1));
+        if (i !== this.current) this.show(i);
+    }
+
+    show(i) {
+        this.current = i;
+        this.slides.forEach((slide, n) => {
+            const on = n === i;
+            slide.classList.toggle('active', on);
+            slide.classList.toggle('visible', on);
+            slide.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+    }
+}
+
+new SlidePresentation();
+</script>
+</script>
+</body>
+</html>

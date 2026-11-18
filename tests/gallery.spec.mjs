@@ -1,6 +1,6 @@
 // Gallery (EN and ZH): cards, search, filters, hash state, language switch, no-JS, thumbnails, weight.
 import { test, expect } from './font-cache.mjs';
-import { ALL_SLUGS, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
+import { ALL_SLUGS, CATALOG, COLLECTION_SLUGS, COLLECTION_SOURCE_ID, SOURCES_JSON, upstreamMeta, artifactPath, monitor, settled } from './helpers.mjs';
 
 const META = ALL_SLUGS.map((slug) => ({ slug, ...upstreamMeta(slug) }));
 const searchText = (t) => [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug].join(' ').toLowerCase();
@@ -9,13 +9,13 @@ const SCHEMES = ['light', 'dark', 'mixed'];
 const count = (fn) => META.filter(fn).length;
 
 const LANGS = {
-  en: { url: 'index.html', clear: 'Clear filters', countRe: (n) => new RegExp(`^${n} of ${META.length} templates$`), schemeLabel: { light: 'Light', dark: 'Dark', mixed: 'Mixed' } },
-  zh: { url: 'zh/index.html', clear: '清除筛选', countRe: (n) => new RegExp(`共 ${META.length} 个模板，显示 ${n} 个`) },
+  en: { url: 'gallery/', clear: 'Clear filters', countRe: (n) => new RegExp(`^${n} of ${META.length} templates$`), schemeLabel: { light: 'Light', dark: 'Dark', mixed: 'Mixed' } },
+  zh: { url: 'zh/gallery/', clear: '清除筛选', countRe: (n) => new RegExp(`共 ${META.length} 个模板，显示 ${n} 个`) },
 };
 
 const visibleSlugs = (page) => page.evaluate(() => [...document.querySelectorAll('#grid > li')]
   .filter((li) => !li.hidden && getComputedStyle(li).display !== 'none')
-  .map((li) => li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, '')).sort());
+  .map((li) => li.querySelector('a.card').getAttribute('href').match(/t\/([^/]+)\/$/)[1]).sort());
 const chip = (page, group, value) => page.locator(`button.chip[data-group="${group}"][data-value="${value}"]`);
 
 // Moods: choose two common moods that give a non-trivial OR and AND.
@@ -25,12 +25,24 @@ const MOODS = [...moodCounts].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[
 
 for (const [lang, L] of Object.entries(LANGS)) {
   test.describe(`gallery [${lang}]`, () => {
-    test.beforeEach(async ({ page }) => { await page.goto(L.url); await expect(page.locator('#filters')).toBeVisible(); });
+    test.beforeEach(async ({ page }) => {
+      await page.goto(L.url);
+      await expect(page.locator('#filters')).toBeVisible();
+      await page.locator('.filter-extra > summary').click();
+    });
 
-    test('34 cards, each linking to its detail page; count text', async ({ page }) => {
-      expect(META).toHaveLength(34);
+    test('standalone gallery is usable at tablet width', async ({ page }) => {
+      await page.setViewportSize({ width: 768, height: 900 });
+      await expect(page.locator('.collection-heading h1')).toBeVisible();
+      await expect(page.locator('#grid .card')).toHaveCount(META.length);
+      await expect(page.locator('nav.site-nav a[href$="gallery/"]')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+    });
+
+    test('one card per template (all sources), each linking to its detail page; count text', async ({ page }) => {
+      expect(META.length).toBeGreaterThan(34);
       expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
-      await expect(page.locator('#fcount')).toHaveText(L.countRe(34));
+      await expect(page.locator('#fcount')).toHaveText(L.countRe(META.length));
       await expect(page.locator('#fclear')).toBeHidden();
     });
 
@@ -120,15 +132,29 @@ for (const [lang, L] of Object.entries(LANGS)) {
       const sw = page.locator(`a[data-lang-switch="${other}"]`);
       expect(await sw.getAttribute('href')).toContain(hash);
       await sw.click();
-      await expect(page).toHaveURL(new RegExp(lang === 'en' ? '/zh/index\\.html' : '/index\\.html'));
+      await expect(page).toHaveURL(new RegExp(lang === 'en' ? '/zh/gallery/index\\.html' : '/gallery/index\\.html'));
       expect(new URL(page.url()).hash).toBe(hash);
       await expect(page.locator('#filters')).toBeVisible();
       expect(await visibleSlugs(page), 'after language switch').toEqual(before);
     });
 
-    test('source group is hidden while there is one source', async ({ page }) => {
-      await expect(page.locator('button.chip[data-group="source"]')).toHaveCount(0);
-      await expect(page.locator('button.chip[data-group="scheme"]')).not.toHaveCount(0);
+    test('source group lists every source with its count and filters cards', async ({ page }) => {
+      const ids = SOURCES_JSON.sources.map((x) => x.id);
+      expect(ids.length).toBeGreaterThan(1);
+      await expect(page.locator('button.chip[data-group="source"]')).toHaveCount(ids.length);
+      for (const id of ids) {
+        const mine = CATALOG.filter((t) => t.source === id).map((t) => t.slug).sort();
+        await expect(chip(page, 'source', id).locator('.n'), `${id} chip number`).toHaveText(String(mine.length));
+        await chip(page, 'source', id).click();
+        expect(await visibleSlugs(page), `source ${id}`).toEqual(mine);
+        await expect(page.locator('#fcount')).toHaveText(L.countRe(mine.length));
+        expect(new URL(page.url()).hash).toContain(`source=${id}`);
+        await chip(page, 'source', id).click();
+      }
+      // Source ANDs with scheme.
+      await chip(page, 'source', COLLECTION_SOURCE_ID).click();
+      await chip(page, 'scheme', 'dark').click();
+      expect(await visibleSlugs(page)).toEqual(bySlugs(META.filter((t) => COLLECTION_SLUGS.includes(t.slug) && t.scheme === 'dark')));
     });
 
     test('thumbnails load for every card after scrolling; no console errors', async ({ page }) => {
@@ -162,11 +188,11 @@ for (const [lang, L] of Object.entries(LANGS)) {
   });
 }
 
-test('EN home: first load transfers less than 2.5 MB', async ({ page }) => {
+test('EN gallery: first load transfers less than 2.5 MB', async ({ page }) => {
   const requests = [];
   page.on('requestfinished', (r) => requests.push(r));
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('index.html');
+  await page.goto('gallery/');
   await expect(page.locator('#filters')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.readyState)).toBe('complete');
   await settled({ inflight: new Set(requests.filter((r) => !r.response)) }, expect).catch(() => {});
@@ -179,13 +205,13 @@ test('EN home: first load transfers less than 2.5 MB', async ({ page }) => {
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
   for (const [lang, L] of Object.entries(LANGS)) {
-    test(`[${lang}] all 34 cards are visible and the filter panel stays hidden`, async ({ page }) => {
+    test(`[${lang}] all cards are visible and the filter panel stays hidden`, async ({ page }) => {
       await page.goto(L.url);
       expect(await visibleSlugs(page)).toEqual([...ALL_SLUGS]);
       await expect(page.locator('#filters')).toBeHidden();
       await expect(page.locator('#fnone')).toBeHidden();
       // Cards are plain links.
-      await expect(page.locator('#grid a.card').first()).toHaveAttribute('href', /^t\/.+\//);
+      await expect(page.locator('#grid a.card').first()).toHaveAttribute('href', lang === 'en' ? /^\.\.\/t\/.+\/$/ : /^\.\.\/\.\.\/zh\/t\/.+\/$/);
     });
   }
 });

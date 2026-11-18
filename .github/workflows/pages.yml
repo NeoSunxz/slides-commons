@@ -66,8 +66,11 @@ jobs:
           for f in site/index.html site/zh/index.html site/.nojekyll; do
             [ -e "$f" ] || { echo "missing: $f"; exit 1; }
           done
+          # site/manifest.json is written by the build: one zip per template, whatever the sources hold.
+          [ -e site/manifest.json ] || { echo "missing: site/manifest.json"; exit 1; }
+          expected=$(node -e "console.log(JSON.parse(require('fs').readFileSync('site/manifest.json','utf8')).templates.length)")
           zips=$(find site/zip -maxdepth 1 -name '*.zip' | wc -l)
-          [ "$zips" -eq 34 ] || { echo "expected 34 zips in site/zip, found $zips"; exit 1; }
+          [ "$expected" -gt 0 ] && [ "$zips" -eq "$expected" ] || { echo "expected $expected zips in site/zip (from manifest.json), found $zips"; exit 1; }
           big=$(find site -type f -size +25M)
           [ -z "$big" ] || { echo "files over 25 MB:"; echo "$big"; exit 1; }
           grep -q "${SC_SITE_URL}zip/" site/zh/t/*/index.html >/dev/null || { echo "prompts do not contain ${SC_SITE_URL}zip/"; exit 1; }

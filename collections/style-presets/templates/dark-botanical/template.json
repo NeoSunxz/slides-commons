@@ -1,0 +1,46 @@
+{
+  "slug": "dark-botanical",
+  "name": "Dark Botanical",
+  "tagline": "Elegant italic serif headlines on near-black, soft blurred circles of terracotta, rose and gold in the corners, and hairline gold rules. Adapted from the Dark Botanical preset in frontend-slides.",
+  "mood": [
+    "elegant",
+    "sophisticated",
+    "artistic",
+    "premium"
+  ],
+  "occasion": [
+    "luxury product launch",
+    "brand evening",
+    "collectors' or patrons' update",
+    "gallery or museum talk",
+    "hospitality pitch",
+    "annual letter"
+  ],
+  "tone": [
+    "refined",
+    "quiet",
+    "warm",
+    "literary"
+  ],
+  "formality": "medium-high",
+  "density": "medium-low",
+  "palette": {
+    "bg-primary": "#0f0f0f",
+    "text-primary": "#e8e4df",
+    "text-secondary": "#9a9590",
+    "accent-warm": "#d4a574",
+    "accent-pink": "#e8b4b8",
+    "accent-gold": "#c9b896",
+    "description": "near-black ground with warm off-white type, soft blurred circles of terracotta, rose and gold glowing from one or two corners, gold for numerals and hairline accents, rose for one italic phrase"
+  },
+  "typography": {
+    "display": "Cormorant",
+    "body": "IBM Plex Sans",
+    "style": "high-contrast Cormorant at light weights with italic signature phrases and italic roman numerals, paired with IBM Plex Sans Light for body and widely tracked uppercase labels"
+  },
+  "scheme": "dark",
+  "best_for": "Luxury, fragrance, fashion, wine, hospitality and arts decks: product launches, collectors' and patrons' evenings, gallery talks and annual letters where atmosphere matters as much as numbers. Strong for statements, quotes and a few elegant figures.",
+  "avoid_for": "Data-heavy reviews, technical training and anything that must be read at the back of a bright room. Light serif type and low-contrast secondary text need a dark room and few words.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

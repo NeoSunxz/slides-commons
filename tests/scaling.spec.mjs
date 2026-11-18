@@ -111,28 +111,29 @@ const rect = (page, sel) => page.locator(sel).first().evaluate((el) => { const r
 
 for (const lang of ['en', 'zh']) {
   for (const [w, h] of [[1440, 900], [1920, 1080]]) {
-    test(`[${lang}] layout ${w}x${h}: two columns, sticky panel, details stay in the preview column`, async ({ page }) => {
+    test(`[${lang}] layout ${w}x${h}: aligned workspace and full-width design information`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await page.goto(DETAIL(lang));
       await previewFrame(page);
       const main = await rect(page, 'main.wrap');
-      expect(main.w, 'container width').toBeLessThanOrEqual(1440 + 0.5);
-      const pv = await rect(page, '.detail > .preview');
-      const panel = await rect(page, '.detail > .actions');
+      expect(main.w, 'detail container is capped for comfortable reading').toBeCloseTo(Math.min(w, 1760), 0);
+      const pv = await rect(page, '.detail-workspace > .preview');
+      const panel = await rect(page, '.detail-workspace > .actions');
       expect(panel.x, `panel.left ${panel.x} vs preview.right ${pv.r}`).toBeGreaterThanOrEqual(pv.r - 0.5);
       expect(panel.r).toBeLessThanOrEqual(w + 0.5);
 
-      // Nothing in the details column runs under the panel.
-      const offenders = await page.evaluate((previewRight) => [...document.querySelectorAll('.detail > .details *')]
-        .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.right > previewRight + 1; })
-        .map((el) => `${el.tagName.toLowerCase()}.${el.className}`.slice(0, 40)), pv.r);
-      expect(offenders, 'elements of the details column wider than the preview column').toEqual([]);
+      const detail = await rect(page, '.detail');
       const det = await rect(page, '.detail > .details');
-      expect(det.r).toBeLessThanOrEqual(pv.r + 1);
+      expect(det.x).toBeCloseTo(detail.x, 0);
+      expect(det.w).toBeCloseTo(detail.w, 0);
+      expect(det.y).toBeGreaterThanOrEqual(Math.max(panel.b, pv.b));
+      const controls = await rect(page, '.controls');
+      const preview = await rect(page, '.frame16x9');
+      expect(controls.x).toBeCloseTo(preview.x, 0);
+      expect(controls.w).toBeCloseTo(preview.w, 0);
 
-      // Sticky panel keeps top:16px after scrolling.
       await page.evaluate(() => scrollTo(0, 600));
-      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(16);
+      await expect.poll(async () => (await rect(page, '.detail-workspace > .actions')).b <= (await rect(page, '.detail > .details')).y).toBe(true);
       const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(over).toBeLessThanOrEqual(0);
       await page.evaluate(() => scrollTo(0, 0));
@@ -145,18 +146,19 @@ for (const lang of ['en', 'zh']) {
       await previewFrame(page);
       await page.locator('.actions details > summary').click();
       await expect(page.locator('.actions pre.prompt')).toBeVisible();
-      await page.evaluate(() => scrollTo(0, 400));
-      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(16);
-      const panel = await rect(page, '.detail > .actions');
+      await page.evaluate(() => window.scrollTo({ top: document.querySelector('.detail-workspace').getBoundingClientRect().top + scrollY - 88, behavior: 'instant' }));
+      const panel = await rect(page, '.detail-workspace > .actions');
       expect(panel.bottom, 'panel bottom within the viewport').toBeLessThanOrEqual(h + 0.5);
       const scrollable = await page.locator('.actions').evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight, oy: getComputedStyle(el).overflowY }));
       expect(['auto', 'scroll']).toContain(scrollable.oy);
-      const pv = await rect(page, '.detail > .preview');
+      const pv = await rect(page, '.detail-workspace > .preview');
       expect(panel.x).toBeGreaterThanOrEqual(pv.r - 0.5);
       // The prompt box is inside the panel.
       const pre = await page.locator('.actions pre.prompt').evaluate((el) => { const r = el.getBoundingClientRect(); return { l: r.left, r: r.right }; });
       expect(pre.l).toBeGreaterThanOrEqual(panel.x - 0.5);
       expect(pre.r).toBeLessThanOrEqual(panel.r + 0.5);
+      await page.evaluate(() => window.scrollTo({ top: 600, behavior: 'instant' }));
+      expect((await rect(page, '.detail-workspace > .actions')).b).toBeLessThanOrEqual((await rect(page, '.detail > .details')).y);
     });
   }
 
@@ -165,8 +167,8 @@ for (const lang of ['en', 'zh']) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto(DETAIL(lang));
       await previewFrame(page);
-      const pv = await rect(page, '.detail > .preview');
-      const panel = await rect(page, '.detail > .actions');
+      const pv = await rect(page, '.detail-workspace > .preview');
+      const panel = await rect(page, '.detail-workspace > .actions');
       const det = await rect(page, '.detail > .details');
       expect(panel.y, 'panel below the preview').toBeGreaterThanOrEqual(pv.b - 0.5);
       expect(det.y, 'details below the panel').toBeGreaterThanOrEqual(panel.b - 0.5);
@@ -178,7 +180,7 @@ for (const lang of ['en', 'zh']) {
       await expect(page.locator('.actions pre.prompt')).toBeVisible();
       const over2 = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(over2, 'overflow with prompt open').toBeLessThanOrEqual(0);
-      const panel2 = await rect(page, '.detail > .actions');
+      const panel2 = await rect(page, '.detail-workspace > .actions');
       const det2 = await rect(page, '.detail > .details');
       expect(det2.y).toBeGreaterThanOrEqual(panel2.b - 0.5);
     });

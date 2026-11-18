@@ -126,6 +126,16 @@ test.describe('--out guard', () => {
       fs.mkdirSync(path.join(root, d), { recursive: true });
       fs.writeFileSync(path.join(root, d, 'keep.txt'), 'keep');
     }
+    for (const [fontPackage, fontFile] of [
+      ['@fontsource-variable/dm-sans', 'dm-sans-latin-wght-normal.woff2'],
+      ['@fontsource/barlow-condensed', 'barlow-condensed-latin-700-normal.woff2'],
+    ]) {
+      const sourceDir = path.join(ROOT, 'node_modules', ...fontPackage.split('/'));
+      const targetDir = path.join(root, 'node_modules', ...fontPackage.split('/'));
+      fs.mkdirSync(path.join(targetDir, 'files'), { recursive: true });
+      fs.copyFileSync(path.join(sourceDir, 'files', fontFile), path.join(targetDir, 'files', fontFile));
+      fs.copyFileSync(path.join(sourceDir, 'LICENSE'), path.join(targetDir, 'LICENSE'));
+    }
     fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
     return root;
   }

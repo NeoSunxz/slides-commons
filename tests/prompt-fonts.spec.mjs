@@ -73,9 +73,7 @@ for (const slug of ALL_SLUGS) {
         expect(new URL(l).searchParams.get('display'), `${slug} ${name}: display= missing in ${l}`).toBeTruthy();
       }
       // CJK families from design.md's CJK section must all survive (incl. ZCOOL/Long Cang/...).
-      // System-font-only templates (no web fonts upstream, e.g. raw-grid) deliberately quote no link,
-      // even though design.md allows Noto Sans SC for CJK (reported as an observation).
-      if (NO_WEBFONT_SLUGS.includes(slug)) { expect(links, `${slug} ${name}: system-font template quotes no link`).toEqual([]); continue; }
+      // System-font templates (e.g. raw-grid) quote exactly the CJK link design.md allows as its one exception.
       expect([...quotedFams].sort(), `${slug} ${name}: CJK families quoted vs design.md CJK section`).toEqual([...expectedFams].sort());
       if (!expectedFams.size) expect(links, `${slug} ${name}: no link expected`).toEqual([]);
       // Links are only quoted in §4.

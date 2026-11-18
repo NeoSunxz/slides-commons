@@ -26,6 +26,14 @@ test('npm run build exits 0 from a clean state and emits the expected files', as
 
   for (const rel of [
     'index.html',
+    path.join('assets', 'home.css'),
+    path.join('assets', 'home.js'),
+    path.join('assets', 'type', 'dm-sans.woff2'),
+    path.join('assets', 'type', 'barlow-condensed.woff2'),
+    path.join('assets', 'type', 'dm-sans-LICENSE.txt'),
+    path.join('assets', 'type', 'barlow-condensed-LICENSE.txt'),
+    path.join('gallery', 'index.html'),
+    path.join('zh', 'gallery', 'index.html'),
     'credits.html',
     path.join('t', SLUG, 'index.html'),
     path.join('preview', SLUG, 'template.html'),

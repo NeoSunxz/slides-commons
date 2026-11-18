@@ -21,8 +21,8 @@ const deckState = (frame) => frame.evaluate(() => {
 // ---------------------------------------------------------------------------
 test.describe('gallery', () => {
   test('card shows thumbnail, name, tagline, author and links to the detail page', async ({ page }) => {
-    await page.goto('index.html');
-    const card = page.locator(`a.card[href="t/${SLUG}/"]`);
+    await page.goto('gallery/');
+    const card = page.locator(`a.card[href="../t/${SLUG}/"]`);
     await expect(card).toHaveCount(1);
     await expect(card.locator('h2')).toHaveText(meta.name);
     await expect(card).toContainText(meta.tagline);
@@ -241,16 +241,17 @@ test.describe('detail page', () => {
 
 // ---------------------------------------------------------------------------
 test.describe('every page', () => {
-  for (const url of ['index.html', DETAIL, 'credits.html']) {
-    test(`footer with attribution and no "official" claims on ${url}`, async ({ page }) => {
+  for (const url of ['gallery/', DETAIL]) {
+    test(`compact footer links to credits on ${url}`, async ({ page }) => {
       await page.goto(url);
       const footer = page.locator('footer.site-footer');
       await expect(footer).toHaveCount(1);
-      await expect(footer).toContainText('Zara Zhang');
-      await expect(footer).toContainText('MIT');
-      expect(await footer.locator('a[href="https://github.com/zarazhangrui/beautiful-html-templates"]').count()).toBeGreaterThan(0);
-      expect(await footer.locator(`a[href="${SKILL_REPO}"]`).count()).toBeGreaterThan(0);
-      await expect(footer).toContainText(/not affiliated/i);
+      await expect(footer).toHaveClass(/compact-footer/);
+      await expect(footer).toContainText('slides-commons');
+      await expect(footer.locator('a')).toHaveCount(1);
+      await expect(footer.locator('a')).toHaveAttribute('href', /credits\.html$/);
+      await expect(footer).not.toContainText('Zara Zhang');
+      await expect(footer).not.toContainText('MIT');
 
       const text = await page.locator('body').innerText();
       const bad = text.split(/(?<=[.!?。])\s*|\n/)
@@ -260,7 +261,7 @@ test.describe('every page', () => {
     });
   }
 
-  for (const url of ['index.html', DETAIL, 'credits.html', `preview/${SLUG}/template.html`]) {
+  for (const url of ['index.html', 'gallery/', DETAIL, 'credits.html', `preview/${SLUG}/template.html`]) {
     test(`no console errors, failed requests, or off-whitelist hosts on ${url}`, async ({ page, baseURL }) => {
       const log = monitor(page);
       await page.goto(url);

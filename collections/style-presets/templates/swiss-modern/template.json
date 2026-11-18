@@ -1,0 +1,45 @@
+{
+  "slug": "swiss-modern",
+  "name": "Swiss Modern",
+  "tagline": "White page, black type, one red accent, a visible 12-column grid and flat geometric shapes in asymmetric layouts. Adapted from the Swiss Modern preset in frontend-slides.",
+  "mood": [
+    "clean",
+    "precise",
+    "rational",
+    "confident"
+  ],
+  "occasion": [
+    "design review",
+    "architecture or urban planning",
+    "public sector briefing",
+    "strategy presentation",
+    "museum or culture talk",
+    "board decision"
+  ],
+  "tone": [
+    "precise",
+    "minimal",
+    "graphic",
+    "objective"
+  ],
+  "formality": "medium-high",
+  "density": "medium",
+  "palette": {
+    "white": "#ffffff",
+    "black": "#000000",
+    "red": "#ff3300",
+    "field": "#f2f2f2",
+    "text-2": "#595959",
+    "description": "pure white page with a faint visible column grid, pure black type and shapes, one signal red for the key word, number, shape or column; light grey only for quiet fields and 'before' data"
+  },
+  "typography": {
+    "display": "Archivo",
+    "body": "Nunito",
+    "style": "Archivo 800 in sentence case with very tight tracking for headlines, numbers and small uppercase labels; Nunito 400/700 for body text"
+  },
+  "scheme": "light",
+  "best_for": "Design reviews, architecture, planning and public-sector briefings, strategy and board decisions — content that should look objective and well-ordered. Strong for big numbers, option tables, timelines and principle sets.",
+  "avoid_for": "Warm, emotional or playful storytelling, dense text documents, and brands built around soft colors or photography. The strict grid and black-red palette feel cool and institutional.",
+  "slide_count": 11,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}
