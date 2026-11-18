@@ -1,0 +1,215 @@
+<!-- Demo slides for the slides-commons gallery preview (written for this site). The cover and the closing
+     slide are the example slides of the Guizang PPT Skill's template-swiss.html with their placeholders
+     filled in; the others are adapted from its layouts. AGPL-3.0, see ../README.md. -->
+
+<!-- 1 · Cover -->
+<section class="slide accent" data-animate="hero" data-slide-id="cover">
+  <div class="canvas-card">
+    <canvas class="ascii-bg" aria-hidden="true"></canvas>
+    <div class="chrome-min">
+      <div class="l">Swiss International Style · Field Note 01</div>
+      <div class="r">DEMO · 2026 · 01 / 07</div>
+    </div>
+
+    <!-- 主体:padding 必须为 0,不要再叠 5vw,否则左右对不齐 chrome-min -->
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2.6vh">
+      <div data-anim="kicker" class="t-meta" style="color:rgba(var(--accent-on-rgb),.78);letter-spacing:.22em">One grid. One color. No decoration.</div>
+
+      <h1 data-anim="title" style="align-self:center;font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(11.6vw,19vh);line-height:.94;letter-spacing:-.025em;color:var(--accent-on)">Make the<br/>structure <span style="font-style:italic;font-weight:300">visible</span></h1>
+
+      <div data-anim="bottom" style="display:grid;grid-template-rows:auto auto;gap:1.6vh;border-top:1px solid rgba(var(--accent-on-rgb),.22);padding-top:2vh">
+        <div data-anim="lead" class="lead" style="max-width:52ch;color:rgba(var(--accent-on-rgb),.86)">A demo deck for the Swiss template: sharp rectangles, hairline rules and type scale doing all the work.</div>
+        <div style="display:flex;justify-content:space-between;align-items:end">
+          <div class="t-meta" style="color:rgba(var(--accent-on-rgb),.6)">Demo deck · 瑞士国际主义风</div>
+          <div class="t-meta" style="color:rgba(var(--accent-on-rgb),.6)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · Statement -->
+<section class="slide dark" data-animate="statement" data-slide-id="statement">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">PRINCIPLE · 01</div>
+      <div class="r">02 / 07</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:1fr auto;gap:3vh">
+      <h2 data-anim="line" class="h-xl" style="align-self:center;max-width:78vw;font-size:min(8.2vw,14.6vh);line-height:1;letter-spacing:-.04em">Build it once.<br>It <span style="font-style:italic;font-weight:300">aligns</span> forever.</h2>
+      <div data-anim="foot" style="display:flex;justify-content:space-between;align-items:end;border-top:1px solid rgba(var(--paper-rgb),.22);padding-top:2vh">
+        <div class="t-meta">— STATEMENT 02</div>
+        <div class="t-meta">12-COLUMN GRID · 1PX HAIRLINES</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · Compare -->
+<section class="slide light" data-animate="duo-mirror" data-slide-id="compare">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">BEFORE / AFTER</div>
+      <div class="r">03 / 07</div>
+    </div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1.4vh">
+      <div class="t-meta">COMPARE · TWO WAYS TO BUILD A DECK</div>
+      <h2 class="h-xl" style="font-size:min(6vw,10.6vh);line-height:1">Skin or system?</h2>
+    </div>
+    <div class="duo-compare">
+      <div class="col" data-anim="left">
+        <div class="col-tag"><span class="num">A</span>A themed skin</div>
+        <div class="col-ttl">Colors on top</div>
+        <div class="col-desc">The layout is improvised page by page, so the pages drift apart.</div>
+        <ul class="col-list">
+          <li>Free-form blocks and spacing</li>
+          <li>Several accent colors compete</li>
+          <li>Rounded cards and shadows creep in</li>
+        </ul>
+      </div>
+      <span class="vrule" data-anim="rule"></span>
+      <div class="col accent" data-anim="right">
+        <div class="col-tag"><span class="num">B</span>A layout system</div>
+        <div class="col-ttl">Rules underneath</div>
+        <div class="col-desc">Registered layouts on one grid keep every page related.</div>
+        <ul class="col-list">
+          <li>22 locked layouts, S01 to S22</li>
+          <li>One anchor color per deck</li>
+          <li>Sharp rectangles and hairlines only</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · KPI towers -->
+<section class="slide light" data-animate="measure-up" data-slide-id="kpi">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">NUMBERS · DATA HERO</div>
+      <div class="r">04 / 07</div>
+    </div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1.4vh">
+      <div class="t-meta">KPI TOWER · DEMO FIGURES</div>
+      <h2 class="h-xl" style="font-size:min(6vw,10.6vh);line-height:1">Height is the data</h2>
+    </div>
+    <div class="bar-towers" style="margin-bottom:5vh">
+      <div class="bar-tower">
+        <div class="body-block h-1"><span class="lbl">Layouts</span><span class="nb">22</span><span class="sub">registered body layouts</span></div>
+      </div>
+      <div class="bar-tower">
+        <div class="body-block h-2"><span class="lbl">Themes</span><span class="nb">4</span><span class="sub">anchor colors</span></div>
+      </div>
+      <div class="bar-tower">
+        <div class="body-block h-3"><span class="lbl">Grid</span><span class="nb">12</span><span class="sub">columns</span></div>
+      </div>
+      <div class="bar-tower">
+        <div class="body-block h-4 b-accent"><span class="lbl">Shadows</span><span class="nb">0</span><span class="sub">none, by design</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Timeline -->
+<section class="slide light" data-animate="timeline-walk" data-slide-id="timeline">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">PROCESS · HORIZONTAL TIMELINE</div>
+      <div class="r">05 / 07</div>
+    </div>
+    <div data-anim="head" style="display:flex;flex-direction:column;gap:1.4vh">
+      <div class="t-meta">FIVE STEPS · FROM BRIEF TO DECK</div>
+      <h2 class="h-xl" style="font-size:min(6vw,10.6vh);line-height:1">A short, straight line</h2>
+    </div>
+    <div class="timeline-h">
+      <div class="tl-row">
+        <div class="th-node up"><span class="dot"></span><div class="label" data-anim="node"><span class="yr">01</span><span class="name">Brief</span><span class="desc">Audience and goal</span></div></div>
+        <div class="th-node down"><span class="dot"></span><div class="label" data-anim="node"><span class="yr">02</span><span class="name">Outline</span><span class="desc">One idea per slide</span></div></div>
+        <div class="th-node up"><span class="dot"></span><div class="label" data-anim="node"><span class="yr">03</span><span class="name">Layouts</span><span class="desc">Pick registered ones</span></div></div>
+        <div class="th-node down accent"><span class="dot"></span><div class="label" data-anim="node"><span class="yr">04</span><span class="name">Review</span><span class="desc">Measure, then adjust</span></div></div>
+        <div class="th-node up"><span class="dot"></span><div class="label" data-anim="node"><span class="yr">05</span><span class="name">Present</span><span class="desc">Presenter mode</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · Cards -->
+<section class="slide light" data-animate="grid-reveal" data-slide-id="cards">
+  <div class="canvas-card">
+    <div class="chrome-min">
+      <div class="l">SYSTEM · FOUR PARTS</div>
+      <div class="r">06 / 07</div>
+    </div>
+    <div data-anim="line" style="display:flex;flex-direction:column;gap:1.4vh">
+      <div class="t-meta">WHAT THE TEMPLATE CARRIES</div>
+      <h2 class="h-xl" style="font-size:min(6vw,10.6vh);line-height:1">Four parts, equal weight</h2>
+    </div>
+    <div class="grid-12" style="gap:1.4vh 1.2vw;margin-top:4vh;align-content:start">
+      <div class="card-fill span-3 sub-card" style="padding:3vh 1.4vw"><div class="t-meta">— 01 / GRID</div><h3 style="font-weight:300;font-size:min(2.2vw,3.9vh);margin:1.6vh 0 1vh">Twelve columns</h3><p style="line-height:1.55">Everything snaps; nothing floats.</p></div>
+      <div class="card-fill span-3 sub-card" style="padding:3vh 1.4vw"><div class="t-meta">— 02 / TYPE</div><h3 style="font-weight:300;font-size:min(2.2vw,3.9vh);margin:1.6vh 0 1vh">Scale contrast</h3><p style="line-height:1.55">Huge and light against small and heavy.</p></div>
+      <div class="card-fill span-3 sub-card" style="padding:3vh 1.4vw"><div class="t-meta">— 03 / COLOR</div><h3 style="font-weight:300;font-size:min(2.2vw,3.9vh);margin:1.6vh 0 1vh">One anchor</h3><p style="line-height:1.55">A single saturated color per deck.</p></div>
+      <div class="card-fill span-3 sub-card" style="padding:3vh 1.4vw"><div class="t-meta">— 04 / MOTION</div><h3 style="font-weight:300;font-size:min(2.2vw,3.9vh);margin:1.6vh 0 1vh">Quiet reveals</h3><p style="line-height:1.55">One purposeful animation per page.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · Closing -->
+<section class="slide split" data-animate="split-statement" data-slide-id="closing">
+  <div class="canvas-card">
+    <div class="split-half">
+      <!-- 左半 · IKB 宣言 + ASCII 呼吸场 -->
+      <div class="half b-accent" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between;position:relative;overflow:hidden">
+        <canvas class="ascii-bg" aria-hidden="true"></canvas>
+        <div class="chrome-min" style="margin-bottom:0;position:relative;z-index:1">
+          <div class="l">07 / 07</div>
+          <div class="r">CLOSING</div>
+        </div>
+
+        <div data-anim="manifesto" style="display:flex;flex-direction:column;gap:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(var(--accent-on-rgb),.78);letter-spacing:.22em;margin-bottom:1.6vh">MANIFESTO</div>
+          <h2 style="font-family:var(--sans),var(--sans-zh);font-size:min(8vw,14vh);line-height:.94;letter-spacing:-.025em;font-weight:200;color:var(--accent-on)">Say less.<br/>Align <span style="font-style:italic;font-weight:300">everything</span>.</h2>
+          <div style="font-family:var(--sans),var(--sans-zh);font-size:max(min(14px,1.944vh),min(1vw,1.778vh));line-height:1.6;color:rgba(var(--accent-on-rgb),.82);font-weight:400;max-width:36ch;margin-top:1.4vh">Three rules to take away from this demo.</div>
+        </div>
+
+        <div data-anim="signature" style="display:flex;justify-content:space-between;align-items:end;border-top:1px solid rgba(var(--accent-on-rgb),.22);padding-top:2vh;position:relative;z-index:1">
+          <div class="t-meta" style="color:rgba(var(--accent-on-rgb),.62)">Demo deck</div>
+          <div class="t-meta" style="color:rgba(var(--accent-on-rgb),.62)">2026</div>
+        </div>
+      </div>
+
+      <!-- 右半 · 三条 takeaway · 白底承载理性收束 -->
+      <div class="half" style="padding:5.6vh 3.6vw 4.4vh;justify-content:space-between">
+        <div class="chrome-min">
+          <div class="l">TAKEAWAYS</div>
+          <div class="r">03 RULES</div>
+        </div>
+
+        <div data-anim="rules" style="display:flex;flex-direction:column;gap:0">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:min(2vw,3.556vh) 2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--text-primary)">01</div>
+            <div>
+              <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(min(18px,2.5vh),min(1.8vw,3.2vh));line-height:1.2;letter-spacing:-.015em;color:var(--text-primary);margin-bottom:1vh">One anchor color</h3>
+              <p style="font-family:var(--sans),var(--sans-zh);font-size:max(min(16px,2.222vh),.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">Pick one accent for the whole deck and let it carry the emphasis.</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:min(2vw,3.556vh) 2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--text-primary)">02</div>
+            <div>
+              <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(min(18px,2.5vh),min(1.8vw,3.2vh));line-height:1.2;letter-spacing:-.015em;color:var(--text-primary);margin-bottom:1vh">Snap to the grid</h3>
+              <p style="font-family:var(--sans),var(--sans-zh);font-size:max(min(16px,2.222vh),.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">Left-aligned text, hairline rules, generous white space.</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:min(2vw,3.556vh) 2vw;align-items:start;padding:2.6vh 0;border-top:1px solid var(--border-subtle);border-bottom:2px solid var(--accent)">
+            <div style="font-family:var(--sans);font-weight:200;font-size:min(4.4vw,7.8vh);line-height:.9;color:var(--accent-ink)">03</div>
+            <div>
+              <h3 style="font-family:var(--sans),var(--sans-zh);font-weight:400;font-size:max(min(18px,2.5vh),min(1.8vw,3.2vh));line-height:1.2;letter-spacing:-.015em;color:var(--accent-ink);margin-bottom:1vh">Let size do the talking</h3>
+              <p style="font-family:var(--sans),var(--sans-zh);font-size:max(min(16px,2.222vh),.94vw);line-height:1.6;color:var(--text-secondary);font-weight:400">Very large, very light headlines against small labels.</p>
+            </div>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+    </div>
+  </div>
+</section>

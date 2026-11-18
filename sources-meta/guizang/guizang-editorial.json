@@ -1,0 +1,32 @@
+{
+  "slug": "guizang-editorial",
+  "name": "Editorial Magazine × Electronic Ink",
+  "tagline": "A Monocle-style editorial deck: serif headlines, warm e-ink themes and a WebGL fluid background.",
+  "description": "A horizontal-swipe deck system that reads like a printed magazine with a little code stitched in. Large serif headlines (Playfair Display with Noto Serif SC), a sans-serif body, monospace metadata and hairline rules carry the hierarchy instead of shadows or floating cards. A WebGL fluid background shows through on hero pages only, and light and dark pages alternate to set the rhythm. Five electronic-ink themes are built in and chosen with one data-theme attribute. Presenter mode, speaker notes, an audience window, overview and a low-power static mode are part of the template. Style A of the Guizang PPT Skill, written for narrative talks, opinion pieces and personal voice.",
+  "mood": ["editorial", "literary", "refined", "calm"],
+  "occasion": ["conference talk", "salon", "opinion piece", "keynote", "product launch"],
+  "tone": ["thoughtful", "intellectual", "human"],
+  "formality": "medium",
+  "density": "medium-low",
+  "palette": {
+    "description": "Five electronic-ink themes, one per deck: ink-classic (default), indigo-porcelain, forest-ink, kraft-paper and dune. Each pairs a warm paper tone with a deep ink color; every text, rule and accent color comes from theme variables, never from hand-written hex values",
+    "ink-classic paper": "#f1efea",
+    "ink-classic ink": "#0a0a0b",
+    "indigo-porcelain ink": "#0a1f3d",
+    "forest-ink ink": "#1a2e1f",
+    "kraft-paper ink": "#2a1e13",
+    "dune ink": "#1f1a14"
+  },
+  "typography": {
+    "display": "Playfair Display",
+    "serif": "Source Serif 4",
+    "cn": "Noto Serif SC (headlines), Noto Sans SC (body)",
+    "mono": "IBM Plex Mono",
+    "style": "Serif headlines, sans-serif body, monospace metadata labels; the hierarchy comes from type size and typeface contrast, not from shadows or cards"
+  },
+  "scheme": "mixed",
+  "best_for": "Narrative talks, industry observations, salons, product launches with a story, opinion pieces and anything with a strong personal voice, in English or Chinese. Works best with a few large ideas per slide, photographs and short data callouts.",
+  "avoid_for": "Dense tables, training courseware (information density is too low) and decks that several people edit together. The WebGL background needs a reasonably modern machine; a static mode is built in.",
+  "slide_count": 8,
+  "navigation": "Horizontal swipe: arrow keys, mouse wheel, touch swipe and bottom dots; Esc opens the overview, P presenter mode, B static mode"
+}

@@ -33,9 +33,152 @@
       }
     },
     {
+      "id": "guizang",
+      "name": "Guizang Skill",
+      "author": "Guizang",
+      "authorZh": "歸藏",
+      "authorUrl": "https://github.com/op7418",
+      "license": "AGPL-3.0",
+      "licenseUrl": "https://github.com/op7418/guizang-ppt-skill/blob/main/LICENSE",
+      "repo": "https://github.com/op7418/guizang-ppt-skill",
+      "branch": "main",
+      "path": "upstream/guizang",
+      "packLicenseName": "LICENSE",
+      "layout": {
+        "templatesDir": "templates",
+        "metaFile": "template.json",
+        "htmlFile": "template.html",
+        "designFile": "design.md",
+        "screenshotsDir": "screenshots",
+        "licenseFile": "LICENSE"
+      },
+      "overlay": {
+        "metaDir": "sources-meta/guizang",
+        "templates": {
+          "guizang-editorial": {
+            "html": "assets/template.html",
+            "link": "assets/template.html",
+            "assets": [
+              "assets/motion.min.js"
+            ],
+            "docs": [
+              {
+                "path": "SKILL.md",
+                "en": "The author's workflow and rules: the two styles, the question list, theme and layout selection, the self-check order. Your primary source of truth (section 4 lists what this prompt overrides).",
+                "zh": "作者的工作流与规则：两种风格、提问清单、主题与版式的选择、自检顺序。是你的首要依据（第 4 节列出了本提示词覆盖的部分）。"
+              },
+              {
+                "path": "references/themes.md",
+                "en": "The five theme presets (colors) and how a theme is selected with `data-theme`.",
+                "zh": "五套主题配色预设，以及如何用 `data-theme` 选择主题。"
+              },
+              {
+                "path": "references/layouts.md",
+                "en": "Paste-ready slide skeletons (10 layouts), the pre-flight class list and the light/dark rhythm rules.",
+                "zh": "可直接粘贴的页面骨架（10 种版式）、动手前的类名预检清单，以及深浅主题的节奏规则。"
+              },
+              {
+                "path": "references/components.md",
+                "en": "Component catalogue (type, color, grid, callout, stat, pipeline, motion). Look things up here when a layout does not say how.",
+                "zh": "组件手册（字体、颜色、网格、引用块、数据块、流水线、动效）。版式没写清怎么做时到这里查。"
+              },
+              {
+                "path": "references/presenter-mode.md",
+                "en": "Speaker-notes contract (`SPEAKER_NOTES`, `data-slide-id`) and how the built-in presenter mode works.",
+                "zh": "演讲备注契约（`SPEAKER_NOTES`、`data-slide-id`）以及内置演讲者模式的工作方式。"
+              },
+              {
+                "path": "references/checklist.md",
+                "en": "The author's quality checklist (P0 to P3). Check the finished deck against it.",
+                "zh": "作者的质量检查清单（P0 到 P3）。成稿后逐项对照。"
+              }
+            ],
+            "allowHosts": [
+              "unpkg.com"
+            ],
+            "preview": {
+              "slides": "sources-meta/guizang/demo/guizang-editorial.slides.html",
+              "replace": "(<div id=\"deck\">)[\\s\\S]*?(</div>\\s*<div id=\"nav\">)",
+              "inlineModules": [
+                "assets/motion.min.js"
+              ],
+              "replaceScripts": [
+                {
+                  "src": "https://unpkg.com/lucide@latest/dist/umd/lucide.min.js",
+                  "with": "window.lucide={createIcons:function(){}};"
+                }
+              ]
+            }
+          },
+          "guizang-swiss": {
+            "html": "assets/template-swiss.html",
+            "link": "assets/template-swiss.html",
+            "assets": [
+              "assets/motion.min.js"
+            ],
+            "docs": [
+              {
+                "path": "SKILL.md",
+                "en": "The author's workflow and rules: the two styles, the question list, theme and layout selection, the self-check order. Your primary source of truth (section 4 lists what this prompt overrides).",
+                "zh": "作者的工作流与规则：两种风格、提问清单、主题与版式的选择、自检顺序。是你的首要依据（第 4 节列出了本提示词覆盖的部分）。"
+              },
+              {
+                "path": "references/themes-swiss.md",
+                "en": "The four anchor-color themes and how a theme is selected with `data-theme`.",
+                "zh": "四套锚点色主题，以及如何用 `data-theme` 选择主题。"
+              },
+              {
+                "path": "references/layouts-swiss.md",
+                "en": "The 22 registered Swiss layouts (S01 to S22) with skeletons, and the P0 alignment rules.",
+                "zh": "22 个登记的瑞士风版式（S01 到 S22）及其骨架，以及 P0 对齐法则。"
+              },
+              {
+                "path": "references/swiss-layout-lock.md",
+                "en": "The layout lock: body slides may only use registered layouts, and every slide carries `data-layout`.",
+                "zh": "版式锁：正文页只能使用登记的版式，每页都要写 `data-layout`。"
+              },
+              {
+                "path": "references/presenter-mode.md",
+                "en": "Speaker-notes contract (`SPEAKER_NOTES`, `data-slide-id`) and how the built-in presenter mode works.",
+                "zh": "演讲备注契约（`SPEAKER_NOTES`、`data-slide-id`）以及内置演讲者模式的工作方式。"
+              },
+              {
+                "path": "references/checklist.md",
+                "en": "The author's quality checklist (P0 to P3). Check the finished deck against it.",
+                "zh": "作者的质量检查清单（P0 到 P3）。成稿后逐项对照。"
+              }
+            ],
+            "allowHosts": [
+              "unpkg.com"
+            ],
+            "preview": {
+              "slides": "sources-meta/guizang/demo/guizang-swiss.slides.html",
+              "replace": "(<div id=\"deck\">)[\\s\\S]*?(</div>\\s*<div id=\"nav\">)",
+              "inlineModules": [
+                "assets/motion.min.js"
+              ],
+              "replaceScripts": [
+                {
+                  "src": "https://unpkg.com/lucide@latest/dist/umd/lucide.min.js",
+                  "with": "window.lucide={createIcons:function(){}};"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "screenshots": {
+        "slides": [
+          1,
+          "middle",
+          "last"
+        ]
+      }
+    },
+    {
       "id": "style-presets",
       "name": "Style Presets",
-      "author": "slides-commons",
+      "author": "NeoSun",
       "authorUrl": "https://github.com/NeoSunxz/slides-commons",
       "license": "MIT",
       "repo": "https://github.com/NeoSunxz/slides-commons",

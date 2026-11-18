@@ -22,6 +22,7 @@
         "id": { "$ref": "#/$defs/id" },
         "name": { "$ref": "#/$defs/str" },
         "author": { "$ref": "#/$defs/str" },
+        "authorZh": { "description": "Author name in Chinese, used in the Chinese license notice only (pages show `author`; English pages never contain CJK).", "$ref": "#/$defs/str" },
         "authorUrl": { "$ref": "#/$defs/url" },
         "license": { "$ref": "#/$defs/str" },
         "repo": { "$ref": "#/$defs/url" },
@@ -29,6 +30,126 @@
         "path": { "$ref": "#/$defs/str" },
         "repoPath": { "description": "POSIX path of `path` inside `repo` (default: the repo root). Back-links are <repo>/tree/<branch>/<repoPath>/<templatesDir>/<slug>.", "type": "string" },
         "include": { "type": "array", "items": { "$ref": "#/$defs/str" } },
+        "licenseUrl": {
+          "description": "Link to the license text in the source repo (default: <repo>/blob/<branch>/LICENSE). Shown next to the license notice.",
+          "$ref": "#/$defs/url"
+        },
+        "overlay": {
+          "description": "For sources that are NOT organised as templates/<slug>/{template.json,design.md,screenshots} (typically a read-only submodule): the metadata, screenshots and demo slides live in this repo (`metaDir`: <slug>.json, screenshots/<slug>-N.png) and each template is mapped onto files of the source. See scripts/overlay.mjs.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "metaDir",
+            "templates"
+          ],
+          "properties": {
+            "metaDir": {
+              "description": "POSIX path inside this repo with <slug>.json (all template.json fields) and screenshots/.",
+              "$ref": "#/$defs/str"
+            },
+            "templates": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "html",
+                  "docs"
+                ],
+                "properties": {
+                  "html": {
+                    "description": "The template's HTML file, relative to the source directory. Shipped in the pack as template.html.",
+                    "$ref": "#/$defs/str"
+                  },
+                  "keepPaths": {
+                    "description": "Ship the HTML at its own relative path (not as template.html), so the relative references inside the upstream files (../../assets/...) keep working: every file the HTML loads must be listed in `assets` or `docs`. The preview copy resolves them from the HTML's directory.",
+                    "type": "boolean"
+                  },
+                  "prompt": {
+                    "description": "Which prompt family to generate: `base-file` (default; the template is the base file of the deck, with an insertion point for slides) or `skill-deck` (an agent skill that ships complete example decks on a fixed 1920x1080 canvas, with shared stylesheets and a runtime to inline).",
+                    "enum": ["base-file", "skill-deck"]
+                  },
+                  "link": {
+                    "description": "Path inside the source repo the detail page links back to (default: html).",
+                    "$ref": "#/$defs/str"
+                  },
+                  "assets": {
+                    "description": "Local files the HTML loads, relative to the source directory; shipped under the same relative path.",
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/str"
+                    }
+                  },
+                  "docs": {
+                    "description": "Design documents shipped unmodified (SKILL.md at the pack root, others under their relative path), in reading order.",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["path", "en", "zh"],
+                      "properties": {
+                        "path": { "description": "Relative to the source directory; shipped under the same path.", "$ref": "#/$defs/str" },
+                        "en": { "description": "What the file is for (English prompt).", "$ref": "#/$defs/str" },
+                        "zh": { "description": "Same, Chinese prompt.", "$ref": "#/$defs/str" }
+                      }
+                    }
+                  },
+                  "allowHosts": {
+                    "description": "Hosts the ORIGINAL html may reference in addition to the global whitelist (the preview copy and generated decks must not use them; see `preview.replaceScripts`).",
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/str"
+                    }
+                  },
+                  "preview": {
+                    "description": "Changes made to the site's preview copy only (never to the zip).",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "slides": {
+                        "description": "HTML fragment (slides) inserted into the preview, relative to the repo root.",
+                        "$ref": "#/$defs/str"
+                      },
+                      "replace": {
+                        "description": "Regex with two capture groups; the slides are inserted between them, replacing whatever was there.",
+                        "$ref": "#/$defs/str"
+                      },
+                      "inlineModules": {
+                        "description": "Local files (relative to the source dir) imported with import('./...'): replaced by data: URIs so a sandboxed frame can load them.",
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/str"
+                        }
+                      },
+                      "replaceScripts": {
+                        "description": "Remote <script src> tags replaced by an inline script.",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "src",
+                            "with"
+                          ],
+                          "properties": {
+                            "src": {
+                              "$ref": "#/$defs/url"
+                            },
+                            "with": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "packLicenseName": { "description": "File name of the source license inside the zip (default LICENSE-templates).", "$ref": "#/$defs/str" },
         "collection": { "description": "Own-work collection living inside this repo: pack README says so instead of 'unmodified copies of the originals'.", "type": "boolean" },
         "perTemplateLicense": { "description": "Every template directory holds its own LICENSE file and must set `authors` and `license` in template.json (community contributions). The pack ships that file as LICENSE; the source-level `author` / `license` are only a label.", "type": "boolean" },

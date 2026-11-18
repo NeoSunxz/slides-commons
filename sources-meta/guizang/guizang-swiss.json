@@ -1,0 +1,32 @@
+{
+  "slug": "guizang-swiss",
+  "name": "Swiss International Style",
+  "tagline": "Grid-first Swiss deck: one high-saturation anchor color, hairline rules and extreme type contrast.",
+  "description": "A strict layout system rather than a skin. Everything snaps to a 12-column grid with sharp rectangles, 1px hairlines, no shadows, no gradients and no rounded cards. Headlines are very large and very light (weight 200) against small, heavier labels, so the hierarchy comes from scale alone. One anchor color per deck, chosen from four presets (International Klein Blue, lemon yellow, lemon green, safety orange). Body slides use 22 registered layouts (S01 to S22), including KPI towers, bar charts, timelines, loop and system diagrams. A WebGL grid and dot background shows on hero pages. Presenter mode, speaker notes, overview and a low-power static mode are part of the template. Style B of the Guizang PPT Skill, written for facts, products, analysis and frameworks.",
+  "mood": ["modernist", "precise", "rigorous", "bold"],
+  "occasion": ["product launch", "data review", "year-end summary", "framework talk", "design or engineering talk"],
+  "tone": ["factual", "analytical", "direct"],
+  "formality": "medium-high",
+  "density": "medium",
+  "palette": {
+    "description": "Four anchor-color themes, one per deck: ikb (International Klein Blue, the default), lemon, lemon-green and safety-orange, on an off-white paper with near-black ink. A deck uses a single accent; every color comes from theme variables, never from hand-written hex values",
+    "paper": "#fafaf8",
+    "ink": "#0a0a0a",
+    "ikb": "#002FA7",
+    "lemon": "#FFD500",
+    "lemon-green": "#C5E803",
+    "safety-orange": "#FF6B35"
+  },
+  "typography": {
+    "display": "Inter",
+    "sans": "Inter",
+    "cn": "Noto Sans SC",
+    "mono": "JetBrains Mono",
+    "style": "Sans-serif only: very large, very light headlines against small, heavier monospace labels; type scale carries the hierarchy"
+  },
+  "scheme": "mixed",
+  "best_for": "Technology products, data reports, design and engineering talks, annual summaries, frameworks and analysis in English or Chinese. Shines on slides built around real numbers, comparisons, timelines and structure diagrams.",
+  "avoid_for": "Warm, literary or story-driven talks where a magazine voice fits better, decks without real data for the data layouts, and decks that need freely invented layouts (the registered layouts are locked).",
+  "slide_count": 7,
+  "navigation": "Horizontal swipe: arrow keys, mouse wheel, touch swipe and bottom dots; Esc opens the overview, P presenter mode, B static mode"
+}
