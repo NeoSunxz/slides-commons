@@ -11,6 +11,8 @@
   var prev = document.getElementById('prev');
   var next = document.getElementById('next');
 
+  var slideNow = 0, slideTotal = 0;
+
   function nav(dir) {
     if (!frame || !frame.contentWindow) return;
     frame.contentWindow.postMessage({ type: 'slides-commons:nav', dir: dir }, '*');
@@ -33,6 +35,7 @@
       if (!m || m.type !== 'slides-commons:state') return;
       if (typeof m.index !== 'number' || typeof m.total !== 'number') return;
       gotState = true;
+      slideNow = m.index; slideTotal = m.total;
       counter.textContent = (m.index + 1) + ' / ' + m.total;
       if (m.via) counter.setAttribute('data-via', m.via);
       // Slide count comes from the running deck, not from template.json metadata.
@@ -59,6 +62,49 @@
       if (e.key === 'ArrowRight') { if (!next.disabled) nav('next'); e.preventDefault(); }
       else if (e.key === 'ArrowLeft') { if (!prev.disabled) nav('prev'); e.preventDefault(); }
     });
+  }
+
+  // --- Screenshots jump the preview to their slide ------------------------------
+  // data-slide is a number, "middle" or "last". The bridge pages one slide per request, so a jump
+  // is a run of next / prev requests (the bridge queues them and waits out key locks).
+  function jumpTo(spec) {
+    if (!frame || !slideTotal) return false;
+    var target = spec === 'last' ? slideTotal : spec === 'middle' ? Math.ceil(slideTotal / 2) : Math.min(Number(spec), slideTotal);
+    if (!(target >= 1)) return false;
+    var delta = target - 1 - slideNow;
+    for (var i = 0; i < Math.abs(delta); i++) nav(delta > 0 ? 'next' : 'prev');
+    return true;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.shots a[data-slide]'), function (a) {
+    a.addEventListener('click', function (e) {
+      if (!jumpTo(a.getAttribute('data-slide'))) return; // not ready: open the image as a link
+      e.preventDefault();
+      var box = document.getElementById('preview-wrap');
+      if (box && box.scrollIntoView) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+  });
+
+  // --- Collapsible description ----------------------------------------------------
+  var desc = document.querySelector('.desc');
+  if (desc) {
+    var para = desc.querySelector('p');
+    desc.classList.add('is-clamped');
+    if (para.scrollHeight <= para.clientHeight + 1) {
+      desc.classList.remove('is-clamped');
+    } else {
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'desc-toggle';
+      toggle.textContent = desc.getAttribute('data-more');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-controls', para.id);
+      toggle.addEventListener('click', function () {
+        var open = desc.classList.toggle('is-clamped') === false;
+        toggle.textContent = desc.getAttribute(open ? 'data-less' : 'data-more');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      desc.appendChild(toggle);
+    }
   }
 
   // --- Scale the preview -----------------------------------------------------

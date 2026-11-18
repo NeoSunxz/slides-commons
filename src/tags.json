@@ -1,0 +1,17 @@
+{
+  "_comment": "Mood filter groups. Every mood tag found in a template must appear in exactly one group (lower-case); the build fails on an unmapped tag. The gallery filter shows only these groups; search still matches the original mood and tone tags.",
+  "groups": [
+    { "id": "bold", "en": "Bold", "zh": "大胆", "tags": ["bold", "confident", "loud", "punchy", "high-impact", "high-contrast", "dramatic", "weighty", "electric", "energetic", "activist", "poster-like", "underground", "graphic"] },
+    { "id": "warm", "en": "Warm", "zh": "温暖", "tags": ["warm", "friendly", "approachable", "wholesome", "sunny", "encouraging", "honest", "intimate", "warm-classical", "warm-minimal", "warm-modern", "warm-retro", "earthy", "natural", "organic", "hospitality", "social", "soft"] },
+    { "id": "editorial", "en": "Editorial", "zh": "杂志", "tags": ["editorial", "magazine-cover", "newspaper", "ledger", "archival", "design-research", "tech-print", "cultural-institution", "product-catalogue"] },
+    { "id": "calm", "en": "Calm", "zh": "沉静", "tags": ["calm", "quiet", "restrained", "airy", "clear", "focused", "thoughtful", "intentional", "minimal", "considered"] },
+    { "id": "elegant", "en": "Elegant", "zh": "优雅", "tags": ["elegant", "refined", "luxe", "premium", "sophisticated", "polished", "sleek"] },
+    { "id": "playful", "en": "Playful", "zh": "俏皮", "tags": ["playful", "fun", "witty", "cheerful", "kawaii-tech", "messy-on-purpose", "pop"] },
+    { "id": "professional", "en": "Professional", "zh": "专业", "tags": ["professional", "trustworthy", "corporate", "institutional", "authoritative", "organized", "structured", "rigorous", "analytical", "data-dense", "studious", "scholarly", "rational", "precise", "crisp"] },
+    { "id": "modern", "en": "Modern", "zh": "现代", "tags": ["modern", "modernist", "clean", "fresh", "design-led", "monochrome"] },
+    { "id": "retro", "en": "Retro", "zh": "复古", "tags": ["retro", "nostalgic", "retro-modern", "retro-tech", "lo-fi", "mid-century"] },
+    { "id": "tech", "en": "Tech", "zh": "科技", "tags": ["techy", "technical", "cyberpunk", "futuristic", "geeky", "hacker", "monospace"] },
+    { "id": "crafted", "en": "Crafted", "zh": "手作", "tags": ["crafted", "handmade", "tactile", "small-batch", "workshop", "raw"] },
+    { "id": "artistic", "en": "Artistic", "zh": "文艺", "tags": ["artistic", "creative", "literary", "atmospheric", "moody", "nocturnal", "expressive", "intellectual", "indie"] }
+  ]
+}

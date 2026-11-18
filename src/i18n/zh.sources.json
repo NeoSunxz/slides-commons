@@ -100,7 +100,7 @@
   },
   "consulting-report": {
     "tagline": "ba605a2835fb",
-    "description": "21a37278a78c",
+    "description": "734284909bde",
     "best_for": "8035abc4bff9",
     "avoid_for": "42b156990180",
     "occasion": "bcc5adb55f26",
@@ -196,6 +196,24 @@
     "occasion": "1a7ba45e890c",
     "palette_description": "f0fbb2470af1",
     "typography_style": "82504b8fa445"
+  },
+  "guizang-editorial": {
+    "tagline": "ee0f250f0550",
+    "description": "a0c17dd7f648",
+    "best_for": "0ae525d9e217",
+    "avoid_for": "21443fa006a8",
+    "occasion": "843851fefc8e",
+    "palette_description": "fa069b4d92ee",
+    "typography_style": "c97f3a48bc89"
+  },
+  "guizang-swiss": {
+    "tagline": "ddf0e1b6394c",
+    "description": "7cc09b450240",
+    "best_for": "bd54acbca40f",
+    "avoid_for": "8861175e6af4",
+    "occasion": "785be080b80e",
+    "palette_description": "64ccee801317",
+    "typography_style": "b4e600d18f76"
   },
   "long-table": {
     "tagline": "6f8f216151e7",

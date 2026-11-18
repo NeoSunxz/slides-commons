@@ -99,7 +99,7 @@
   // Requests are served one at a time, in order. What counts as "the key worked" depends
   // on how the position can be read:
   //
-  //  * <deck-stage> and class-based decks (the position is an index that changes in the
+  //  * <deck-stage>, class-based decks and decks publishing window.__currentSlideIndex (the position is an index that changes in the
   //    key handler): the key worked ONLY if the slide position actually changed. Nothing
   //    else is evidence. Other page activity is common while a deck is locked (staggered
   //    animation-delay children fire animationstart 0.3-0.8 s after a move, class changes
@@ -187,9 +187,16 @@
       }
       if (slides.length) return null;
     }
-    slides = document.querySelectorAll('.slide');
+    // Slides cloned into an overview / thumbnail grid (html-ppt's runtime builds one at start-up,
+    // every clone carrying "slide is-active") are not slides of the deck.
+    slides = Array.prototype.filter.call(document.querySelectorAll('.slide'), function (el) { return !el.closest('.overview'); });
     if (!slides.length) slides = document.querySelectorAll('body > section, main > section, section');
     if (!slides.length) return null;
+    // Decks that publish their position (the Guizang templates set window.__currentSlideIndex in
+    // their go() function): an index that changes in the key handler, like the class-based decks.
+    if (typeof window.__currentSlideIndex === 'number' && window.__currentSlideIndex >= 0 && window.__currentSlideIndex < slides.length) {
+      return { index: window.__currentSlideIndex, total: slides.length, via: 'index' };
+    }
     // Exactly one slide carrying an "active" class marks the current one.
     var marked = -1, markedCount = 0;
     for (i = 0; i < slides.length; i++) {

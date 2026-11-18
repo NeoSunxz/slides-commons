@@ -1,0 +1,9 @@
+{
+  "_comment": "Templates shown in the home page hero wall (first 16) and carousel. Pick only templates whose first screenshot has no placeholder text ([Month, Year], PLACEHOLDER, [Presentation Title], ...). The build fails on an unknown slug.",
+  "carousel": [
+    "biennale-yellow", "neon-cyber", "swiss-modern", "dark-botanical",
+    "bold-poster", "pink-script", "stencil-tablet", "vintage-editorial",
+    "neo-grid-bold", "paper-and-ink", "emerald-editorial", "electric-studio",
+    "sakura-chroma", "terminal-green", "playful", "pastel-geometry"
+  ]
+}
