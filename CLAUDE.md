@@ -200,6 +200,7 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-18：页面改版移植完成（新首页 `src/home.*`、独立 `gallery/`、`src/tags.json` 12 个情绪大类、协议筛选、页头 GitHub 图标、页脚列出各来源作者/协议、详情页折叠描述/适用对比卡/色带/字体实样/署名卡）。新增 overlay 来源 guizang（歸藏 Guizang PPT Skill，AGPL-3.0，只读 submodule `upstream/guizang`，`scripts/overlay.mjs` + `sources-meta/guizang/`，2 个模板；卡片角标、详情页、PROMPT 顶部、zip README、致谢均带 AGPL 提示）；`upstream/html-ppt-skill`（lewislulu）仅作参考资料，不入画廊（CREDITS.md 已注明）。共 52 个模板 / 4 个来源，`npm test` 891 通过。提示词增加均衡密度选项与 CJK 换行提示；4 个商务模板修订。
   - 已知：guizang 滚轮翻页偶发失效（模板的流水线步骤所致）；file:// 下 `motion.min.js` 动态 import 失败时回退到 CDN。
   - 下一步：维护者审阅改版与 `tags.json` 分组 → v0.3.0 PR（dev→main）。
+- 2026-11-19：v0.3.0 已发布（PR #3 合并，db4de6e，已打标签并建 Release，Pages 线上核实，`fonts/cjk` 以 CORS `*` 提供）。v0.3.1 修复 iOS 上 ↗ 箭头被显示为 emoji（改用内联 SVG / CSS mask，✓/✕ 加 U+FE0E）。
 
 ### 页面改版（维护者 2026-11-18）：已完成
 - 已从 `design/pages-refresh` 移植到 dev（新首页、`gallery/`、作者署名 NeoSun、页脚致谢与精简声明、12 大类情绪标签、详情页改版），详见 2026-11-18 进度。
