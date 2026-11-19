@@ -71,6 +71,9 @@ export const EXPECT = {
 };
 
 export function buildPptx({ truncateSlide2 = false } = {}) {
+  return writeZip(buildPptxFiles({ truncateSlide2 }));
+}
+function buildPptxFiles({ truncateSlide2 = false } = {}) {
   const s1 = slide(
     sp(2, 'Title 1', 120, 80, 1200, 160, { ph: 'title', text: `<a:p>${run('Quarterly Review', { sz: 4400, b: true, color: 'E4572E', latin: 'Georgia' })}</a:p>` })
     + sp(3, 'Accent bar', 0, 0, 40, 1080, { fill: 'E4572E' })
@@ -98,6 +101,85 @@ export function buildPptx({ truncateSlide2 = false } = {}) {
     ['ppt/slides/_rels/slide3.xml.rels', rels([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml']])],
     ['ppt/media/image1.png', tinyPng()],
   ];
-  return writeZip(files);
+  return files;
 }
 void EMU;
+
+// ---------------------------------------------------------------------------
+// A second deck ("rich") exercising what the newer extractor reports. Expected values are in RICH.
+// ---------------------------------------------------------------------------
+const px = (n) => n * 6350;
+const clr = (hex, alpha) => `<a:srgbClr val="${hex}">${alpha === undefined ? '' : `<a:alpha val="${alpha}"/>`}</a:srgbClr>`;
+/** A shape with full control over spPr children and the optional <p:style>. */
+function rawSp(id, name, x, y, w, h, { prst = 'rect', gd = '', fill = '<a:noFill/>', ln = '', effect = '', style = '', text = '' } = {}) {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(w)}" cy="${px(h)}"/></a:xfrm><a:prstGeom prst="${prst}"><a:avLst>${gd}</a:avLst></a:prstGeom>${fill}${ln}${effect}</p:spPr>${style}${text ? `<p:txBody><a:bodyPr/><a:lstStyle/>${text}</p:txBody>` : ''}</p:sp>`;
+}
+const solid = (hex, alpha) => `<a:solidFill>${clr(hex, alpha)}</a:solidFill>`;
+const styleRef = ({ ln = 0, fill = 0, effect = 0 } = {}) => `<p:style><a:lnRef idx="${ln}"><a:srgbClr val="2E86AB"/></a:lnRef><a:fillRef idx="${fill}"><a:srgbClr val="2E86AB"/></a:fillRef><a:effectRef idx="${effect}"><a:srgbClr val="000000"/></a:effectRef><a:fontRef idx="minor"/></p:style>`;
+const bgImage = '<p:bg><p:bgPr><a:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></a:blipFill><a:effectLst/></p:bgPr></p:bg>';
+const bgSolid = (hex) => `<p:bg><p:bgPr>${solid(hex)}<a:effectLst/></p:bgPr></p:bg>`;
+const slideBg = (bg, shapes) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld ${NS}><p:cSld>${bg}<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapes}</p:spTree></p:cSld></p:sld>`;
+const para = (...runs) => `<a:p>${runs.join('')}</a:p>`;
+
+/** Brand fonts the font map must know (name -> expected open replacement). */
+export const BRAND_FONTS = {
+  'HarmonyOS Sans SC': 'Noto Sans SC',
+  'Alibaba PuHuiTi 3.0': 'Noto Sans SC',
+  OPPOSans: 'Noto Sans SC',
+  MiSans: 'Noto Sans SC',
+  'vivo Sans': 'Noto Sans SC',
+  'Smiley Sans': 'Noto Sans SC',
+  '方正兰亭黑_GBK': 'Noto Sans SC',
+  '方正小标宋简体': 'Noto Serif SC',
+  '方正楷体简体': 'Noto Serif SC',
+  '思源黑体 CN': 'Noto Sans SC',
+  '思源宋体 CN': 'Noto Serif SC',
+};
+
+export const RICH = {
+  slide1: { bg: 'ppt/media/image1.png', over: { x: 100, y: 100, w: 800, h: 300, fill: '000000', alpha: 0.5 } },
+  // slide 2: white background
+  slide2: {
+    backdrop: 'FFFFFF',
+    translucent: { fill: 'E4572E', alpha: 0.4 },
+    textAlpha: { color: '1F2A44', alpha: 0.6 },
+    lnRefWidthPx: 4, // theme line style 2 = 25400 EMU
+    shadow: { blur: 10, dist: 6, angle: 45, color: '000000', alpha: 0.4 },
+    themeShadow: { blur: 8, dist: 4, angle: 90 }, // theme effect style 2
+    reflection: { blur: 4, dist: 2 },
+    roundRect: { w: 400, h: 200, adj: 25000, radius: 50 },
+    roundRectDefaultRadius: 33.3, // 16667 / 100000 * 200
+  },
+  runs: { bold: true, color: '17BEBB', size: 40 },
+};
+
+const emu = (px_) => px_ * 6350;
+export function buildRichPptx() {
+  const s1 = slideBg(bgImage,
+    rawSp(2, 'Scrim', 100, 100, 800, 300, { fill: solid('000000', 50000) }));
+  const s2 = slideBg(bgSolid('FFFFFF'),
+    rawSp(2, 'Glass', 100, 100, 500, 200, { fill: solid('E4572E', 40000) })
+    + rawSp(3, 'Quote', 100, 350, 900, 120, { text: para(`<a:r><a:rPr lang="en-US" sz="2400">${solid('1F2A44', 60000)}</a:rPr><a:t>Muted caption</a:t></a:r>`) })
+    + rawSp(4, 'Outlined', 100, 520, 400, 120, { fill: solid('FFFFFF'), style: styleRef({ ln: 2 }) })
+    + rawSp(5, 'Shadowed', 700, 100, 400, 200, { fill: solid('FFFFFF'), effect: `<a:effectLst><a:outerShdw blurRad="${emu(10)}" dist="${emu(6)}" dir="2700000" algn="tl" rotWithShape="0">${clr('000000', 40000)}</a:outerShdw></a:effectLst>` })
+    + rawSp(6, 'Themed shadow', 700, 350, 400, 200, { fill: solid('FFFFFF'), style: styleRef({ effect: 2 }) })
+    + rawSp(7, 'Mirror', 700, 600, 400, 200, { fill: solid('FFFFFF'), effect: `<a:effectLst><a:reflection blurRad="${emu(4)}" stA="50000" endA="0" dist="${emu(2)}" dir="5400000" sy="-100000" algn="bl" rotWithShape="0"/></a:effectLst>` })
+    + rawSp(8, 'Rounded', 1200, 100, 400, 200, { prst: 'roundRect', gd: '<a:gd name="adj" fmla="val 25000"/>', fill: solid('76B041') })
+    + rawSp(9, 'Rounded default', 1200, 350, 400, 200, { prst: 'roundRect', fill: solid('76B041') })
+    + rawSp(10, 'Pill', 1200, 600, 400, 200, { prst: 'roundRect', gd: '<a:gd name="adj" fmla="val 90000"/>', fill: solid('76B041') }));
+  const s3 = slideBg(bgSolid('FFFFFF'),
+    rawSp(2, 'Emphasis', 120, 100, 1600, 160, { text: para(run('Bold teal ', { sz: 4000, b: true, color: '17BEBB' }), run('plain dark', { sz: 4000, color: '111111' })) })
+    + Object.keys(BRAND_FONTS).map((f, i) => rawSp(20 + i, `Brand ${i}`, 120, 300 + i * 60, 1600, 50, { text: para(run('品牌字体 Sample', { sz: 2000, ea: f, latin: f })) })).join(''));
+  const theme = (fmt) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Rich"><a:themeElements><a:clrScheme name="Rich">${Object.entries(THEME.colors).map(([k, v]) => `<a:${k}><a:srgbClr val="${v}"/></a:${k}>`).join('')}</a:clrScheme><a:fontScheme name="Rich"><a:majorFont><a:latin typeface="${THEME.major}"/><a:ea typeface="${THEME.ea}"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="${THEME.minor}"/><a:ea typeface="${THEME.ea}"/><a:cs typeface=""/></a:minorFont></a:fontScheme>${fmt}</a:themeElements></a:theme>`;
+  const fmt = `<a:fmtScheme name="Rich"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="25400"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="dash"/></a:ln><a:ln w="38100"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst><a:outerShdw blurRad="${emu(8)}" dist="${emu(4)}" dir="5400000" algn="t" rotWithShape="0">${clr('000000', 30000)}</a:outerShdw></a:effectLst></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme>`;
+  const base = buildPptxFiles();
+  const files = base.map(([n, d]) => {
+    if (n === 'ppt/theme/theme1.xml') return [n, theme(fmt)];
+    if (n === 'ppt/slides/slide1.xml') return [n, s1];
+    if (n === 'ppt/slides/slide2.xml') return [n, s2];
+    if (n === 'ppt/slides/slide3.xml') return [n, s3];
+    if (n === 'ppt/slides/_rels/slide2.xml.rels' || n === 'ppt/slides/_rels/slide3.xml.rels') return [n, d];
+    return [n, d];
+  });
+  return writeZip(files);
+}
