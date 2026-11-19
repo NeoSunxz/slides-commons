@@ -33,12 +33,14 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
-import { parseRequests, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
+import { parseRequests, cjkFamilyEntry, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
 import { checkCollectionTemplate } from './collection-checks.mjs';
 import { overlayPreviewHtml, metaFileOf, screenshotsDirOf, inlineLocalAssets as inlineLocal } from './overlay.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, galleryPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
+import { convertPage, skillsPage } from '../src/kit-pages.mjs';
+import { buildKits } from './kits.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -1171,6 +1173,7 @@ function main() {
 
   fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
+  fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
   // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
@@ -1397,6 +1400,18 @@ function main() {
     pageData.push(data);
   }
 
+  // Convert kit + skills collection: two more zips and their pages.
+  // Only for the repository's own sources.json (--sources fixture builds stay minimal) and when kits/ exists.
+  const kits = path.resolve(SOURCES_FILE) === path.join(ROOT, 'sources.json') && fs.existsSync(path.join(ROOT, 'kits', 'kits.json'))
+    ? buildKits({ root: ROOT, site: SITE, siteUrl, makeZip, zipTime, writeFile, licenseName: fontLicenseName, cjkFamilyEntry, cjkRangesJson, fail })
+    : null;
+  if (kits) {
+    for (const lang of LANGS) {
+      writeFile(path.join(SITE, ...pagePath(lang, 'convert/index.html').split('/')), convertPage({ lang, kit: kits.convert }));
+      writeFile(path.join(SITE, ...pagePath(lang, 'skills/index.html').split('/')), skillsPage({ lang, skills: kits.skills }));
+    }
+  }
+
   for (const lang of LANGS) {
     writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, featured: homeSlugs }));
     writeFile(path.join(SITE, ...pagePath(lang, 'gallery/index.html').split('/')), galleryPage({ templates: pageData, lang, tags: tagGroups().groups }));
@@ -1408,6 +1423,7 @@ function main() {
     sources: sources.filter((s) => templates.some((t) => t.source === s.id)).map((s) => s.id),
     templates: templates.map((t) => ({ slug: t.slug, source: t.source })),
     zips: templates.map((t) => `zip/${t.slug}.zip`),
+    kits: kits ? kits.zips : [],
   }, null, 2) + '\n');
 
   const ms = Date.now() - started;

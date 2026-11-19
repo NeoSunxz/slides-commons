@@ -53,6 +53,8 @@ const STRINGS = {
     navHome: 'Home',
     navTemplates: 'Gallery',
     navCredits: 'Credits',
+    navConvert: 'Convert',
+    navSkills: 'Skills',
     skipContent: 'Skip to content',
     langLabel: 'Language',
     galleryEyebrow: 'THE COLLECTION',
@@ -80,6 +82,10 @@ const STRINGS = {
       processIntro: 'You bring the ideas. The pack brings the visual language. Your coding agent puts them together.',
       packLabel: 'Inside every pack',
       packNote: 'Design notes, reference slides, fonts and licenses. All in one download.',
+      extras: [
+        ['Already have a deck you like?', 'Turn it into a template', 'convert/'],
+        ['Working with Claude Code or another agent?', 'Install the skills', 'skills/'],
+      ],
       processTitles: ['Find a direction', 'Give your agent the prompt', 'Make it your own'],
       processDescriptions: [
         'Browse the gallery and flip through the slides. Choose the typography, colors and rhythm that suit your talk.',
@@ -182,6 +188,8 @@ const STRINGS = {
     navHome: '首页',
     navTemplates: '画廊',
     navCredits: '致谢',
+    navConvert: '转换',
+    navSkills: '技能',
     skipContent: '跳转到正文',
     langLabel: '语言',
     galleryEyebrow: '设计合集',
@@ -209,6 +217,10 @@ const STRINGS = {
       processIntro: '不必从空白页开始。模板给出设计语言，你负责内容，coding agent 负责把它们变成作品。',
       packLabel: '一个素材包，完整的设计语言',
       packNote: '设计说明、参考幻灯片、字体与许可证，一次下载。',
+      extras: [
+        ['已经有一份喜欢的幻灯片？', '把它变成模板', 'convert/'],
+        ['在用 Claude Code 或其他 agent？', '安装技能', 'skills/'],
+      ],
       processTitles: ['选一个方向', '把提示词交给 agent', '讲你自己的故事'],
       processDescriptions: [
         '在画廊里逐页预览，找到适合你的字体、配色与版式，而不是只看一张封面。',
@@ -330,6 +342,7 @@ export function setSources(sources) { footerSources = sources; }
 // usage steps start with copying the prompt and the zip becomes the offline fallback.
 let autoDownload = false;
 export function setAutoDownload(v) { autoDownload = Boolean(v); }
+export const isAutoDownload = () => autoDownload;
 
 /** Site-relative output path of a page, e.g. "zh/t/neo-grid-bold/index.html". */
 export function pagePath(lang, page) {
@@ -337,9 +350,9 @@ export function pagePath(lang, page) {
 }
 
 // Relative prefix from a page to the site root ("", "../", "../../" …).
-const rootFor = (sitePath) => '../'.repeat(sitePath.split('/').length - 1);
+export const rootFor = (sitePath) => '../'.repeat(sitePath.split('/').length - 1);
 
-function layout({ lang, page, title, description, body, scripts = [], redirectToPreferred = false, styles = [], extraHead = '' }) {
+export function layout({ lang, page, title, description, body, scripts = [], redirectToPreferred = false, styles = [], extraHead = '' }) {
   const S = STRINGS[lang];
   const root = rootFor(pagePath(lang, page));
   const home = root + LANG_DIR[lang]; // this language's root
@@ -353,7 +366,7 @@ function layout({ lang, page, title, description, body, scripts = [], redirectTo
     ? `<script>try{if(localStorage.getItem(${JSON.stringify(LANG_STORAGE_KEY)})==="zh"){location.replace(${JSON.stringify(pagePath('zh', page))}+location.search+location.hash)}}catch(e){}</script>\n`
     : '';
   const isHome = page === 'index.html';
-  const kind = isHome ? 'home' : page === 'credits.html' ? 'credits' : page === 'gallery/index.html' ? 'gallery' : 'detail';
+  const kind = isHome ? 'home' : page === 'credits.html' ? 'credits' : page === 'gallery/index.html' ? 'gallery' : page === 'convert/index.html' ? 'convert' : page === 'skills/index.html' ? 'skills' : 'detail';
   const cur = (k) => (kind === k ? ' aria-current="page"' : '');
   return `<!doctype html>
 <html lang="${HTML_LANG[lang]}"${isHome ? ' class="home-document"' : ''}>
@@ -372,7 +385,7 @@ ${styles.map((c) => `<link rel="stylesheet" href="${root}${c}">`).join('\n')}
   <div class="wrap">
     <a class="brand" href="${home}index.html">${SITE_NAME}</a>
     <nav class="site-nav">
-      <a href="${home}index.html"${cur('home')}>${S.navHome}</a><a href="${home}gallery/"${kind === 'gallery' ? ' aria-current="page"' : ''}>${S.navTemplates}</a><a href="${home}credits.html"${cur('credits')}>${S.navCredits}</a>
+      <a href="${home}index.html"${cur('home')}>${S.navHome}</a><a href="${home}gallery/"${kind === 'gallery' ? ' aria-current="page"' : ''}>${S.navTemplates}</a><a href="${home}convert/"${cur('convert')}>${S.navConvert}</a><a href="${home}skills/"${cur('skills')}>${S.navSkills}</a><a href="${home}credits.html"${cur('credits')}>${S.navCredits}</a>
       <span class="lang-switch" role="group" aria-label="${S.langLabel}">
         <span class="lang-current" lang="${HTML_LANG[lang]}" aria-current="true">${LANG_NAME[lang]}</span>
         <a href="${esc(altHref(other))}" hreflang="${HTML_LANG[other]}" lang="${HTML_LANG[other]}" data-lang-switch="${other}">${LANG_NAME[other]}</a>
@@ -450,6 +463,7 @@ ${boundary}<section class="home-chapter home-process" id="how-it-works" aria-lab
   <div class="home-section-top"><span class="eyebrow">03 / ${esc(H.processLabel)}</span><span class="chapter-counter" aria-hidden="true">03 — 05</span></div>
   <div class="home-process-grid"><div class="home-process-heading"><h2 id="process-title">${H.processTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><p>${esc(H.processIntro)}</p>
     <div class="pack-note"><span>${esc(H.packLabel)}</span><div class="pack-files"><code>design.md</code><code>template.html</code><code>PROMPT.md</code></div><p>${esc(H.packNote)}</p></div>
+    <ul class="home-extras">${H.extras.map(([lead, label, href]) => `<li><span>${esc(lead)}</span> <a class="home-text-link" href="${href}">${esc(label)} ${arrowIcon()}</a></li>`).join('')}</ul>
   </div>
   <ol class="home-process-steps">${H.processTitles.map((title, index) => `<li><span class="home-step-number">0${index + 1}</span><div><h3>${esc(title)}</h3><p>${esc(steps[index])}</p></div></li>`).join('')}</ol></div>
 </section>
