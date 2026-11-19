@@ -16,7 +16,7 @@
   font-display: block;
 }
 
-:root {
+:root { --arrow-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 10.5 10.5 3.5M4.5 3.5h6v6'/%3E%3C/svg%3E");
   --bg: #f4f3ee;
   --surface: #ffffff;
   --ink: #20231f;
@@ -121,7 +121,8 @@ main.gallery-main { padding-top: 24px; }
 .card-body { padding: 16px 18px 18px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .card .tag-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .card-body h2 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 1.12rem; margin: 0 0 0.4rem; letter-spacing: -0.035em; }
-.card-body h2::after { content: '↗'; color: var(--accent); font-weight: 400; }
+.card-body h2::after { content: ''; width: 0.9em; height: 0.9em; flex: none; align-self: center; background: var(--accent); -webkit-mask: var(--arrow-mask) center / contain no-repeat; mask: var(--arrow-mask) center / contain no-repeat; }
+.arrow-icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.12em; }
 .card-body p { margin: 0; font-size: 0.88rem; color: var(--muted); }
 .card-body .by { margin-top: auto; padding-top: 10px; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; min-width: 0; color: var(--muted); font-size: 0.78rem; }
 .card-body .tag-line + .by { margin-top: auto; }
@@ -225,8 +226,8 @@ pre.prompt { white-space: pre-wrap; word-break: break-word; max-height: min(420p
 .fit-card { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
 .fit-card.avoid { border-top-color: #b5432f; }
 .fit-card h3 { margin: 0 0 6px; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.fit-card.good h3::before { content: '✓ '; color: var(--accent); }
-.fit-card.avoid h3::before { content: '✕ '; color: #b5432f; }
+.fit-card.good h3::before { content: '\2713\FE0E '; color: var(--accent); }
+.fit-card.avoid h3::before { content: '\2715\FE0E '; color: #b5432f; }
 :lang(zh) .fit-card h3 { letter-spacing: 0; text-transform: none; }
 .fit-card p { margin: 0; font-size: .92rem; line-height: 1.65; overflow-wrap: anywhere; }
 

@@ -20,6 +20,11 @@ export const LANG_STORAGE_KEY = 'slides-commons:lang';
 // Where this site's own source (build scripts, metadata, demo slides) is published.
 export const SITE_REPO = 'https://github.com/NeoSunxz/slides-commons';
 
+// Decorative up-right arrow as inline SVG (U+2197 renders as a colour emoji on iOS).
+export function arrowIcon() {
+  return '<svg class="arrow-icon" viewBox="0 0 14 14" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.5 10.5 10.5 3.5M4.5 3.5h6v6"/></svg>';
+}
+
 export const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -116,7 +121,7 @@ const STRINGS = {
     prev: '← Prev', prevLabel: 'Previous slide',
     next: 'Next →', nextLabel: 'Next slide',
     fullscreen: '⛶ Fullscreen',
-    openTab: 'Open in new tab ↗',
+    openTab: `Open in new tab ${arrowIcon()}`,
     hint: 'Click into the preview and use the arrow keys to page; Esc leaves fullscreen.',
     useHeading: 'Use this template',
     useStepsAuto: ['Copy the prompt.', 'Paste it into your coding agent (Claude Code, Codex, Cursor, …), ideally in an empty folder. It downloads the template pack itself.', 'Answer its questions.'],
@@ -245,7 +250,7 @@ const STRINGS = {
     prev: '← 上一页', prevLabel: '上一页',
     next: '下一页 →', nextLabel: '下一页',
     fullscreen: '⛶ 全屏',
-    openTab: '在新标签页打开 ↗',
+    openTab: `在新标签页打开 ${arrowIcon()}`,
     hint: '点击预览区后可用方向键翻页；按 Esc 退出全屏。',
     useHeading: '使用此模板',
     useStepsAuto: ['复制提示词。', '粘贴给你的 coding agent（Claude Code、Codex、Cursor 等），最好在空文件夹中。它会自己下载模板素材包。', '回答它的问题。'],
@@ -420,7 +425,7 @@ export function indexPage({ templates, lang, featured: featuredSlugs = [] }) {
     const tiles = column.map((t) => `<span class="hero-wall-tile"><img src="${root}assets/screenshots/${esc(t.thumb.small.file)}" width="${t.thumb.small.width}" height="${t.thumb.small.height}" alt="" decoding="async"></span>`).join('');
     return `<div class="hero-wall-column"><div class="hero-wall-track"><div class="hero-wall-group">${tiles}</div><div class="hero-wall-group">${tiles}</div></div></div>`;
   }).join('');
-  const arrow = '<span class="round-arrow" aria-hidden="true">↗</span>';
+  const arrow = `<span class="round-arrow" aria-hidden="true">${arrowIcon()}</span>`;
   const boundary = '<div class="chapter-anchor" aria-hidden="true"></div>';
   const en = lang === 'zh' ? ' lang="en"' : '';
   const showcase = featured.map((t, index) => {
@@ -438,7 +443,7 @@ export function indexPage({ templates, lang, featured: featuredSlugs = [] }) {
   <div class="home-hero-bottom"><span class="hero-count"><strong>${String(templates.length).padStart(2, '0')}</strong><span>${esc(H.totalLabel)}</span></span><p>${esc(H.subline)}</p><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div>
 </section>
 ${boundary}<section class="home-chapter home-showcase" aria-labelledby="showcase-title">
-  <div class="home-section-top"><span class="eyebrow">02 / ${esc(H.showcaseLabel)}</span><a class="home-text-link" href="gallery/">${esc(H.showcaseAction)} <span aria-hidden="true">↗</span></a></div>
+  <div class="home-section-top"><span class="eyebrow">02 / ${esc(H.showcaseLabel)}</span><a class="home-text-link" href="gallery/">${esc(H.showcaseAction)} ${arrowIcon()}</a></div>
   <div class="home-showcase-content"><h2 id="showcase-title">${esc(H.showcaseTitle)}</h2><div class="home-carousel" role="region" aria-roledescription="${esc(H.carouselRole)}" aria-labelledby="showcase-title" tabindex="0"><div class="home-carousel-viewport"><div class="home-work-grid" id="home-carousel-track">${showcase}</div></div><div class="home-carousel-controls" hidden><span class="carousel-position" aria-live="off" aria-atomic="true"></span><span class="carousel-hint">${esc(H.carouselHint)}</span><div><button type="button" class="carousel-play" data-pause-label="${esc(H.carouselPause)}" data-play-label="${esc(H.carouselPlay)}" aria-label="${esc(H.carouselPause)}"><span class="carousel-play-icon" aria-hidden="true"></span></button><button type="button" data-carousel-direction="-1" aria-controls="home-carousel-track" aria-label="${esc(H.carouselPrevious)}">←</button><button type="button" data-carousel-direction="1" aria-controls="home-carousel-track" aria-label="${esc(H.carouselNext)}">→</button></div></div></div></div>
 </section>
 ${boundary}<section class="home-chapter home-process" id="how-it-works" aria-labelledby="process-title">
@@ -450,9 +455,9 @@ ${boundary}<section class="home-chapter home-process" id="how-it-works" aria-lab
 </section>
 ${boundary}<section class="home-chapter home-origin" id="origins" aria-labelledby="origin-title">
   <div class="home-section-top"><span class="eyebrow">04 / ${esc(H.originLabel)}</span><span class="chapter-counter" aria-hidden="true">04 — 05</span></div>
-  <div class="home-origin-content"><div><h2 id="origin-title">${H.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-text-link" href="credits.html">${esc(H.originAction)} <span aria-hidden="true">↗</span></a></div><div><p>${esc(H.originText)}</p><div class="home-source-list">${sourceList}</div></div></div>
+  <div class="home-origin-content"><div><h2 id="origin-title">${H.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-text-link" href="credits.html">${esc(H.originAction)} ${arrowIcon()}</a></div><div><p>${esc(H.originText)}</p><div class="home-source-list">${sourceList}</div></div></div>
 </section>
-${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">05 / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">05 — 05</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}"><span aria-hidden="true">↗</span></a></div></section>`;
+${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">05 / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">05 — 05</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}">${arrowIcon()}</a></div></section>`;
   return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
 }
 
@@ -682,7 +687,7 @@ ${list}
   </ul></details></div>
 </section>`;
   }).join('\n');
-  const body = `<section class="credits-hero"><div class="wrap"><div class="credits-top"><span class="eyebrow">04 / ${S.creditsHeading}</span><a href="index.html#origins">${S.creditsBack} ↗</a></div><div class="credits-intro"><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1><p>${S.creditsIntro}</p></div></div></section>
+  const body = `<section class="credits-hero"><div class="wrap"><div class="credits-top"><span class="eyebrow">04 / ${S.creditsHeading}</span><a href="index.html#origins">${S.creditsBack} ${arrowIcon()}</a></div><div class="credits-intro"><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1><p>${S.creditsIntro}</p></div></div></section>
 <div class="wrap credits-content">${blocks}
 ${S.creditsTranslation ? `<aside class="credits-translation"><p>${S.creditsTranslation}</p></aside>` : ''}</div>`;
   return layout({ lang, page, title: S.creditsTitle, description: S.creditsDescription, body, scripts: [] });
