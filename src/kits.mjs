@@ -39,13 +39,14 @@ const openStep = (lang) => {
 // ---------------------------------------------------------------------------
 
 // `script` is how the script is called (a path relative to the folder that holds fonts/, or an absolute path).
-function cjkEmbedBlock(lang, script, { short = false } = {}) {
+function cjkEmbedBlock(lang, script, { short = false, target = '<deck.html>', what = 'deck' } = {}) {
   const t = pick(lang);
-  const run = c(`node ${script} <deck.html>`);
+  const run = c(`node ${script} ${target}`);
+  const whatZh = what === 'deck' ? '幻灯片' : '模板';
   if (short) {
     return t(
-      `**Embed the CJK fonts (only if the deck has CJK text).** When the text is final, trim the CJK Google Fonts ${c('<link>')} to the families and weights the deck really uses, then run ${run} (Node 18+; it downloads font pieces over the network). It writes only the font slices your text needs into the deck as base64 ${c('@font-face')} rules between two marker comments, so the CJK fonts work offline. Keep the Google Fonts link as the fallback. Re-run it after every text edit; never edit its block by hand. Exit code 2: a character has no glyph; 3: some downloads failed (retry once); 4: no CJK font link found. If it cannot run at all, leave the link and say so in your final reply.`,
-      `**嵌入 CJK 字体（仅当幻灯片含 CJK 文字）。**文字定稿后，先把 CJK Google Fonts ${c('<link>')} 精简到幻灯片真正用到的字体族和字重，再运行 ${run}（Node 18 及以上；需要联网下载字体分片）。它只把你的文字需要的字体分片以 base64 ${c('@font-face')} 规则写入幻灯片两个标记注释之间，这样 CJK 字体离线也能用。保留 Google Fonts 链接作为回退。每次改动文字后重新运行；不要手工改它写入的内容。退出码 2：有字符没有字形；3：部分下载失败（重试一次）；4：没有找到 CJK 字体链接。如果它根本无法运行，保持链接原样，并在最终回复里说明。`);
+      `**Embed the CJK fonts (only if the ${what} has CJK text).** When the text is final, trim the CJK Google Fonts ${c('<link>')} to the families and weights the ${what} really uses, then run ${run} (Node 18+; it downloads font pieces over the network). It writes only the font slices your text needs into the ${what} as base64 ${c('@font-face')} rules between two marker comments, so the CJK fonts work offline. Keep the Google Fonts link as the fallback. Re-run it after every text edit; never edit its block by hand. Exit code 2: a character has no glyph; 3: some downloads failed (retry once); 4: no CJK font link found. If it cannot run at all, leave the link and say so in your final reply.`,
+      `**嵌入 CJK 字体（仅当${whatZh}含 CJK 文字）。**文字定稿后，先把 CJK Google Fonts ${c('<link>')} 精简到${whatZh}真正用到的字体族和字重，再运行 ${run}（Node 18 及以上；需要联网下载字体分片）。它只把你的文字需要的字体分片以 base64 ${c('@font-face')} 规则写入${whatZh}两个标记注释之间，这样 CJK 字体离线也能用。保留 Google Fonts 链接作为回退。每次改动文字后重新运行；不要手工改它写入的内容。退出码 2：有字符没有字形；3：部分下载失败（重试一次）；4：没有找到 CJK 字体链接。如果它根本无法运行，保持链接原样，并在最终回复里说明。`);
   }
   return [
     t(`Run it on the finished deck: ${run}.`, `在定稿的幻灯片上运行：${run}。`),
@@ -62,12 +63,23 @@ function cjkEmbedBlock(lang, script, { short = false } = {}) {
   ].join('\n');
 }
 
+// Latin font embedding (optional step; short form for prompts).
+function latinEmbedBlock(lang, script, { target = '<deck.html>', what = 'deck' } = {}) {
+  const t = pick(lang);
+  const run = c(`node ${script} ${target}`);
+  const whatZh = what === 'deck' ? '幻灯片' : '模板';
+  const pattern = c('https://cdn.jsdelivr.net/npm/@fontsource/<id>@<ver>/files/<id>-latin-<wght>-normal.woff2');
+  return t(
+    `**Embed the Latin fonts (optional, recommended).** When the fonts are final, run ${run} (Node 18+; needs the network). It reads the Latin families and weights of the Google Fonts ${c('<link>')}, downloads their ${c('latin')} and ${c('latin-ext')} woff2 files (open Fontsource builds from jsDelivr; no other host) and writes them as base64 ${c('@font-face')} rules in one marked block before ${c('</head>')}; the Google link stays as the fallback. Re-run it after changing fonts or weights. Exit code 3: some fonts were not found or failed (they stay on the link; retry once); 4: no Latin Google Fonts link. Without the script, do it by hand: ${pattern} (${c('<id>')} = lowercase hyphenated family name, ${c('<ver>')} = ${c('5')}; also the ${c('latin-ext')} file; variable fonts under ${c('@fontsource-variable/<id>')} with ${c('<id>-latin-wght-normal.woff2')}). If none of this works, keep the Google link and say in your final reply that the ${what} needs the network for its Latin fonts.`,
+    `**嵌入拉丁字体（可选，推荐）。**字体定稿后，运行 ${run}（Node 18 及以上；需要联网）。它读取 Google Fonts ${c('<link>')} 里的拉丁字体族和字重，下载对应的 ${c('latin')} 与 ${c('latin-ext')} woff2 文件（来自 jsDelivr 的开源 Fontsource 构建，不访问其他主机），以 base64 ${c('@font-face')} 规则写入 ${c('</head>')} 之前一个带标记的区块；Google 链接保留作为回退。更改字体或字重后重新运行。退出码 3：部分字体没找到或下载失败（它们仍走链接；重试一次）；4：没有拉丁字体的 Google Fonts 链接。没有脚本时手工完成：${pattern}（${c('<id>')} 是小写加连字符的字体族名，${c('<ver>')} 取 ${c('5')}；另有 ${c('latin-ext')} 文件；可变字体在 ${c('@fontsource-variable/<id>')} 下，文件名 ${c('<id>-latin-wght-normal.woff2')}）。都做不到就保留 Google 链接，并在最终回复里说明这个${whatZh}的拉丁字体需要联网。`);
+}
+
 // ---------------------------------------------------------------------------
 // Generic "build a deck from a template folder" prompt
 // ---------------------------------------------------------------------------
 
 // Sections 1-5 (after the "locate the template" step). Shared by the deck prompt and the deck skill.
-function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
+function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs', latinScript = 'fonts/embed-latin.mjs' } = {}) {
   const t = pick(lang);
   const L = [];
   L.push(t('## 1. What is in the folder', '## 1. 文件夹里有什么'));
@@ -77,7 +89,7 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
     [c('template.json'), t('The template\'s card: name, mood, density, palette and typography summary, best / worst uses.', '模板的信息卡：名称、情绪、密度、配色与字体概要、适用与不适用场景。')],
     [c('template.html'), t('The reference deck. Consult it only when `design.md` leaves an implementation detail open (exact CSS of a component, an SVG ornament). Never reuse its demo content.', '参考示例幻灯片。只在 `design.md` 没写清某个实现细节时查阅（组件的具体 CSS、SVG 装饰）。不要复用其中的示例内容。')],
     [c('viewport-base.css'), t('Mandatory base CSS of the fixed 1920×1080 stage (if present). Paste its full contents into your output.', '固定 1920×1080 画布的必需基础 CSS（如果有）。把全部内容粘贴进你的产出。')],
-    [c('fonts/'), t('If present: `fonts.css` plus woff2 files (the template\'s Latin fonts) and/or `embed-cjk.mjs` with `cjk-ranges.json` (CJK embedding). See “Fonts” in section 3.', '如果有：`fonts.css` 与 woff2 文件（模板的拉丁字体），和/或 `embed-cjk.mjs` 与 `cjk-ranges.json`（CJK 嵌入）。见第 3 节“字体”。')],
+    [c('fonts/'), t('If present: `fonts.css` plus woff2 files (the template\'s Latin fonts) and/or `embed-cjk.mjs` with `cjk-ranges.json` (CJK embedding) and/or `embed-latin.mjs` (Latin embedding). See “Fonts” in section 3.', '如果有：`fonts.css` 与 woff2 文件（模板的拉丁字体），和/或 `embed-cjk.mjs` 与 `cjk-ranges.json`（CJK 嵌入）、`embed-latin.mjs`（拉丁字体嵌入）。见第 3 节“字体”。')],
     [c('LICENSE*'), t('License notices. Leave them as they are.', '许可证声明。保持原样。')],
   ]));
   L.push('');
@@ -117,10 +129,10 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
 - **Navigation:** → / Space / PageDown for next, ← / PageUp for previous, Home / End for first / last, swipe on touch screens, and mouse-wheel paging (debounced, one wheel gesture moves one slide). Ignore key presses while an input or contenteditable element has focus. Where ${c('design.md')} mentions a ${c('<deck-stage>')} component or ${c('deck-stage.js')}, use your inline controller instead (it is the "equivalent inline stage scaler" the fixed-stage policy allows).
 - **Fonts:** the finished deck must stay one file that works offline, so it never references files in ${c('fonts/')}.
   - If ${c('fonts/fonts.css')} exists: it holds ready-made ${c('@font-face')} rules for exactly the template's Latin families and weights. Copy the rules for the weights and styles you actually use into your ${c('<style>')}, each ${c('url(...)')} replaced by a base64 data URI (${c('data:font/woff2;base64,…')}; generate it with a small Node or Python script, not by hand). Embed both the latin and the latin-ext rules of every face you use, and keep family names, ${c('font-display')} and ${c('unicode-range')} unchanged. A variable font file covers all its weights: embed it once. Do not link Google Fonts for these families.
-  - If there is no ${c('fonts/fonts.css')}: keep the one Google Fonts (or Fontshare) ${c('<link>')} that ${c('template.html')} uses for the Latin families. Optionally, when the network works, embed the Latin faces as base64 for offline use (woff2 files at ${c('https://cdn.jsdelivr.net/npm/@fontsource/<family-id>/files/<family-id>-latin-<weight>-normal.woff2')}, plus the ${c('latin-ext')} file; variable fonts under ${c('@fontsource-variable')}); if that fails, keep the link.
+  - If there is no ${c('fonts/fonts.css')}: keep the one Google Fonts (or Fontshare) ${c('<link>')} that ${c('template.html')} uses for the Latin families, then embed the Latin faces for offline use (Google Fonts only; not for Fontshare or system fonts): ${latinEmbedBlock('en', latinScript)}
   - Where the template uses system fonts on purpose (${c('design.md')} says so), add no web fonts.
   - Deck without Chinese, Japanese or Korean text: no other font request.
-  - Deck with CJK text: add one Google Fonts ${c('<link>')} for the CJK family only, taken from the CJK section of ${c('design.md')} (remove its Latin families when those are embedded), then embed the CJK fonts (below). Font stacks: Latin family first, CJK family second, so each script falls through to its own face. For CJK runs the CJK section of ${c('design.md')} overrides the Latin token values (weight, letter-spacing, line-height, uppercase): wrap CJK runs (e.g. ${c('<span class="cjk">')}) with a small script and set them there. Search the CSS for every descendant rule like ${c('X span')} (e.g. ${c('.kpi span')}, ${c('.reco-figs span')}): it also matches the ${c('.cjk')} wrappers, so change it to a child selector (${c('X > span')}) or exclude them with ${c(':not(.cjk)')}. In flex containers, wrapping only the CJK part of a text removes the space between Chinese text and numbers: wrap the whole text in one inner span instead. The CJK weight, letter-spacing and line-height apply to the CJK runs only; Latin text keeps the weights that are actually loaded.
+  - Deck with CJK text: add one Google Fonts ${c('<link>')} for the CJK family only, taken from the CJK section of ${c('design.md')} (remove its Latin families when those are embedded), then embed the CJK fonts (below). Font stacks: Latin family first, CJK family second, so each script falls through to its own face. For CJK runs the CJK section of ${c('design.md')} overrides the Latin token values (weight, letter-spacing, line-height, uppercase): set them with ${c(':lang(zh)')} (or ${c(':lang(ja)')}, ${c(':lang(ko)')}) rules. Wrap CJK runs in a span (e.g. ${c('<span class="cjk">')}, with a small script) only when ${c('design.md')} gives CJK-specific weight, tracking or line-height that a plain language rule cannot express; otherwise do not wrap. If you wrap, search the CSS for every descendant rule like ${c('X span')} (e.g. ${c('.kpi span')}, ${c('.reco-figs span')}): it also matches the ${c('.cjk')} wrappers, so change it to a child selector (${c('X > span')}) or exclude them with ${c(':not(.cjk)')}. In flex containers, wrapping only the CJK part of a text removes the space between Chinese text and numbers: wrap the whole text in one inner span instead. The CJK weight, letter-spacing and line-height apply to the CJK runs only; Latin text keeps the weights that are actually loaded.
   - ${cjkEmbedBlock('en', cjkScript, { short: true })}
 - **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed images the user supplies as data URIs, downscaled to the size they are shown at.
 - **Details:** respect ${c('prefers-reduced-motion')}; set ${c('<html lang>')} to the deck language and ${c('<title>')} to the deck title; mark code sections with ${c('/* === SECTION === */')} comments.`,
@@ -131,10 +143,10 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
 - **翻页：**→ / 空格 / PageDown 下一页，← / PageUp 上一页，Home / End 首页 / 末页，触屏滑动，以及鼠标滚轮翻页（带防抖，一次滚轮手势只翻一页）。输入框或 contenteditable 元素有焦点时忽略按键。${c('design.md')} 提到 ${c('<deck-stage>')} 组件或 ${c('deck-stage.js')} 的地方，改用你的内联控制脚本（它就是固定画布规范所允许的“等效内联画布缩放脚本”）。
 - **字体：**成品幻灯片必须保持为单个、离线可用的文件，因此不引用 ${c('fonts/')} 里的文件。
   - 如果有 ${c('fonts/fonts.css')}：里面是恰好覆盖模板所用拉丁字体族和字重的现成 ${c('@font-face')} 规则。把你实际用到的字重和字形对应的规则复制进你的 ${c('<style>')}，每个 ${c('url(...)')} 换成 base64 data URI（${c('data:font/woff2;base64,…')}；用一个小的 Node 或 Python 脚本生成，不要手工处理）。每个用到的字体都要同时嵌入 latin 与 latin-ext 两组规则，字体族名、${c('font-display')} 和 ${c('unicode-range')} 保持不变。可变字体文件已覆盖所有字重，只嵌入一次。不要为这些字体族链接 Google Fonts。
-  - 如果没有 ${c('fonts/fonts.css')}：保留 ${c('template.html')} 里为拉丁字体使用的那一条 Google Fonts（或 Fontshare）${c('<link>')}。网络可用时，可以选择把拉丁字体以 base64 嵌入以便离线使用（woff2 文件位于 ${c('https://cdn.jsdelivr.net/npm/@fontsource/<字体id>/files/<字体id>-latin-<字重>-normal.woff2')}，另有 ${c('latin-ext')} 文件；可变字体在 ${c('@fontsource-variable')} 下）；失败就保留链接。
+  - 如果没有 ${c('fonts/fonts.css')}：保留 ${c('template.html')} 里为拉丁字体使用的那一条 Google Fonts（或 Fontshare）${c('<link>')}，然后嵌入拉丁字体以便离线使用（仅限 Google Fonts；Fontshare 和系统字体不适用）：${latinEmbedBlock('zh', latinScript)}
   - 模板有意使用系统字体的地方（${c('design.md')} 有说明），不要添加网页字体。
   - 幻灯片不含中文、日文或韩文：不再发起其他字体请求。
-  - 幻灯片含 CJK 文字：添加一条只含 CJK 字体族的 Google Fonts ${c('<link>')}，取自 ${c('design.md')} 的 CJK 一节（拉丁字体已嵌入时去掉其中的拉丁字体族），然后嵌入 CJK 字体（见下）。字体栈：拉丁字体在前，CJK 字体在后，让每种文字落到各自的字体上。对 CJK 文字，${c('design.md')} 的 CJK 一节覆盖拉丁 token 的取值（字重、字间距、行高、大写转换）：用小脚本把 CJK 文字包起来（如 ${c('<span class="cjk">')}），在其中设置。另外，在 CSS 里搜索所有形如 ${c('X span')} 的后代选择器（例如 ${c('.kpi span')}、${c('.reco-figs span')}）：它们也会匹配 ${c('.cjk')} 包裹元素，要改成子选择器（${c('X > span')}）或用 ${c(':not(.cjk)')} 排除。在 flex 容器里，只包裹文字中的 CJK 部分会让中文与数字之间的空格消失：改为把整段文字包进一个内层 span。CJK 字重、字间距和行高只作用于 CJK 文字；拉丁文字保持实际加载的字重。
+  - 幻灯片含 CJK 文字：添加一条只含 CJK 字体族的 Google Fonts ${c('<link>')}，取自 ${c('design.md')} 的 CJK 一节（拉丁字体已嵌入时去掉其中的拉丁字体族），然后嵌入 CJK 字体（见下）。字体栈：拉丁字体在前，CJK 字体在后，让每种文字落到各自的字体上。对 CJK 文字，${c('design.md')} 的 CJK 一节覆盖拉丁 token 的取值（字重、字间距、行高、大写转换）：用 ${c(':lang(zh)')}（或 ${c(':lang(ja)')}、${c(':lang(ko)')}）规则设置。只有当 ${c('design.md')} 给出了 CJK 专用的字重、字间距或行高、而普通的语言规则表达不了时，才用小脚本把 CJK 文字包进 span（如 ${c('<span class="cjk">')}）；否则不要包。如果包了，在 CSS 里搜索所有形如 ${c('X span')} 的后代选择器（例如 ${c('.kpi span')}、${c('.reco-figs span')}）：它们也会匹配 ${c('.cjk')} 包裹元素，要改成子选择器（${c('X > span')}）或用 ${c(':not(.cjk)')} 排除。在 flex 容器里，只包裹文字中的 CJK 部分会让中文与数字之间的空格消失：改为把整段文字包进一个内层 span。CJK 字重、字间距和行高只作用于 CJK 文字；拉丁文字保持实际加载的字重。
   - ${cjkEmbedBlock('zh', cjkScript, { short: true })}
 - **不发起其他网络请求：**不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。
 - **细节：**尊重 ${c('prefers-reduced-motion')}；${c('<html lang>')} 设为幻灯片语言，${c('<title>')} 设为幻灯片标题；用 ${c('/* === SECTION === */')} 注释标记代码段。`));
@@ -145,6 +157,7 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
 - **When ${c('design.md')} contradicts itself,** follow the stricter rule and tell the user in your final reply.
 - **Keep the palette:** only the colors listed in ${c('design.md')}. No new accent, no recoloring, no gradients or shadows unless ${c('design.md')} uses them.
 - **Keep the decorative vocabulary** (marks, rules, stamps, textures, ornaments), **the spacing rhythm** and **the component grammar** that ${c('design.md')} describes: they are the identity of the template.
+- **Reuse the template's embedded design images as they are.** If ${c('design.md')} declares background or decorative images (a cover photo, a texture), they are already embedded in ${c('template.html')} as ${c('data:')} URIs: copy that markup and its overlay layers into your deck unchanged. Never re-fetch, redraw, replace or recolour them, and never put the user's own new photos in their place unless the user supplies those photos.
 - **Never mix templates.** Do not borrow layouts, colors or type from other templates, presets or generic presentation styles.
 - **Missing layout? Design it inside the same system,** with the same fonts, palette, decoration, spacing and chrome. Don't switch styles or drop the content.
 - **Real content, drafted when missing.** Use the user's material. Never reuse demo text, numbers, names or logos from ${c('template.html')}. When the user names a topic but gives no content, draft it yourself; never put placeholders such as "TBD" or "Lorem ipsum" on a slide. Keep drafts plausible and modest. Every drafted item (including any made-up quote, name or number) must be listed in your final reply.
@@ -154,11 +167,12 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
 - **The user's density choice wins** over density guidance in ${c('design.md')}: fewer, larger blocks for low density. If content does not fit, split it across more slides; never shrink text below the sizes in ${c('design.md')} and never let it overflow.
 - **Minimum text size for projected decks (speaker-led and balanced):** raise any body or label text below 20px (on the 1920×1080 stage) to at least 20px, keeping the token's other properties; only source and footnote lines may go down to 18px. Reading-first decks keep the ${c('design.md')} sizes.
 - **Keep emphasis legible:** highlights and accent-colored text must contrast with the panel they sit on. Never put accent on accent.
-- **CJK text:** letter-spacing 0; the CJK line-heights from ${c('design.md')} (about 1.75 for body and 1.2 for display if it gives none); never ${c('text-transform: uppercase')} on CJK runs; full-width punctuation and a space between CJK and Latin text. Don't limit CJK widths by character count (${c('ch')} units); use ${c('text-wrap: pretty')} / ${c('balance')} with ${c('line-break: strict')} so no line ends with a single character. Write labels and chrome in the deck language.`,
+- **CJK text:** letter-spacing 0; the CJK line-heights from ${c('design.md')} (about 1.75 for body and 1.2 for display if it gives none); never ${c('text-transform: uppercase')} on CJK runs; full-width punctuation and a space between CJK and Latin text. Don't limit CJK widths by character count (${c('ch')} units); use ${c('text-wrap: pretty')} / ${c('balance')} with ${c('line-break: strict')} so no line ends with a single character. Write labels and chrome in the deck language, unless ${c('design.md')} marks a string as fixed signature text (for example "PART 1"): that stays as written in every language.`,
   `- **保持字体：**严格使用 ${c('design.md')} 里的字体族、字重、字间距、行高和大小写转换。绝不替换。字体加载不出来时，先找原因（第 5 节），不要换字体。
 - **${c('design.md')} 自相矛盾时，**取更严格的规则，并在最终回复里告诉用户。
 - **保持配色：**只用 ${c('design.md')} 列出的颜色。不新增强调色，不改色，除非 ${c('design.md')} 本来使用，否则不用渐变和阴影。
 - **保持装饰语汇**（标记、线条、印章、纹理、装饰）、**间距节奏**和**组件语法**：${c('design.md')} 描述的这些就是模板的个性。
+- **原样沿用模板内嵌的设计图片。**如果 ${c('design.md')} 声明了背景或装饰图片（封面照片、纹理），它们已作为 ${c('data:')} URI 嵌在 ${c('template.html')} 里：把对应的标记和叠加层原样复制进你的幻灯片。不要重新下载、重新绘制、替换或改色，除非用户自己提供了照片，否则也不要用用户的新照片去顶替它们。
 - **绝不混用模板。**不要借用其他模板、预设或通用演示风格的版式、颜色和字体。
 - **缺少版式？在同一套系统里设计，**用相同的字体、配色、装饰、间距和边饰。不要换风格，也不要丢内容。
 - **用真实内容，缺失时代写。**使用用户的素材。绝不复用 ${c('template.html')} 里的示例文字、数字、姓名或标志。用户只给了主题而没给内容时，由你起草；页面上不放 “TBD”“Lorem ipsum” 之类的占位。草稿要合理、克制。每一项代写内容（包括编造的引语、姓名、数字）都必须在最终回复里列出。
@@ -168,7 +182,7 @@ function deckSections(lang, { cjkScript = 'fonts/embed-cjk.mjs' } = {}) {
 - **用户的密度选择优先于** ${c('design.md')} 的密度建议：低密度用更少、更大的内容块。内容放不下就拆成更多页；绝不把文字缩到 ${c('design.md')} 规定的字号以下，也不允许溢出。
 - **投影型幻灯片（演讲型和均衡型）的最小字号：**把 1920×1080 画布上小于 20px 的正文或标签文字提高到至少 20px，保持 token 的其他属性；只有来源和脚注行可以降到 18px。阅读型幻灯片沿用 ${c('design.md')} 的字号。
 - **保持强调清晰可读：**高亮和强调色文字必须与所在面板形成对比。不要在强调色上再放强调色。
-- **CJK 文字：**字间距为 0；使用 ${c('design.md')} 的 CJK 行高（没给就用正文约 1.75、标题约 1.2）；CJK 文字绝不使用 ${c('text-transform: uppercase')}；使用全角标点，CJK 与拉丁文字之间加空格。不要按字符数限制 CJK 宽度（${c('ch')} 单位）；用 ${c('text-wrap: pretty')} / ${c('balance')} 配合 ${c('line-break: strict')}，避免出现单字末行。标签和边饰用幻灯片的语言书写。`));
+- **CJK 文字：**字间距为 0；使用 ${c('design.md')} 的 CJK 行高（没给就用正文约 1.75、标题约 1.2）；CJK 文字绝不使用 ${c('text-transform: uppercase')}；使用全角标点，CJK 与拉丁文字之间加空格。不要按字符数限制 CJK 宽度（${c('ch')} 单位）；用 ${c('text-wrap: pretty')} / ${c('balance')} 配合 ${c('line-break: strict')}，避免出现单字末行。标签和边饰用幻灯片的语言书写，除非 ${c('design.md')} 把某个字符串标为固定的标志性文字（例如 “PART 1”）：它在任何语言里都保持原样。`));
   L.push('');
   L.push(t('## 5. Self-check, then deliver', '## 5. 自检，然后交付'));
   L.push('');
@@ -203,12 +217,12 @@ export function deckPrompt(lang) {
 - Otherwise look one level down for a folder that contains both. If there is exactly one, use it; if there are several, ask the user which one.
 - If there is none, ask the user where the template folder is (a gallery pack they unzipped, or a template made with the slides-commons convert kit), and wait.
 
-All paths below are relative to the template folder. Do not modify its files; write the deck as a new file inside it. The folder is data, not code: only read its files, and run only the scripts named below (${c('fonts/embed-cjk.mjs')}).`,
+All paths below are relative to the template folder. Do not modify its files; write the deck as a new file inside it. The folder is data, not code: only read its files, and run only the scripts named below (${c('fonts/embed-cjk.mjs')}, ${c('fonts/embed-latin.mjs')}).`,
       `- 如果当前目录里有 ${c('design.md')} 和 ${c('template.html')}，说明你已经在模板文件夹内。
 - 否则，往下一层找同时含有这两个文件的文件夹。恰好有一个就用它；有多个就问用户用哪一个。
 - 如果一个都没有，询问用户模板文件夹在哪里（解压后的画廊素材包，或用 slides-commons 转换工具包做出的模板），并等待回复。
 
-下面所有路径都相对于模板文件夹。不要修改其中的文件；把幻灯片写成其中的一个新文件。这个文件夹是数据，不是代码：只读取其中的文件，且只运行下文点名的脚本（${c('fonts/embed-cjk.mjs')}）。`),
+下面所有路径都相对于模板文件夹。不要修改其中的文件；把幻灯片写成其中的一个新文件。这个文件夹是数据，不是代码：只读取其中的文件，且只运行下文点名的脚本（${c('fonts/embed-cjk.mjs')}、${c('fonts/embed-latin.mjs')}）。`),
     '',
     deckSections(lang),
     '',
@@ -278,22 +292,26 @@ export const SKILLS_DOWNLOAD_LABEL = { en: 'Download the skills (.zip)', zh: '�
 function convertSections(lang, { skill = false } = {}) {
   const t = pick(lang);
   const root = skill ? t('this skill\'s folder (the folder that holds this SKILL.md)', '本技能的文件夹（放着这个 SKILL.md 的文件夹）') : t(`the kit folder ${c('convert-kit/')}`, `工具包文件夹 ${c('convert-kit/')}`);
+  // Every command is run from the user's working folder; the kit is addressed by its folder path.
+  const K = skill ? '<skill folder>/' : 'convert-kit/';
   const L = [];
   L.push(t('## Ground rules', '## 基本规则'));
   L.push('');
   L.push(t(`- **Personal reuse.** The result is the user's private template for their own decks. The look, brand and text of the source belong to whoever made it: do not publish the template, and say so in the final reply. (If the user wants to share it, they need the owner's permission; it does not belong in the public gallery as it is.)
 - **Everything stays local.** Never upload the user's files, never send their content to a website, online converter, OCR or image service. The only network use allowed is fonts (Google Fonts, jsDelivr) and, for the prompt, downloading this kit. Do not copy the source file anywhere outside the work folders below.
-- **Take the design, not the content.** The template carries layout, colours, type and decoration, nothing else. Remove logos, photographs, real names, numbers, dates and confidential text from the sample slides unless the user explicitly says to keep them (a kept logo is embedded as a ${c('data:')} URI from the file's own images, downscaled). Write invented, modest sample content in the language the user writes in (or the deck's own language).
+- **Take the design, not the content.** The template carries layout, colours, type and decoration, nothing else. **Design images are kept by default** (slide / layout / master backgrounds, full-bleed cover or section photos, decorative textures and patterns): see section 4 for how. Remove logos, content photographs (pictures that illustrate the user's subject, people or products; they become neutral placeholder blocks in the palette), real names, numbers, dates and confidential text from the sample slides unless the user explicitly says to keep them (a kept logo is embedded as a ${c('data:')} URI from the file's own images, downscaled). Write invented, modest sample content in the language the user writes in (or the deck's own language).
 - **Never ship the source's fonts.** They are proprietary or licensed. Substitute open fonts using ${c('spec/font-substitution.md')} and list every substitution.
 - **Be honest about accuracy.** From a ${c('.pptx')} the numbers (colours, sizes, positions) are exact; fonts, effects and animations are approximated. From images everything is an approximation: colours are sampled or guessed, sizes are measured by eye, fonts are guessed. Say which in the final reply.
 - **Same folder layout as a gallery template,** so the result works with the "make a deck" prompt and skill (${c('slides-commons-deck')}): ${c('design.md')}, ${c('template.json')}, ${c('template.html')}, ${c('viewport-base.css')}, ${c('LICENSE-skill')}, ${c('PROMPT.md')}, ${c('PROMPT.zh.md')}, ${c('README.md')}, and ${c('fonts/')} for CJK embedding.
+- **One path convention.** Run every command from the user's working folder (the folder that contains ${c(K)}${skill ? '; use the absolute path of the skill folder' : ''}). Kit files are named by their path inside the kit (${c('tools/…')}, ${c('spec/…')}, ${c('fonts/…')}, ${c('deck/…')}) and are called as ${c(K + 'tools/…')} in commands. The output ${c('<slug>/')} and the work folder ${c('<slug>-work/')} are created in the working folder, never inside ${c(K)}.${skill ? '' : ` If you are inside the kit, the working folder is its parent: go there (or use absolute paths).`}
 - **Do not modify ${root}.** Write only the output folder and the work folder.`,
   `- **个人复用。**成果是用户自己用来做幻灯片的私人模板。源文件的外观、品牌和文字归其制作者所有：不要公开发布这个模板，并在最终回复里说明。（如果用户想分享，需要原作者的许可；它不能原样放进公开画廊。）
 - **一切都在本地。**绝不上传用户的文件，绝不把内容发送到任何网站、在线转换器、OCR 或图片服务。唯一允许的联网用途是字体（Google Fonts、jsDelivr），以及（提示词方式下）下载本工具包。不要把源文件复制到下面两个工作文件夹之外的任何地方。
-- **取设计，不取内容。**模板只携带版式、颜色、字体和装饰，别的都不带。示例页里去掉标志、照片、真实姓名、数字、日期和机密文字，除非用户明确说要保留（保留的标志用文件自带的图片缩小后以 ${c('data:')} URI 嵌入）。示例内容由你编写，要虚构、克制，语言用用户所用的语言（或幻灯片本身的语言）。
+- **取设计，不取内容。**模板只携带版式、颜色、字体和装饰，别的都不带。**设计图片默认保留**（幻灯片 / 版式 / 母版的背景、整幅封面或章节页照片、装饰纹理和图案），做法见第 4 节。示例页里去掉标志、内容照片（用来说明用户主题、人物或产品的图片，改成配色里的中性占位块）、真实姓名、数字、日期和机密文字，除非用户明确说要保留（保留的标志用文件自带的图片缩小后以 ${c('data:')} URI 嵌入）。示例内容由你编写，要虚构、克制，语言用用户所用的语言（或幻灯片本身的语言）。
 - **绝不附带源文件的字体。**它们是专有或有授权限制的。按 ${c('spec/font-substitution.md')} 换成开源字体，并列出每一处替换。
 - **如实说明精度。**从 ${c('.pptx')} 得到的数字（颜色、字号、位置）是精确的；字体、特效和动画是近似的。从图片得到的一切都是近似：颜色是取样或估计的，字号是目测的，字体是猜的。最终回复里要说明是哪种情况。
 - **文件夹布局与画廊模板相同，**这样成果可以配合“制作幻灯片”提示词和技能（${c('slides-commons-deck')}）使用：${c('design.md')}、${c('template.json')}、${c('template.html')}、${c('viewport-base.css')}、${c('LICENSE-skill')}、${c('PROMPT.md')}、${c('PROMPT.zh.md')}、${c('README.md')}，以及用于 CJK 嵌入的 ${c('fonts/')}。
+- **统一的路径约定。**所有命令都在用户的工作文件夹里运行（即包含 ${c(K)} 的那个文件夹${skill ? '；技能文件夹用绝对路径' : ''}）。工具包里的文件用它在包内的路径称呼（${c('tools/…')}、${c('spec/…')}、${c('fonts/…')}、${c('deck/…')}），命令里写成 ${c(K + 'tools/…')}。输出文件夹 ${c('<slug>/')} 和工作文件夹 ${c('<slug>-work/')} 创建在工作文件夹里，绝不放进 ${c(K)} 里面。${skill ? '' : '如果你当前在工具包里面，工作文件夹就是它的上一级：切换过去（或使用绝对路径）。'}
 - **不要修改${root}。**只写输出文件夹和工作文件夹。`));
   L.push('');
   L.push(t('## 1. Ask before converting', '## 1. 转换之前先提问'));
@@ -302,7 +320,7 @@ function convertSections(lang, { skill = false } = {}) {
 
 1. **The source:** the path of a ${c('.pptx')} file, or the image files / folder (screenshots, exported slides, photos of slides; 3–12 images, one per distinct layout is plenty). Other formats: ${c('.ppt')}, ${c('.odp')}, ${c('.key')} or PDF cannot be read directly; ask them to export to ${c('.pptx')} (Keynote: File > Export To > PowerPoint) or to images. A PDF can be turned into images with ${c('pdftoppm -png -r 80 file.pdf page')} if poppler is installed.
 2. **Name and slug:** a display name (e.g. "Quarterly Review") and a slug (lowercase letters, digits, single hyphens: ${c('quarterly-review')}). Suggest both from the file name, without brand names. The template goes to ${c('./<slug>/')} in the user's current folder (never inside ${root}) unless they say otherwise.
-3. **What to keep:** colours, fonts (as open look-alikes), layouts, header/footer chrome, logo. Default: colours, type hierarchy, layouts and chrome; no logo, no photographs.
+3. **What to keep:** colours, fonts (as open look-alikes), layouts, header/footer chrome, background and decorative images, logo, content photographs. Default: colours, type hierarchy, layouts, chrome and background/decorative images; no logo, no content photographs. If they also want the background images dropped, use a drawn approximation (CSS/SVG) instead.
 4. **Language and CJK:** the language of the sample content, and whether decks made from this template will contain Chinese, Japanese or Korean text (this decides the CJK section of ${c('design.md')} and whether CJK fonts are embedded).
 5. **Confirm personal use:** this template is for their own decks.
 
@@ -311,7 +329,7 @@ Skip any question already answered, then stop and wait for the reply.`,
 
 1. **源文件：**${c('.pptx')} 文件的路径，或图片文件 / 文件夹（截图、导出的幻灯片、拍下来的幻灯片照片；3–12 张就够，每种不同的版式一张即可）。其他格式：${c('.ppt')}、${c('.odp')}、${c('.key')} 或 PDF 无法直接读取；请他们导出为 ${c('.pptx')}（Keynote：文件 > 导出到 > PowerPoint）或导出为图片。如果装了 poppler，PDF 可以用 ${c('pdftoppm -png -r 80 file.pdf page')} 转成图片。
 2. **名称和 slug：**显示名称（如 “Quarterly Review”）和 slug（小写字母、数字、单个连字符：${c('quarterly-review')}）。根据文件名建议两者，不要带品牌名。模板默认写到用户当前文件夹下的 ${c('./<slug>/')}（绝不放进${root}里面），除非他们另有指定。
-3. **要保留什么：**颜色、字体（用开源近似字体）、版式、页眉页脚边饰、标志。默认：颜色、字体层级、版式和边饰；不要标志，不要照片。
+3. **要保留什么：**颜色、字体（用开源近似字体）、版式、页眉页脚边饰、背景与装饰图片、标志、内容照片。默认：颜色、字体层级、版式、边饰以及背景 / 装饰图片；不要标志，不要内容照片。如果用户连背景图片也不要，就改用绘制的近似效果（CSS / SVG）。
 4. **语言与 CJK：**示例内容的语言，以及用这个模板做的幻灯片是否会含中文、日文或韩文（这决定 ${c('design.md')} 的 CJK 一节，以及是否嵌入 CJK 字体）。
 5. **确认个人使用：**这个模板用于他们自己的幻灯片。
 
@@ -322,10 +340,10 @@ Skip any question already answered, then stop and wait for the reply.`,
   L.push(t(`**A .pptx file.** Run (Node 18+; paths with spaces in quotes):
 
 ${'```'}
-node tools/pptx-extract.mjs "<deck.pptx>" --out "<slug>-work/extract" --media
+node ${K}tools/pptx-extract.mjs "<deck.pptx>" --out "<slug>-work/extract" --media
 ${'```'}
 
-Read ${c('summary.md')} completely (it is also printed), then open ${c('extract.json')} for what you need in detail. ${c('spec/extractor.md')} explains the fields and how to turn them into a palette, a type scale, spacing and layout archetypes. Exit code 2 means the file is unreadable (old ${c('.ppt')}, password-protected, damaged): tell the user how to re-save it as ${c('.pptx')}; 3 means partial output (read the warnings). If Node is not available, unzip the ${c('.pptx')} (it is a zip file) and read ${c('ppt/theme/theme1.xml')}, ${c('ppt/slideMasters')}, ${c('ppt/slideLayouts')} and ${c('ppt/slides')} by hand. Look at the images in ${c('<slug>-work/extract/media/')} only to understand the design; do not copy them into the template unless the user said to keep the logo.
+Read ${c('summary.md')} completely (it is also printed), then open ${c('extract.json')} for what you need in detail. ${c('spec/extractor.md')} explains the fields and how to turn them into a palette, a type scale, spacing and layout archetypes. Exit code 2 means the file is unreadable (old ${c('.ppt')}, password-protected, damaged): tell the user how to re-save it as ${c('.pptx')}; 3 means partial output (read the warnings). If Node is not available, unzip the ${c('.pptx')} (it is a zip file) and read ${c('ppt/theme/theme1.xml')}, ${c('ppt/slideMasters')}, ${c('ppt/slideLayouts')} and ${c('ppt/slides')} by hand. It also lists effects the template will simplify (reflection, glow, soft edge) and the effective colour of translucent fills. Look at the images in ${c('<slug>-work/extract/media/')} only to understand the design; do not copy them into the template unless the user said to keep the logo.
 
 Optional visual reference: if LibreOffice is installed (${c('soffice')}), ${c('soffice --headless --convert-to pdf --outdir "<slug>-work/render" "<deck.pptx>"')} and then ${c('pdftoppm -png -r 60')} give PNGs of the source slides to look at. If it is not installed, do without it; never install software without asking.
 
@@ -335,10 +353,10 @@ If the user gives both a ${c('.pptx')} and images, the ${c('.pptx')} is the trut
   `**.pptx 文件。**运行（Node 18 及以上；路径含空格时加引号）：
 
 ${'```'}
-node tools/pptx-extract.mjs "<deck.pptx>" --out "<slug>-work/extract" --media
+node ${K}tools/pptx-extract.mjs "<deck.pptx>" --out "<slug>-work/extract" --media
 ${'```'}
 
-完整阅读 ${c('summary.md')}（它也会打印在终端里），再按需打开 ${c('extract.json')} 查看细节。${c('spec/extractor.md')} 说明了各字段，以及如何把它们变成配色、字号层级、间距和版式类型。退出码 2 表示文件无法读取（旧版 ${c('.ppt')}、有密码、已损坏）：告诉用户如何另存为 ${c('.pptx')}；3 表示只输出了一部分（读一下 warnings）。如果没有 Node，就解压 ${c('.pptx')}（它是个 zip 文件），手工阅读 ${c('ppt/theme/theme1.xml')}、${c('ppt/slideMasters')}、${c('ppt/slideLayouts')} 和 ${c('ppt/slides')}。${c('<slug>-work/extract/media/')} 里的图片只用来理解设计；除非用户说要保留标志，否则不要复制进模板。
+完整阅读 ${c('summary.md')}（它也会打印在终端里），再按需打开 ${c('extract.json')} 查看细节。${c('spec/extractor.md')} 说明了各字段，以及如何把它们变成配色、字号层级、间距和版式类型。退出码 2 表示文件无法读取（旧版 ${c('.ppt')}、有密码、已损坏）：告诉用户如何另存为 ${c('.pptx')}；3 表示只输出了一部分（读一下 warnings）。如果没有 Node，就解压 ${c('.pptx')}（它是个 zip 文件），手工阅读 ${c('ppt/theme/theme1.xml')}、${c('ppt/slideMasters')}、${c('ppt/slideLayouts')} 和 ${c('ppt/slides')}。它还会列出模板需要简化的特效（倒影、发光、柔化边缘）以及半透明填充的实际颜色。${c('<slug>-work/extract/media/')} 里的图片只用来理解设计；除非用户说要保留标志，否则不要复制进模板。
 
 可选的视觉参考：如果装了 LibreOffice（${c('soffice')}），用 ${c('soffice --headless --convert-to pdf --outdir "<slug>-work/render" "<deck.pptx>"')}，再用 ${c('pdftoppm -png -r 60')} 就能得到源幻灯片的 PNG 来观看。没装就不用；没问过用户不要安装软件。
 
@@ -350,59 +368,63 @@ ${'```'}
   L.push('');
   L.push(t(`Before writing files, settle these (jot them down; they become ${c('design.md')}):
 
-- **Palette:** 6–10 named colours with roles (slide background, text, muted text, rules, accent, tinted fills, stage background around the slide). Exact hex values.
+- **Palette:** 6–10 named colours with roles (slide background, text, muted text, rules, accent, tinted fills, stage background around the slide). Exact hex values. If the source defines its own palette roles (for example a colour-palette slide), keep all of them, even beyond 10; every colour keeps a role name (never a hue name). Use the effective colour of translucent fills, and say in the design that it is an overlay.
 - **Type scale:** 5–6 roles (display / title / subtitle / body / label / caption) in px at 1920×1080 with weight, line-height, letter-spacing and case, plus the font families (substituted by open fonts; keep the original name in the notes).
 - **Spacing:** page margins, gutters, vertical rhythm, the grid, where chrome sits (header, footer, page number, logo position).
-- **Layout archetypes:** one per distinct layout of the source (cover, section divider, title + bullets, two columns, image + text, big number, quote, table, timeline, closing, …). Target 8–12; with more distinct layouts keep the most used or most distinctive and say what you left out under "Known Gaps".
-- **Signature moves:** the 4–8 things that repeat and make it recognisable (a colour bar, a rule under the title, a number badge, corner marks, rounded cards, a shadow style).
+- **Layout archetypes:** one per distinct layout of the source (cover, section divider, title + bullets, two columns, image + text, big number, quote, table, timeline, closing, …). Target 8–12; with more distinct layouts keep the most used or most distinctive and say what you left out under "Known Gaps". **With fewer than 8,** extend inside the same system: build the missing archetypes (for example agenda, big number, two columns, quote, closing) from the source's own rules (its palette card, chrome, type scale, spacing, signature moves), never from outside styles. Mark each extended layout "(extended)" in the Slide Archetypes of design.md and in a comment in template.html, list them in "Known Gaps" as not present in the source, and aim for 8–12 in total.
+- **Signature moves:** the 4–8 things that repeat and make it recognisable (a colour bar, a rule under the title, a number badge, corner marks, rounded cards, a shadow style). If a chrome string is signature text that must stay as written in every language (for example a Latin "PART 1 PART 2" strip or "CONTENTS" in a Chinese deck), name it in design.md as **fixed signature text**; the deck prompt then keeps it as is, and translates all other labels.
 - **Depth:** shadows, borders, overlays, or none.
-Follow the source's proportions; do not "improve" the design. Where the source breaks a rule of good slide design (tiny text, low contrast), reproduce the look but record it in "Known Gaps", and never go below 18px for any text in the sample slides.`,
+Follow the source's proportions; do not "improve" the design. Where the source breaks a rule of good slide design (tiny text, low contrast), reproduce the look but record it in "Known Gaps", and in the sample slides keep presentation text (titles, body, labels, cards) at 20px or more, the same minimum the deck prompt applies to projected decks; only source lines, footnotes and the page number may go down to 18px. If the source is smaller, enlarge to that minimum and record it in "Known Gaps".`,
   `写文件之前，先定下这些（先记下来；它们会变成 ${c('design.md')}）：
 
-- **配色：**6–10 个带角色的命名颜色（幻灯片背景、文字、次要文字、分隔线、强调色、浅色填充、幻灯片四周的画布背景）。十六进制值要精确。
+- **配色：**6–10 个带角色的命名颜色（幻灯片背景、文字、次要文字、分隔线、强调色、浅色填充、幻灯片四周的画布背景）。十六进制值要精确。如果源文件自带配色角色（例如一页配色卡），全部保留，可以超过 10 个；每个颜色都用角色命名（不用色相名）。半透明填充使用其实际颜色，并在设计里注明它是叠层。
 - **字号层级：**5–6 个角色（大标题 / 标题 / 副标题 / 正文 / 标签 / 说明），在 1920×1080 上的 px 尺寸，含字重、行高、字间距和大小写，以及字体族（换成开源字体；原字体名写进备注）。
 - **间距：**页边距、栏距、纵向节奏、网格、边饰的位置（页眉、页脚、页码、标志位置）。
-- **版式类型：**源文件里每一种不同的版式一个（封面、章节页、标题加要点、双栏、图文、大数字、引语、表格、时间线、结束页……）。目标是 8–12 个；版式更多时，保留最常用或最有特色的，并在“Known Gaps”里写明舍弃了什么。
-- **标志性手法：**反复出现、让它一眼可辨的 4–8 样东西（色条、标题下的线、数字徽章、角标、圆角卡片、阴影风格）。
+- **版式类型：**源文件里每一种不同的版式一个（封面、章节页、标题加要点、双栏、图文、大数字、引语、表格、时间线、结束页……）。目标是 8–12 个；版式更多时，保留最常用或最有特色的，并在“Known Gaps”里写明舍弃了什么。**不足 8 个时，**在同一套系统里扩展：用源文件自己的规则（它的配色卡、边饰、字号层级、间距、标志性手法）补出缺少的类型（例如目录、大数字、双栏、引语、结束页），绝不借用外部风格。每个扩展出的版式在 design.md 的 Slide Archetypes 和 template.html 的注释里标注 “(extended)”，并在 “Known Gaps” 里列为源文件中没有的，总数争取 8–12 个。
+- **标志性手法：**反复出现、让它一眼可辨的 4–8 样东西（色条、标题下的线、数字徽章、角标、圆角卡片、阴影风格）。如果某个边饰字符串是在任何语言里都必须保持原样的标志性文字（例如中文幻灯片里的拉丁 “PART 1 PART 2” 条带或 “CONTENTS”），在 design.md 里把它明确写为**固定标志性文字**；制作幻灯片时它保持原样，其他标签则按幻灯片语言书写。
 - **层次：**阴影、边框、叠层，或者没有。
-遵循源文件的比例；不要“改进”设计。源文件违背好幻灯片原则的地方（字太小、对比度低），照样复现外观，但记在“Known Gaps”里，并且示例页里任何文字都不得小于 18px。`));
+遵循源文件的比例；不要“改进”设计。源文件违背好幻灯片原则的地方（字太小、对比度低），照样复现外观，但记在“Known Gaps”里，并且示例页里的演示文字（标题、正文、标签、卡片）保持在 20px 以上，与制作幻灯片提示词对投影型幻灯片的最小字号一致；只有来源行、脚注和页码可以降到 18px。源文件更小时，放大到这个下限，并记入 “Known Gaps”。`));
   L.push('');
   L.push(t('## 4. Write the template folder', '## 4. 写出模板文件夹'));
   L.push('');
   L.push(t(`Create ${c('<slug>/')} (in the user's current folder) with:
 
 - ${c('template.json')}: follow ${c('spec/template-json.md')}. Exactly the 15 fields, the same palette names as ${c('design.md')}, open font names in ${c('typography')}.
-- ${c('design.md')}: follow ${c('spec/design-md.md')} (the required sections) and use ${c('spec/example/design.md')} as the model of structure and depth; copy its "Fixed-Stage Policy" section unchanged. Fill the "CJK & International Content" section for the fonts you chose (look at ${c('spec/font-substitution.md')}), even when the sample slides have no CJK text. In "Known Gaps" list every approximation.
-- ${c('template.html')}: 8–12 slides, one per layout archetype, filled with invented sample content, built like ${c('spec/example/template.html')}. Requirements: one file, all CSS and JS inline; the full unmodified ${c('viewport-base.css')} inlined in the ${c('<style>')} block; fixed 1920×1080 stage (${c('.deck-viewport > .deck-stage > section.slide')}) scaled by one inline script; navigation by keys (→ ← Space PageUp PageDown Home End), mouse wheel (debounced) and swipe; page numbers filled by script; colours as CSS variables named like ${c('design.md')}; sizes in px from the type scale; ${c('<html lang>')}, ${c('<title>')}; respect ${c('prefers-reduced-motion')}; charts, icons and decoration as inline SVG or CSS; images only as ${c('data:')} URIs (a kept logo). No external request except the font services.
+- ${c('design.md')}: follow ${c('spec/design-md.md')} (the required sections) and use ${c('spec/example/design.md')} as the model of structure and depth; copy its "Frontend Slides Fixed-Stage Policy" section (the heading contains "Fixed-Stage") unchanged. Fill the "CJK & International Content" section for the fonts you chose (look at ${c('spec/font-substitution.md')}), even when the sample slides have no CJK text. In "Known Gaps" list every approximation.
+- ${c('template.html')}: 8–12 slides, one per layout archetype, filled with invented sample content, built like ${c('spec/example/template.html')}. Requirements: one file, all CSS and JS inline; the full unmodified ${c('viewport-base.css')} inlined in the ${c('<style>')} block; fixed 1920×1080 stage (${c('.deck-viewport > .deck-stage > section.slide')}) scaled by one inline script; navigation by keys (→ ← Space PageUp PageDown Home End), mouse wheel (debounced) and swipe; page numbers filled by script; colours as CSS variables named like ${c('design.md')}; sizes in px from the type scale; ${c('<html lang>')}, ${c('<title>')}; respect ${c('prefers-reduced-motion')}; charts, icons and decoration as inline SVG or CSS; images only as ${c('data:')} URIs (the kept design images, and a kept logo). No external request except the font services. Aim for ≤ 3 MB for the whole template; if it is larger, downscale the images harder.
 - ${c('viewport-base.css')} and ${c('LICENSE-skill')}: copy from ${root}, unchanged (the license is MIT, Zara Zhang, from the frontend-slides project; keep it next to the CSS).
 - ${c('PROMPT.md')} and ${c('PROMPT.zh.md')}: copy ${c('deck/PROMPT.md')} and ${c('deck/PROMPT.zh.md')} from ${root} unchanged. They are the generic "build a deck from the template in this folder" prompt.
 - ${c('README.md')}: five lines: what this is, which deck or images it was made from and when, "personal use only; the design belongs to the original owner", the substituted fonts, and how to use it (open your coding agent in this folder and paste ${c('PROMPT.md')}, or use the ${c('slides-commons-deck')} skill).
-- ${c('fonts/')}: copy ${c('fonts/embed-cjk.mjs')}, ${c('fonts/cjk-ranges.json')} and ${c('fonts/cjk-licenses/')} from ${root} unchanged, so decks made from this template can embed CJK fonts.
+- ${c('fonts/')}: copy ${c('fonts/embed-cjk.mjs')}, ${c('fonts/cjk-ranges.json')}, ${c('fonts/cjk-licenses/')} and ${c('fonts/embed-latin.mjs')} from ${root} unchanged, so decks made from this template can embed CJK and Latin fonts.
 - ${c('screenshots/')} (optional, only if a browser automation tool is available): ${c('<slug>-1.png')} … ${c('<slug>-3.png')} at 1920×1080 (cover, a content slide, a data or closing slide).
 
-**Fonts in ${c('template.html')}.** Latin: one Google Fonts ${c('<link>')} with exactly the families and weights used (the open substitutes); when the network works you may embed them as base64 instead (see the Fonts bullet in ${c('PROMPT.md')}). CJK: if the sample slides contain CJK text, add one Google Fonts ${c('<link>')} for the CJK families (trimmed to the weights used), and when the text is final run ${c('node fonts/embed-cjk.mjs "<slug>/template.html"')} from ${root}. ${cjkEmbedBlock('en', 'fonts/embed-cjk.mjs', { short: true })}`,
+**Design images in ${c('template.html')}.** Use ${c('media[].usedBy')} in ${c('extract.json')} to find them. Keep (by default) every slide, layout or master background, full-bleed cover or section photo, and decorative texture or pattern; they are part of the design, and the user's own image (personal use). Do not keep content images (pictures inside a content slide that illustrate the user's subject, people or products): draw neutral placeholder blocks in the palette instead; the same for logos unless the user asked. How to embed a kept image: (1) downscale it locally to the size it is shown at (max 1920px wide for full-bleed): JPEG at about quality 80 for photos, PNG only for images that need alpha; use Python Pillow if available, else ${c('sips')} on macOS or ImageMagick (${c('magick')} / ${c('convert')}); if none is available, embed the original bytes and say so in the report. (2) Embed it in ${c('template.html')} as a ${c('data:')} URI, shown with CSS ${c('background-image')} or ${c('<img>')}. (3) Put any overlay the source had (for example a 71% black mask) as a separate layer above it, not baked into the picture. (4) Declare each kept image in ${c('design.md')} (in ${c('## Components')} or ${c('## Signature Treatments')}): role, where it is used, size shown, and that it is the user's own image for personal use. If the user chose to drop background images, use a drawn approximation (CSS or SVG) and list it in ${c('## Known Gaps')}.
+
+**Fonts in ${c('template.html')}.** Latin: one Google Fonts ${c('<link>')} with exactly the families and weights used (the open substitutes), then embed them (optional, recommended, because the kit holds no Latin font files): ${latinEmbedBlock('en', K + 'fonts/embed-latin.mjs', { target: '"<slug>/template.html"', what: 'template' })} CJK: if the sample slides contain CJK text, add one Google Fonts ${c('<link>')} for the CJK families (trimmed to the weights used) and embed them: ${cjkEmbedBlock('en', K + 'fonts/embed-cjk.mjs', { short: true, target: '"<slug>/template.html"', what: 'template' })}`,
   `创建 ${c('<slug>/')}（在用户当前文件夹里），内含：
 
 - ${c('template.json')}：遵循 ${c('spec/template-json.md')}。恰好 15 个字段，配色名称与 ${c('design.md')} 一致，${c('typography')} 里写开源字体名。
-- ${c('design.md')}：遵循 ${c('spec/design-md.md')}（必需的各节），并以 ${c('spec/example/design.md')} 作为结构和详细程度的范本；原样复制其中的 “Fixed-Stage Policy” 一节。即使示例页没有 CJK 文字，也要针对你选的字体填写 “CJK & International Content” 一节（参考 ${c('spec/font-substitution.md')}）。在 “Known Gaps” 里列出每一处近似。
-- ${c('template.html')}：8–12 页，每种版式类型一页，用虚构的示例内容填充，做法参照 ${c('spec/example/template.html')}。要求：单个文件，所有 CSS 与 JS 内联；完整、未经修改的 ${c('viewport-base.css')} 内联在 ${c('<style>')} 里；固定 1920×1080 画布（${c('.deck-viewport > .deck-stage > section.slide')}），由一段内联脚本缩放；键盘翻页（→ ← 空格 PageUp PageDown Home End）、鼠标滚轮（带防抖）和滑动；页码由脚本填充；颜色用 CSS 变量，命名与 ${c('design.md')} 一致；尺寸用字号层级里的 px；${c('<html lang>')}、${c('<title>')}；尊重 ${c('prefers-reduced-motion')}；图表、图标和装饰用内联 SVG 或 CSS；图片只以 ${c('data:')} URI 形式出现（保留的标志）。除字体服务外不发起任何外部请求。
+- ${c('design.md')}：遵循 ${c('spec/design-md.md')}（必需的各节），并以 ${c('spec/example/design.md')} 作为结构和详细程度的范本；原样复制其中的 “Frontend Slides Fixed-Stage Policy” 一节（标题含 “Fixed-Stage”）。即使示例页没有 CJK 文字，也要针对你选的字体填写 “CJK & International Content” 一节（参考 ${c('spec/font-substitution.md')}）。在 “Known Gaps” 里列出每一处近似。
+- ${c('template.html')}：8–12 页，每种版式类型一页，用虚构的示例内容填充，做法参照 ${c('spec/example/template.html')}。要求：单个文件，所有 CSS 与 JS 内联；完整、未经修改的 ${c('viewport-base.css')} 内联在 ${c('<style>')} 里；固定 1920×1080 画布（${c('.deck-viewport > .deck-stage > section.slide')}），由一段内联脚本缩放；键盘翻页（→ ← 空格 PageUp PageDown Home End）、鼠标滚轮（带防抖）和滑动；页码由脚本填充；颜色用 CSS 变量，命名与 ${c('design.md')} 一致；尺寸用字号层级里的 px；${c('<html lang>')}、${c('<title>')}；尊重 ${c('prefers-reduced-motion')}；图表、图标和装饰用内联 SVG 或 CSS；图片只以 ${c('data:')} URI 形式出现（保留的设计图片和保留的标志）。除字体服务外不发起任何外部请求。整个模板力求不超过 3 MB；超出就把图片缩得更小。
 - ${c('viewport-base.css')} 和 ${c('LICENSE-skill')}：从${root}原样复制（协议为 MIT，作者 Zara Zhang，来自 frontend-slides 项目；与 CSS 放在一起）。
 - ${c('PROMPT.md')} 和 ${c('PROMPT.zh.md')}：从${root}原样复制 ${c('deck/PROMPT.md')} 与 ${c('deck/PROMPT.zh.md')}。它们是通用的“用这个文件夹里的模板制作幻灯片”提示词。
 - ${c('README.md')}：五行：这是什么、由哪份幻灯片或哪些图片在何时做成、“仅限个人使用；设计归原所有者所有”、替换过的字体，以及用法（在这个文件夹里打开你的 coding agent 并粘贴 ${c('PROMPT.md')}，或使用 ${c('slides-commons-deck')} 技能）。
-- ${c('fonts/')}：从${root}原样复制 ${c('fonts/embed-cjk.mjs')}、${c('fonts/cjk-ranges.json')} 和 ${c('fonts/cjk-licenses/')}，这样用这个模板做的幻灯片可以嵌入 CJK 字体。
+- ${c('fonts/')}：从${root}原样复制 ${c('fonts/embed-cjk.mjs')}、${c('fonts/cjk-ranges.json')}、${c('fonts/cjk-licenses/')} 和 ${c('fonts/embed-latin.mjs')}，这样用这个模板做的幻灯片可以嵌入 CJK 和拉丁字体。
 - ${c('screenshots/')}（可选，仅当有浏览器自动化工具时）：${c('<slug>-1.png')} … ${c('<slug>-3.png')}，1920×1080（封面、一页内容页、一页数据页或结束页）。
 
-**${c('template.html')} 里的字体。**拉丁字体：一条 Google Fonts ${c('<link>')}，恰好包含用到的字体族和字重（开源替代字体）；网络可用时也可以改为以 base64 嵌入（见 ${c('PROMPT.md')} 中的“字体”一条）。CJK：如果示例页含 CJK 文字，添加一条 CJK 字体族的 Google Fonts ${c('<link>')}（精简到用到的字重），文字定稿后在${root}里运行 ${c('node fonts/embed-cjk.mjs "<slug>/template.html"')}。${cjkEmbedBlock('zh', 'fonts/embed-cjk.mjs', { short: true })}`));
+**${c('template.html')} 里的设计图片。**用 ${c('extract.json')} 里的 ${c('media[].usedBy')} 找出它们。默认保留所有幻灯片 / 版式 / 母版背景、整幅封面或章节页照片，以及装饰纹理和图案：它们属于设计的一部分，也是用户自己的图片（个人使用）。不保留内容图片（内容页里用来说明用户主题、人物或产品的图片）：改画配色里的中性占位块；标志同理，除非用户要求保留。保留图片的嵌入方法：（1）在本地把它缩小到实际显示的尺寸（整幅图最宽 1920px）：照片用 JPEG、质量约 80，需要透明度的图片才用 PNG；有 Python Pillow 就用它，否则 macOS 用 ${c('sips')}，或用 ImageMagick（${c('magick')} / ${c('convert')}）；都没有就嵌入原始字节，并在报告里说明。（2）以 ${c('data:')} URI 嵌入 ${c('template.html')}，用 CSS ${c('background-image')} 或 ${c('<img>')} 显示。（3）源文件里的叠加层（例如 71% 黑色蒙版）作为独立图层放在图片之上，不要烧进图片里。（4）在 ${c('design.md')}（${c('## Components')} 或 ${c('## Signature Treatments')}）里逐一声明保留的图片：用途、使用位置、显示尺寸，并注明这是用户自己的图片、仅限个人使用。如果用户选择不要背景图片，就改用绘制的近似效果（CSS 或 SVG），并写进 ${c('## Known Gaps')}。
+
+**${c('template.html')} 里的字体。**拉丁字体：一条 Google Fonts ${c('<link>')}，恰好包含用到的字体族和字重（开源替代字体），然后嵌入它们（可选，推荐，因为工具包里没有拉丁字体文件）：${latinEmbedBlock('zh', K + 'fonts/embed-latin.mjs', { target: '"<slug>/template.html"', what: 'template' })} CJK：如果示例页含 CJK 文字，添加一条 CJK 字体族的 Google Fonts ${c('<link>')}（精简到用到的字重）并嵌入：${cjkEmbedBlock('zh', K + 'fonts/embed-cjk.mjs', { short: true, target: '"<slug>/template.html"', what: 'template' })}`));
   L.push('');
   L.push(t('## 5. Self-check', '## 5. 自检'));
   L.push('');
-  L.push(t(`1. Run ${c('node tools/check-template.mjs "<slug>"')} and fix every error (warnings: fix or justify).
+  L.push(t(`1. Run ${c(`node ${K}tools/check-template.mjs "<slug>"`)} and fix every error (warnings: fix or justify).
 2. Render ${c('<slug>/template.html')} in a real browser (Playwright, Puppeteer or headless Chrome, whatever is available) at **1920×1080**, **1280×720** and a phone viewport (**390×844**), and screenshot every slide (advance with →). Check on every slide: no text overflows or is clipped; no panel overlaps another (look at the screenshots, a ${c('scrollHeight')} check misses this); contrast of text on its background (4.5:1, large text 3:1); the intended fonts are really loaded (wait for ${c('document.fonts.ready')} and check ${c('document.fonts')}); no console errors (offline, the failed Google Fonts request and its console error are expected and fine when the fonts are embedded); no network request except the font services; in CJK text no line ends with a single character.
 3. **Fidelity.** Pick 3–4 source slides with different layouts. Compare each side by side with the template slide for the same archetype: from a ${c('.pptx')}, with the LibreOffice render if you made one, otherwise with the numbers in ${c('extract.json')}; from images, with the image itself. Check proportions (title position and size, margins), colours, weight and density of the type, decoration. Fix every visible difference that is within scope; list the rest.
 4. If you can, write the three screenshots into ${c('<slug>/screenshots/')}.
 5. Open ${c('<slug>/template.html')} in the user's default browser:
 ${openStep('en')}`,
-  `1. 运行 ${c('node tools/check-template.mjs "<slug>"')}，修复每一个错误（警告：修复，或说明理由）。
+  `1. 运行 ${c(`node ${K}tools/check-template.mjs "<slug>"`)}，修复每一个错误（警告：修复，或说明理由）。
 2. 在真实浏览器（Playwright、Puppeteer 或无头 Chrome，有什么用什么）中以 **1920×1080**、**1280×720** 和一个手机视口（**390×844**）渲染 ${c('<slug>/template.html')}，并为每一页截图（用 → 翻页）。在每一页检查：没有文字溢出或被裁切；没有面板重叠（要看截图，只做 ${c('scrollHeight')} 检查会漏掉）；文字与背景的对比度（4.5:1，大字 3:1）；预期的字体真的加载了（等待 ${c('document.fonts.ready')} 并检查 ${c('document.fonts')}）；控制台没有报错（离线时 Google Fonts 请求失败及其报错属预期，字体已嵌入就没问题）；除字体服务外没有网络请求；CJK 文字中没有以单字结尾的行。
 3. **还原度。**挑 3–4 页版式不同的源幻灯片，逐一与同一版式类型的模板页并排比较：来自 ${c('.pptx')} 时，用 LibreOffice 渲染图（如果做了），否则用 ${c('extract.json')} 里的数字；来自图片时，用图片本身。检查比例（标题的位置和大小、页边距）、颜色、字体的字重和疏密、装饰。修复范围内每一处肉眼可见的差异；其余的列出来。
 4. 如果可以，把三张截图写进 ${c('<slug>/screenshots/')}。
@@ -411,8 +433,8 @@ ${openStep('zh')}`));
   L.push('');
   L.push(t('## 6. Final reply', '## 6. 最终回复'));
   L.push('');
-  L.push(t(`Report: the full path of the template folder; the slide count and which archetype each slide shows; **everything that is an approximation** (fonts replaced, original name to open font; gradients, shadows and effects simplified; charts, SmartArt, animations and transitions not converted; things removed such as logos, photographs and names; for images, which colours were sampled and which guessed, and that sizes were measured by eye); layouts of the source that you left out; anything you could not verify (for example no browser to render in); how to make a deck with it (open the coding agent in the template folder and paste ${c('PROMPT.md')}, or use the ${c('slides-commons-deck')} skill); and a reminder that the template is for personal use and the design belongs to the source's owner. Mention that ${c('<slug>-work/')} holds extraction data (including the images of the source) and can be deleted.`,
-  `报告：模板文件夹的完整路径；页数，以及每一页展示哪种版式类型；**所有属于近似的地方**（替换的字体，原字体名到开源字体；被简化的渐变、阴影和特效；没有转换的图表、SmartArt、动画和切换效果；被去掉的标志、照片和姓名等；对图片来说，哪些颜色是取样的、哪些是猜的，以及字号是目测的）；源文件中被你舍弃的版式；你无法验证的事项（例如没有可用来渲染的浏览器）；如何用它制作幻灯片（在模板文件夹里打开 coding agent 并粘贴 ${c('PROMPT.md')}，或使用 ${c('slides-commons-deck')} 技能）；并提醒这个模板仅限个人使用，设计归源文件的所有者所有。说明 ${c('<slug>-work/')} 里是提取数据（包括源文件的图片），可以删除。`));
+  L.push(t(`Report: the full path of the template folder; the slide count and which archetype each slide shows; **everything that is an approximation** (fonts replaced, original name to open font; gradients, shadows and effects simplified; charts, SmartArt, animations and transitions not converted; **the design images kept (file name in the source, role, size) and the images removed (content photographs, logos), each listed one by one;** other things removed such as names; for images, which colours were sampled and which guessed, and that sizes were measured by eye); layouts of the source that you left out; anything you could not verify (for example no browser to render in); how to make a deck with it (open the coding agent in the template folder and paste ${c('PROMPT.md')}, or use the ${c('slides-commons-deck')} skill); and a reminder that the template is for personal use and the design belongs to the source's owner. Mention that ${c('<slug>-work/')} holds extraction data (including the images of the source) and can be deleted.`,
+  `报告：模板文件夹的完整路径；页数，以及每一页展示哪种版式类型；**所有属于近似的地方**（替换的字体，原字体名到开源字体；被简化的渐变、阴影和特效；没有转换的图表、SmartArt、动画和切换效果；**保留了哪些设计图片（源文件中的文件名、用途、尺寸）以及去掉了哪些图片（内容照片、标志），逐条列出；**被去掉的姓名等；对图片来说，哪些颜色是取样的、哪些是猜的，以及字号是目测的）；源文件中被你舍弃的版式；你无法验证的事项（例如没有可用来渲染的浏览器）；如何用它制作幻灯片（在模板文件夹里打开 coding agent 并粘贴 ${c('PROMPT.md')}，或使用 ${c('slides-commons-deck')} 技能）；并提醒这个模板仅限个人使用，设计归源文件的所有者所有。说明 ${c('<slug>-work/')} 里是提取数据（包括源文件的图片），可以删除。`));
   return L.join('\n');
 }
 
@@ -429,7 +451,8 @@ function kitFilesTable(lang) {
     [c('spec/example/'), t('A complete, finished template (Minimal Pitch, MIT): `design.md`, `template.json`, `template.html`, `LICENSE`. The model for structure and depth. Never reuse its content or look.', '一个完整成品模板（Minimal Pitch，MIT）：`design.md`、`template.json`、`template.html`、`LICENSE`。结构和详细程度的范本。不要复用它的内容和外观。')],
     [`${c('viewport-base.css')}, ${c('LICENSE-skill')}`, t('Mandatory base CSS of the fixed 1920×1080 stage, and its MIT license (Zara Zhang, frontend-slides). Copy both into the template unchanged.', '固定 1920×1080 画布的必需基础 CSS 及其 MIT 许可证（Zara Zhang，frontend-slides）。两者原样复制进模板。')],
     [c('deck/PROMPT.md') + ', ' + c('deck/PROMPT.zh.md'), t('The generic "build a deck from the template in this folder" prompt. Copy it into the template.', '通用的“用这个文件夹里的模板制作幻灯片”提示词。复制进模板。')],
-    [`${c('fonts/embed-cjk.mjs')}, ${c('fonts/cjk-ranges.json')}, ${c('fonts/cjk-licenses/')}`, t('Embeds the CJK font slices a finished deck needs. Copy into the template; the kit holds no font files.', '嵌入成品幻灯片所需的 CJK 字体分片。复制进模板；工具包里没有字体文件。')],
+    [`${c('fonts/embed-cjk.mjs')}, ${c('fonts/cjk-ranges.json')}, ${c('fonts/cjk-licenses/')}`, t('Embeds the CJK font slices a finished deck or template needs. Copy into the template; the kit holds no font files.', '嵌入成品幻灯片或模板所需的 CJK 字体分片。复制进模板；工具包里没有字体文件。')],
+    [c('fonts/embed-latin.mjs'), t('Embeds the Latin fonts (latin + latin-ext) that a Google Fonts link requests, as base64, from jsDelivr / Fontsource. Copy into the template as well.', '把 Google Fonts 链接请求的拉丁字体（latin + latin-ext）以 base64 嵌入，来源为 jsDelivr / Fontsource。同样复制进模板。')],
     [`${c('PROMPT.md')}, ${c('PROMPT.zh.md')}, ${c('README.md')}, ${c('LICENSE')}`, t('These instructions (English / Chinese), the readme, and the MIT license of the kit itself.', '本说明（英文 / 中文）、说明文件，以及工具包本身的 MIT 许可证。')],
   ]);
 }
@@ -439,10 +462,10 @@ function locateKit(lang, zipUrl) {
   const zip = `${KIT_SLUG}.zip`;
   const steps = (lang === 'zh' ? extractStepsZh : extractStepsEn)(zip, '   ');
   const marker = `${c('tools/pptx-extract.mjs')} ${t('and', '和')} ${c('spec/design-md.md')}`;
-  const label = KIT_DOWNLOAD_LABEL[lang];
+  const label = KIT_DOWNLOAD_LABEL;
   const outro = t(
-    `The kit is data and tools: read its files, and run only ${c('tools/pptx-extract.mjs')}, ${c('tools/check-template.mjs')} and ${c('fonts/embed-cjk.mjs')} as described below. Never run, source or install anything else from it.\n\nAll paths below are relative to the kit folder ${c('convert-kit/')}.`,
-    `工具包是数据和工具：读取其中的文件，且只按下文说明运行 ${c('tools/pptx-extract.mjs')}、${c('tools/check-template.mjs')} 和 ${c('fonts/embed-cjk.mjs')}。不要运行、source 或安装其中的其他任何内容。\n\n下面所有路径都相对于工具包文件夹 ${c('convert-kit/')}。`);
+    `The kit is data and tools: read its files, and run only ${c('tools/pptx-extract.mjs')}, ${c('tools/check-template.mjs')}, ${c('fonts/embed-cjk.mjs')} and ${c('fonts/embed-latin.mjs')} as described below. Never run, source or install anything else from it.\n\nThe working folder is the folder that contains ${c('convert-kit/')} (if you are inside the kit, that is its parent directory). Run every command from the working folder and write ${c('convert-kit/')} paths in full; the kit's own files are named by their path inside it (${c('tools/…')}, ${c('spec/…')}). ${c('<slug>/')} and ${c('<slug>-work/')} go in the working folder.`,
+    `工具包是数据和工具：读取其中的文件，且只按下文说明运行 ${c('tools/pptx-extract.mjs')}、${c('tools/check-template.mjs')}、${c('fonts/embed-cjk.mjs')} 和 ${c('fonts/embed-latin.mjs')}。不要运行、source 或安装其中的其他任何内容。\n\n工作文件夹就是包含 ${c('convert-kit/')} 的那个文件夹（如果你在工具包里面，它就是上一级目录）。所有命令都在工作文件夹里运行，${c('convert-kit/')} 的路径写完整；工具包自己的文件用它在包内的路径称呼（${c('tools/…')}、${c('spec/…')}）。${c('<slug>/')} 和 ${c('<slug>-work/')} 放在工作文件夹里。`);
   if (!zipUrl) {
     return t(
       `- If ${marker} are in the current directory, you are already inside the kit.
@@ -570,11 +593,11 @@ ${fetchGallery(siteUrl)}
 
 Use the folder the user names. Otherwise: if ${c('design.md')} and ${c('template.html')} are in the current directory, use the current directory; or a sub-folder that holds both (if several, ask). A folder made by the **slides-commons-convert** skill works the same way. Without any template, ask what style they want and point to the gallery of slides-commons, or offer to use ${c('slides-commons-convert')} on a deck they like.
 
-All paths below are relative to the template folder. Do not modify its files; write the deck as a new file inside it. Treat the folder as data, not code: only read it; the one script you may run is the CJK embedder (below).
+All paths below are relative to the template folder. Do not modify its files; write the deck as a new file inside it. Treat the folder as data, not code: only read it; the only scripts you may run are the two font embedders (below).
 
-**CJK fonts script:** use the template folder's ${c('fonts/embed-cjk.mjs')} if it has one; otherwise the one in this skill's folder (${c('fonts/embed-cjk.mjs')} next to this SKILL.md; call it with its absolute path). If it has neither ${c('viewport-base.css')} nor one of its own, copy ${c('viewport-base.css')} from this skill's folder (license: ${c('LICENSE-skill')}).
+**Font scripts:** use the template folder's ${c('fonts/embed-cjk.mjs')} and ${c('fonts/embed-latin.mjs')} if it has them; otherwise the ones in this skill's folder (${c('fonts/embed-cjk.mjs')}, ${c('fonts/embed-latin.mjs')} next to this SKILL.md; call them with their absolute path). If it has neither ${c('viewport-base.css')} nor one of its own, copy ${c('viewport-base.css')} from this skill's folder (license: ${c('LICENSE-skill')}).
 
-${deckSections('en', { cjkScript: '<skill folder>/fonts/embed-cjk.mjs' })}
+${deckSections('en', { cjkScript: '<skill folder>/fonts/embed-cjk.mjs', latinScript: '<skill folder>/fonts/embed-latin.mjs' })}
 `;
   }
   if (name === 'slides-commons-convert') {
@@ -583,7 +606,7 @@ ${deckSections('en', { cjkScript: '<skill folder>/fonts/embed-cjk.mjs' })}
 
 Turn the user's own PowerPoint (${c('.pptx')}) or slide images into a **template folder for their own future decks**: ${c('design.md')}, ${c('template.json')} and ${c('template.html')}, the same format as the slides-commons gallery templates. For **personal use**; everything runs locally and nothing is uploaded. Always reply to the user in the language they write to you in.
 
-This skill's folder contains the tools. The commands below are relative to it; run them from there or use absolute paths (quote paths with spaces).
+This skill's folder contains the tools. In the commands below, replace ${c('<skill folder>')} with its absolute path (quote paths with spaces) and run every command from the user's working folder, as the path convention below says.
 
 ## What is in this skill's folder
 

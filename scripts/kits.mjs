@@ -58,6 +58,7 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
     if (!e) fail(`kits/kits.json: CJK family "${name}" is not installed (npm install)`);
     cjk.set(name, e);
   }
+  const latinEntry = (prefix) => ({ name: `${prefix}fonts/embed-latin.mjs`, data: read(path.join(convertDir, 'fonts', 'embed-latin.mjs')) });
   const fontsEntries = (prefix) => [
     { name: `${prefix}fonts/embed-cjk.mjs`, data: read(path.join(root, 'src', 'embed-cjk.mjs')) },
     { name: `${prefix}fonts/cjk-ranges.json`, data: Buffer.from(cjkRangesJson(cjk, siteUrl ?? null), 'utf8') },
@@ -72,16 +73,21 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
     const out = [];
     for (const f of walk(path.join(convertDir, 'tools'))) out.push({ name: `${prefix}tools/${f}`, data: read(path.join(convertDir, 'tools', ...f.split('/'))) });
     out.push({ name: `${prefix}spec/font-map.json`, data: read(path.join(convertDir, 'spec', 'font-map.json')) });
-    out.push({ name: `${prefix}spec/font-substitution.md`, data: Buffer.from(fontSubstitutionMd(fontMap) + '\n', 'utf8') });
+    out.push(text(`${prefix}spec/font-substitution.md`, fontSubstitutionMd(fontMap) + '\n'));
     for (const d of specDocs) out.push({ name: `${prefix}spec/${d}`, data: read(path.join(convertDir, 'spec', d)) });
     for (const f of cfg.example.files) out.push({ name: `${prefix}spec/example/${f}`, data: read(at(`${cfg.example.dir}/${f}`)) });
     out.push({ name: `${prefix}spec/example/LICENSE`, data: read(at(cfg.example.license)) });
-    out.push({ name: `${prefix}deck/PROMPT.md`, data: Buffer.from(deckPrompt('en'), 'utf8') });
-    out.push({ name: `${prefix}deck/PROMPT.zh.md`, data: Buffer.from(deckPrompt('zh'), 'utf8') });
+    out.push(text(`${prefix}deck/PROMPT.md`, deckPrompt('en')));
+    out.push(text(`${prefix}deck/PROMPT.zh.md`, deckPrompt('zh')));
     return out;
   };
   const license = (prefix) => ({ name: `${prefix}LICENSE`, data: read(at(cfg.projectLicense)) });
-  const text = (name, s) => ({ name, data: Buffer.from(s, 'utf8') });
+  // Guard: a missing i18n key or a template slip must never reach a visitor as "undefined".
+  const text = (name, s) => {
+    const bad = /\bundefined\b|\[object Object\]|\bNaN\b/.exec(s);
+    if (bad) fail(`generated text ${name} contains "${bad[0]}" (near: ${JSON.stringify(s.slice(Math.max(0, bad.index - 60), bad.index + 40))})`);
+    return { name, data: Buffer.from(s, 'utf8') };
+  };
 
   // ---- convert kit --------------------------------------------------------------------------
   const kz = `${KIT_SLUG}/`;
@@ -95,6 +101,7 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
     ...toolEntries(kz),
     ...baseEntries(kz),
     ...fontsEntries(kz),
+    latinEntry(kz),
   ];
   writeFile(path.join(site, 'zip', `${KIT_SLUG}.zip`), makeZip(withDirs(kz, kitFiles), zipTime));
 
@@ -107,15 +114,18 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
   for (const name of SKILL_NAMES) {
     const p = `${sz}${name}/`;
     skillFiles.push(text(`${p}SKILL.md`, skillMd(name, { siteUrl })), license(p));
-    if (name === 'slides-commons-deck') skillFiles.push(...baseEntries(p), ...fontsEntries(p));
-    if (name === 'slides-commons-convert') skillFiles.push(...toolEntries(p), ...baseEntries(p), ...fontsEntries(p));
+    if (name === 'slides-commons-deck') skillFiles.push(...baseEntries(p), ...fontsEntries(p), latinEntry(p));
+    if (name === 'slides-commons-convert') skillFiles.push(...toolEntries(p), ...baseEntries(p), ...fontsEntries(p), latinEntry(p));
     if (name === 'slides-commons-cjk-fonts') skillFiles.push(...fontsEntries(p));
   }
   writeFile(path.join(site, 'zip', `${SKILLS_SLUG}.zip`), makeZip(withDirs(sz, skillFiles), zipTime));
 
+  const installEn = skillsInstallPrompt('en', { zipUrl: url(SKILLS_SLUG) });
+  const installZh = skillsInstallPrompt('zh', { zipUrl: url(SKILLS_SLUG) });
+  text('install prompt (en)', installEn); text('install prompt (zh)', installZh);
   return {
     zips: [`zip/${KIT_SLUG}.zip`, `zip/${SKILLS_SLUG}.zip`],
     convert: { promptEn: kitPromptEn, promptZh: kitPromptZh, exampleFiles: cfg.example.files },
-    skills: { installEn: skillsInstallPrompt('en', { zipUrl: url(SKILLS_SLUG) }), installZh: skillsInstallPrompt('zh', { zipUrl: url(SKILLS_SLUG) }) },
+    skills: { installEn, installZh },
   };
 }

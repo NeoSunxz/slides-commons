@@ -218,6 +218,9 @@ function resolveColor(el, env, phClr) {
   return { hex, alpha, source };
 }
 
+// Colour of `hex` at `alpha` laid over the opaque colour `under` (both '#RRGGBB').
+const composite = (hex, alpha, under) => { const a = fromHex(hex), b = fromHex(under); return toHex(...a.map((c, i) => c * alpha + b[i] * (1 - alpha))); };
+
 // A fill property element (solidFill, gradFill, noFill, blipFill, pattFill) -> description.
 function readFill(el, env, rels, phClr) {
   if (!el) return null;
@@ -295,6 +298,53 @@ function substitutionFor(face) {
   return null;
 }
 
+// Corner radius (canvas px) of the preset shapes with rounded corners, from their `adj` guides
+// (a fraction of the shorter side, 100000 = 100%; the default when a guide is missing is 16667).
+function cornerRadii(prst, gds, box) {
+  if (!box || !/^round/.test(prst ?? '')) return null;
+  const g = {};
+  for (const d of gds) { const v = num((d.attrs.fmla ?? '').replace(/^val\s+/, ''), null); if (v !== null && d.attrs.name) g[d.attrs.name] = v; }
+  const short = Math.min(box.w, box.h);
+  const r = (v) => round(short * Math.min(50000, Math.max(0, v)) / 100000, 1);
+  switch (prst) {
+    case 'roundRect': return { cornerRadius: r(g.adj ?? 16667) };
+    case 'round1Rect': return { cornerRadii: { tl: 0, tr: r(g.adj ?? 16667), br: 0, bl: 0 } };
+    case 'round2SameRect': { const t = r(g.adj1 ?? 16667), b = r(g.adj2 ?? 0); return { cornerRadii: { tl: t, tr: t, br: b, bl: b } }; }
+    case 'round2DiagRect': { const a = r(g.adj1 ?? 16667), b = r(g.adj2 ?? 0); return { cornerRadii: { tl: a, tr: b, br: a, bl: b } }; }
+    default: return null; // snipRoundRect, round*Rect variants not listed: the radius is not worked out
+  }
+}
+
+// <a:effectLst> -> { shadow, effects }. `shadow` carries the parameters in canvas px; reflection, glow
+// and soft edge (which have no plain CSS equivalent) are listed in `effects`.
+function readEffects(list, env, pxOf, phClr) {
+  const out = { shadow: null, effects: [] };
+  if (!list) return out;
+  for (const e of list.children) {
+    const col = resolveColor(e.children.find((c) => /Clr$/.test(c.name)), env, phClr);
+    switch (e.name) {
+      case 'outerShdw': case 'innerShdw': case 'prstShdw': {
+        if (out.shadow) break;
+        out.shadow = {
+          type: e.name === 'innerShdw' ? 'inner' : 'outer',
+          blur: round(pxOf(num(e.attrs.blurRad, 0)), 1),
+          dist: round(pxOf(num(e.attrs.dist, 0)), 1),
+          angle: round(num(e.attrs.dir, 0) / 60000, 1),
+          ...(col ? { color: col.hex, alpha: round(col.alpha, 2) } : {}),
+          ...(e.attrs.rotWithShape === '0' ? { rotWithShape: false } : {}),
+        };
+        break;
+      }
+      case 'glow': out.effects.push({ type: 'glow', radius: round(pxOf(num(e.attrs.rad, 0)), 1), ...(col ? { color: col.hex, alpha: round(col.alpha, 2) } : {}), summary: `radius ${round(pxOf(num(e.attrs.rad, 0)), 1)}px${col ? `, ${col.hex}` : ''}` }); break;
+      case 'reflection': out.effects.push({ type: 'reflection', blur: round(pxOf(num(e.attrs.blurRad, 0)), 1), dist: round(pxOf(num(e.attrs.dist, 0)), 1), startAlpha: round(num(e.attrs.stA, 100000) / 100000, 2), endAlpha: round(num(e.attrs.endA, 0) / 100000, 2), summary: `blur ${round(pxOf(num(e.attrs.blurRad, 0)), 1)}px, ${round(num(e.attrs.stA, 100000) / 1000)}% to ${round(num(e.attrs.endA, 0) / 1000)}%` }); break;
+      case 'softEdge': out.effects.push({ type: 'softEdge', radius: round(pxOf(num(e.attrs.rad, 0)), 1), summary: `radius ${round(pxOf(num(e.attrs.rad, 0)), 1)}px` }); break;
+      case 'blur': out.effects.push({ type: 'blur', radius: round(pxOf(num(e.attrs.rad, 0)), 1), summary: `radius ${round(pxOf(num(e.attrs.rad, 0)), 1)}px` }); break;
+      default: break;
+    }
+  }
+  return out;
+}
+
 const CJK_CHAR = /[⺀-鿿ꥠ-꥿가-퟿豈-﫿︰-﹏＀-￯\u{20000}-\u{3134F}]/u;
 
 function extract(file, opts) {
@@ -366,7 +416,10 @@ function extract(file, opts) {
       for (const sf of kids(f, 'font')) if (sf.attrs.typeface) scripts[sf.attrs.script] = sf.attrs.typeface;
       if (Object.keys(scripts).length) fonts[role].scripts = scripts;
     }
-    const th = { part, name: root?.attrs.name ?? null, colors, fonts, fontSchemeName: at(t, 'fontScheme')?.attrs.name ?? null };
+    const fmt = at(t, 'fmtScheme');
+    const lineStyles = kids(at(fmt, 'lnStyleLst'), 'ln').map((l) => ({ w: num(l.attrs.w, 0), dash: kid(l, 'prstDash')?.attrs.val ?? null }));
+    const effectStyles = kids(at(fmt, 'effectStyleLst'), 'effectStyle').map((e) => kid(e, 'effectLst') ?? null);
+    const th = { part, name: root?.attrs.name ?? null, colors, fonts, lineStyles, effectStyles, fontSchemeName: at(t, 'fontScheme')?.attrs.name ?? null };
     themeCache.set(part, th);
     return th;
   }
@@ -406,11 +459,17 @@ function extract(file, opts) {
     fontsUsed.set(face, e);
   };
   let colorSlideNo = 0;
-  const noteColor = (hex, kind, amount, from) => {
+  // What lies under the shapes drawn next: the slide background, replaced when a big opaque shape or
+  // picture covers most of the slide. Used to work out the effective colour of translucent fills.
+  let backdrop = null; // { hex } | { image: true } | null (unknown)
+  const effectiveOver = (hex, alpha) => (alpha < 1 && backdrop?.hex ? composite(hex, alpha, backdrop.hex) : null);
+  const noteColor = (hex, kind, amount, from, extra = {}) => {
     if (!hex || !colorSlideNo) return; // only what the slides themselves use
-    const e = colorsUsed.get(hex) ?? { textChars: 0, fillArea: 0, lines: 0, from: new Set() };
+    const e = colorsUsed.get(hex) ?? { textChars: 0, fillArea: 0, lines: 0, from: new Set(), alphas: new Set(), effective: new Set() };
     e[kind] += amount;
     if (from) e.from.add(from);
+    if (extra.alpha !== undefined && extra.alpha < 1) e.alphas.add(extra.alpha);
+    if (extra.effective) e.effective.add(extra.effective);
     colorsUsed.set(hex, e);
   };
 
@@ -493,7 +552,7 @@ function extract(file, opts) {
           ...(ra('spc') ? { letterSpacing: round(Number(ra('spc')) / 100 * EMU_PER_PT * scale, 2) } : {}),
           ...(ra('baseline') && ra('baseline') !== '0' ? { baseline: Number(ra('baseline')) / 1000 } : {}),
           color: color?.hex ?? null,
-          ...(color && color.alpha < 1 ? { colorAlpha: round(color.alpha, 2) } : {}),
+          ...(color && color.alpha < 1 ? { colorAlpha: round(color.alpha, 2), ...(effectiveOver(color.hex, color.alpha) ? { colorEffective: effectiveOver(color.hex, color.alpha) } : {}) } : {}),
           font: { ...faces },
         };
         runs.push(run);
@@ -502,7 +561,7 @@ function extract(file, opts) {
         const lat = [...t].filter((c) => /\S/.test(c)).length - cjk;
         noteFont(faces.latin, lat, slideNo, 'latin');
         noteFont(faces.ea || faces.latin, cjk, slideNo, faces.ea ? 'ea' : 'latin');
-        if (color) noteColor(color.hex, 'textChars', cjk + lat, color.source);
+        if (color) noteColor(color.hex, 'textChars', cjk + lat, color.source, { alpha: color.alpha, effective: effectiveOver(color.hex, color.alpha) });
         chars += cjk + lat;
       }
       if (!runs.length && !kid(p, 'endParaRPr')) continue;
@@ -590,6 +649,8 @@ function extract(file, opts) {
       if (geom.name === 'prstGeom') {
         const adj = kids(at(geom, 'avLst'), 'gd').map((g) => num((g.attrs.fmla ?? '').replace(/^val\s+/, ''), null)).filter((v) => v !== null);
         if (adj.length) out.geometryAdjust = adj;
+        const radii = cornerRadii(geom.attrs.prst, kids(at(geom, 'avLst'), 'gd'), box);
+        if (radii) Object.assign(out, radii);
       }
     }
 
@@ -602,11 +663,16 @@ function extract(file, opts) {
     for (const s of chain) { const f = fillEl(kid(s, 'spPr')); if (f && f.name !== 'grpFill') { fill = readFill(f, env, ctx.rels); break; } }
     if (!fill && style && num(at(style, 'fillRef')?.attrs.idx, 0) > 0) {
       const c = refColor(kid(style, 'fillRef'));
-      if (c) fill = { type: 'solid', color: c.hex, ...(c.source ? { from: c.source } : {}), viaStyle: true };
+      if (c) fill = { type: 'solid', color: c.hex, ...(c.alpha < 1 ? { alpha: round(c.alpha, 2) } : {}), ...(c.source ? { from: c.source } : {}), viaStyle: true };
     }
-    // line
+    if (fill?.type === 'solid' && fill.alpha !== undefined) { const eff = effectiveOver(fill.color, fill.alpha); if (eff) fill.effective = eff; else if (backdrop?.image) fill.effectiveNote = 'lies over a photo: the result depends on the picture'; }
+    if (fill?.type === 'image' && fill.media) (mediaUse.get(fill.media) ?? mediaUse.set(fill.media, new Set()).get(fill.media)).add(ctx.where);
+    // line: explicit <a:ln> first, then the theme line style named by the shape style's lnRef
     let line = null;
     const ln = chain.map((s) => at(s, 'spPr', 'ln')).find((l) => l && l.children.length) ?? at(spPr, 'ln');
+    const lnRef = style ? at(style, 'lnRef') : null;
+    const lnIdx = num(lnRef?.attrs.idx, 0);
+    const themeLine = lnIdx > 0 ? env.theme?.lineStyles?.[lnIdx - 1] : null;
     if (ln) {
       const f = fillEl(ln);
       const w = ln.attrs.w !== undefined ? round(pxOf(Number(ln.attrs.w)), 1) : undefined;
@@ -616,17 +682,30 @@ function extract(file, opts) {
         if (lf || w !== undefined) line = { ...(lf ?? {}), ...(w !== undefined ? { width: w } : {}), ...(kid(ln, 'prstDash') ? { dash: kid(ln, 'prstDash').attrs.val } : {}) };
       }
     }
-    if (!line && style && num(at(style, 'lnRef')?.attrs.idx, 0) > 0) {
-      const c = refColor(kid(style, 'lnRef'));
-      if (c) line = { type: 'solid', color: c.hex, viaStyle: true };
+    if (line?.type !== 'none' && lnIdx > 0) {
+      const c = refColor(lnRef);
+      if (!line && c) line = { type: 'solid', color: c.hex, ...(c.alpha < 1 ? { alpha: round(c.alpha, 2) } : {}), viaStyle: true };
+      else if (line && !line.color && c && !line.type) Object.assign(line, { type: 'solid', color: c.hex, viaStyle: true });
+      if (line && line.width === undefined && themeLine?.w) { line.width = round(pxOf(themeLine.w), 1); line.widthFrom = `theme line style ${lnIdx}`; }
+      if (line && !line.dash && themeLine?.dash) line.dash = themeLine.dash;
     }
-    const shadow = Boolean(at(spPr, 'effectLst', 'outerShdw') ?? at(spPr, 'effectLst', 'innerShdw'));
+    // effects: explicit <a:effectLst>, else the theme effect style named by effectRef
+    const effRef = style ? at(style, 'effectRef') : null;
+    const effIdx = num(effRef?.attrs.idx, 0);
+    const effList = at(spPr, 'effectLst') ?? (effIdx > 0 ? env.theme?.effectStyles?.[effIdx - 1] ?? null : null);
+    const fx = readEffects(effList, env, pxOf, effRef ? resolveColor(effRef.children[0], env) : null);
+    if (fx.shadow) out.shadow = fx.shadow;
+    if (fx.effects.length) {
+      out.effects = fx.effects;
+      for (const e of fx.effects) warn(`${ctx.where}: "${out.name}" has a ${e.type} effect (${e.summary}); the template simplifies it (reflection, glow and soft edge are usually dropped or replaced by a plain shadow)`);
+    }
+    if (fx.shadow && fx.shadow.blur > 60) warn(`${ctx.where}: "${out.name}" has a very soft shadow (blur ${fx.shadow.blur}px); use a CSS box-shadow with similar blur`);
+    if (kid(spPr, 'scene3d') || kid(spPr, 'sp3d')) warn(`${ctx.where}: "${out.name}" has a 3-D format (bevel / extrusion); it is flattened in the template`);
     if (fill) out.fill = fill;
     if (line) out.line = line;
-    if (shadow) out.shadow = true;
-    if (fill?.color && box) noteColor(fill.color, 'fillArea', (box.w * box.h) / (CANVAS.width * CANVAS.height), fill.from);
-    if (line?.color) noteColor(line.color, 'lines', 1, line.from);
-    if (fill?.type === 'gradient') for (const s of fill.stops) noteColor(s.color, 'fillArea', box ? (box.w * box.h) / (CANVAS.width * CANVAS.height) / Math.max(1, fill.stops.length) : 0);
+    if (fill?.color && box) noteColor(fill.color, 'fillArea', (box.w * box.h) / (CANVAS.width * CANVAS.height), fill.from, { alpha: fill.alpha, effective: fill.effective });
+    if (line?.color) noteColor(line.color, 'lines', 1, line.from, { alpha: line.alpha });
+    if (fill?.type === 'gradient') for (const s of fill.stops) noteColor(s.color, 'fillArea', box ? (box.w * box.h) / (CANVAS.width * CANVAS.height) / Math.max(1, fill.stops.length) : 0, null, { alpha: s.alpha });
 
     if (kind0 === 'pic') {
       out.kind = 'picture';
@@ -698,7 +777,18 @@ function extract(file, opts) {
   }
   function parseTree(tree, ctx) {
     const out = [];
-    for (const c of shapesOf(tree)) { const s = safeParse(c, baseTr, ctx, 0); if (s) out.push(s); }
+    for (const c of shapesOf(tree)) {
+      const s = safeParse(c, baseTr, ctx, 0);
+      if (!s) continue;
+      out.push(s);
+      // a big picture / opaque fill becomes the backdrop of the shapes drawn above it
+      if (ctx.slideNo && s.w && s.h && (s.w * s.h) / (CANVAS.width * CANVAS.height) >= 0.6) {
+        if (s.kind === 'picture' || s.fill?.type === 'image') backdrop = { image: true };
+        else if (s.fill?.type === 'solid' && !(s.fill.alpha < 1)) backdrop = { hex: s.fill.color };
+        else if (s.fill?.type === 'solid' && s.fill.effective) backdrop = { hex: s.fill.effective };
+        else if (s.fill?.type === 'gradient') backdrop = null;
+      }
+    }
     return out;
   }
 
@@ -706,7 +796,11 @@ function extract(file, opts) {
     const bg = at(root, 'cSld', 'bg');
     if (!bg) return null;
     const pr = kid(bg, 'bgPr');
-    if (pr) { const f = readFill(fillEl(pr), ctx.env, ctx.rels); return f; }
+    if (pr) {
+      const f = readFill(fillEl(pr), ctx.env, ctx.rels);
+      if (f?.type === 'image' && f.media) (mediaUse.get(f.media) ?? mediaUse.set(f.media, new Set()).get(f.media)).add(ctx.where);
+      return f;
+    }
     const ref = kid(bg, 'bgRef');
     if (ref) { const c = resolveColor(ref.children[0], ctx.env); return c ? { type: 'solid', color: c.hex, ...(c.source ? { from: c.source } : {}), viaStyle: true } : null; }
     return null;
@@ -716,6 +810,7 @@ function extract(file, opts) {
   const masterOut = new Map();
   function describeMaster(m) {
     if (masterOut.has(m.part)) return masterOut.get(m.part);
+    backdrop = null;
     const ctx = { env: m.env, slideNo: 0, masterTree: m.tree, master: m, rels: rels(m.part), where: m.part, isLayout: false };
     const o = {
       file: m.part,
@@ -733,6 +828,7 @@ function extract(file, opts) {
   const layoutOut = new Map();
   function describeLayout(l) {
     if (layoutOut.has(l.part)) return layoutOut.get(l.part);
+    backdrop = null;
     const ctx = { env: l.master?.env ?? { theme: { colors: {}, fonts: {} }, clrMap: {} }, slideNo: 0, tree: l.tree, layoutTree: null, masterTree: l.master?.tree, master: l.master, rels: rels(l.part), where: l.part, isLayout: true };
     const o = { file: l.part, name: l.name, type: l.type, background: readBackground(l.root, ctx), shapes: parseTree(l.tree, ctx) };
     layoutOut.set(l.part, o);
@@ -767,6 +863,7 @@ function extract(file, opts) {
       if (!background && master) { background = readBackground(master.root, { ...ctx, rels: rels(master.part) }); bgFrom = 'master'; }
       colorSlideNo = no;
       if (background?.color) noteColor(background.color, 'fillArea', 1, background.from);
+      backdrop = background?.type === 'solid' && background.color && !(background.alpha < 1) ? { hex: background.color } : background?.type === 'image' ? { image: true } : null;
       const shapes = parseTree(ctx.tree, ctx);
       const notesRel = relOfType(part, 'notesSlide')[0];
       let notes = null;
@@ -818,7 +915,7 @@ function extract(file, opts) {
     return { typeface: face, characters: e.chars, roles: [...e.roles], slides: [...e.slides].sort((a, b) => a - b), ...(sub ? { suggestion: { use: sub.use, google: sub.google, note: sub.note } } : {}) };
   });
   const nSlides = Math.max(1, slides.length);
-  const colorList = [...colorsUsed.entries()].map(([hex, e]) => ({ hex, textCharacters: e.textChars, fillArea: round(e.fillArea / nSlides, 3), lines: e.lines, ...(e.from.size ? { from: [...e.from] } : {}) }))
+  const colorList = [...colorsUsed.entries()].map(([hex, e]) => ({ hex, textCharacters: e.textChars, fillArea: round(e.fillArea / nSlides, 3), lines: e.lines, ...(e.from.size ? { from: [...e.from] } : {}), ...(e.alphas.size ? { alpha: [...e.alphas].sort((x, y) => x - y) } : {}), ...(e.effective.size ? { effective: [...e.effective] } : {}) }))
     .sort((a, b) => (b.fillArea * 2000 + b.textCharacters + b.lines * 5) - (a.fillArea * 2000 + a.textCharacters + a.lines * 5));
 
   const result = {
@@ -864,18 +961,29 @@ function summarize(r) {
   if (!r.fontsUsed.length) L.push('(no text found)');
   for (const f of r.fontsUsed.slice(0, 12)) L.push(`- ${f.typeface} - ${f.characters} characters, slides ${f.slides.slice(0, 8).join(',')}${f.slides.length > 8 ? '…' : ''}${f.suggestion ? `; suggested open replacement: ${f.suggestion.use}${f.suggestion.note ? ` (${f.suggestion.note})` : ''}` : '; no entry in spec/font-map.json: pick an open look-alike'}`);
   L.push('', '## Colours actually used (most important first)', '');
-  for (const c of r.colorsUsed.slice(0, 12)) L.push(`- ${c.hex} - covers ${(c.fillArea * 100).toFixed(0)}% of an average slide (shape fills, overlaps counted twice), ${c.textCharacters} text characters, ${c.lines} lines${c.from ? `; ${c.from.join(', ')}` : ''}`);
+  for (const c of r.colorsUsed.slice(0, 12)) L.push(`- ${c.hex}${c.alpha ? ` at ${c.alpha.map((a) => Math.round(a * 100) + '%').join(' / ')} opacity${c.effective ? ` (looks like ${c.effective.join(' / ')} over the slide background)` : ' (over a photo or unknown backdrop: the result depends on what lies beneath)'}` : ''} - covers ${(c.fillArea * 100).toFixed(0)}% of an average slide (shape fills, overlaps counted twice), ${c.textCharacters} text characters, ${c.lines} lines${c.from ? `; ${c.from.join(', ')}` : ''}`);
   L.push('', '## Layouts', '');
   for (const l of r.layouts) {
     const used = r.slides.filter((s) => s.layoutFile === l.file).map((s) => s.index);
     L.push(`- ${l.name ?? l.file}${l.type ? ` [${l.type}]` : ''}: ${l.shapes.length} shapes${used.length ? `; used by slides ${used.slice(0, 12).join(',')}${used.length > 12 ? '…' : ''}` : '; unused'}`);
   }
+  const px = (v) => `${v}px`;
+  const runStyle = (x) => `${x.size}px${x.bold ? ' bold' : ''}${x.italic ? ' italic' : ''} ${x.color ?? 'no-colour'}${x.colorAlpha ? ` @${Math.round(x.colorAlpha * 100)}%${x.colorEffective ? ` (${x.colorEffective})` : ''}` : ''}`;
+  const textInfo = (t) => {
+    const runs = t.paragraphs.flatMap((p) => p.runs).filter((x) => x.text.trim());
+    if (!runs.length) return '';
+    const styles = [...new Set(runs.map(runStyle))];
+    const faces = [...new Set(runs.map((x) => x.font.ea || x.font.latin).filter(Boolean))];
+    return ` "${trunc(t.paragraphs.map((p) => p.text).join(' / '), 70)}" [${styles.slice(0, 3).join('; ')}${styles.length > 3 ? '; …' : ''}]${faces.length ? ` ${faces.slice(0, 2).join(', ')}` : ''}`;
+  };
+  const fillInfo = (f) => !f ? '' : f.color ? ` fill ${f.color}${f.alpha !== undefined ? ` at ${Math.round(f.alpha * 100)}% opacity${f.effective ? ` (looks like ${f.effective} over the backdrop)` : f.effectiveNote ? ` (${f.effectiveNote})` : ''}` : ''}` : f.type === 'gradient' ? ' gradient' : f.type === 'image' ? ` image-fill${f.media ? ' ' + f.media.split('/').pop() : ''}` : '';
+  const lineInfo = (l) => !l || l.type === 'none' ? '' : ` stroke${l.color ? ' ' + l.color : ''}${l.width !== undefined ? ' ' + px(l.width) : ''}${l.dash ? ' ' + l.dash : ''}`;
+  const fxInfo = (s) => `${s.shadow ? ` shadow(${s.shadow.type} blur ${px(s.shadow.blur)} dist ${px(s.shadow.dist)} angle ${s.shadow.angle}deg${s.shadow.color ? ' ' + s.shadow.color + ' @' + Math.round((s.shadow.alpha ?? 1) * 100) + '%' : ''})` : ''}${(s.effects ?? []).map((e) => ` ${e.type}(${e.summary})`).join('')}`;
+  const radiusInfo = (s) => s.cornerRadius !== undefined ? ` radius ${px(s.cornerRadius)}` : s.cornerRadii ? ` radii ${Object.entries(s.cornerRadii).map(([k, v]) => `${k}${v}`).join(' ')}px` : '';
   const line = (s, ind) => {
     const g = s.x !== undefined ? ` @${s.x},${s.y} ${s.w}x${s.h}` : '';
-    const t = s.text ? ` "${trunc(s.text.paragraphs.map((p) => p.text).join(' / '), 70)}" ${[...new Set(s.text.paragraphs.flatMap((p) => p.runs.map((x) => x.size)))].slice(0, 3).map((x) => x + 'px').join('/')}${s.text.paragraphs[0]?.runs[0]?.bold ? ' bold' : ''} ${s.text.paragraphs[0]?.runs[0]?.color ?? ''} ${s.text.paragraphs[0]?.runs[0]?.font.latin ?? ''}` : '';
-    const f = s.fill?.color ? ` fill ${s.fill.color}` : s.fill?.type === 'gradient' ? ' gradient' : s.fill?.type === 'image' ? ' image-fill' : '';
     const img = s.image ? ` ${s.image.media?.split('/').pop()}` : '';
-    return `${ind}- ${s.kind}${s.placeholder ? ` (${s.placeholder.type})` : ''}${s.geometry && s.geometry !== 'rect' && s.geometry !== s.kind ? ` ${s.geometry}` : ''}${g}${f}${img}${t}`;
+    return `${ind}- ${s.kind}${s.placeholder ? ` (${s.placeholder.type})` : ''}${s.geometry && s.geometry !== 'rect' && s.geometry !== s.kind ? ` ${s.geometry}` : ''}${radiusInfo(s)}${g}${fillInfo(s.fill)}${lineInfo(s.line)}${fxInfo(s)}${img}${s.text ? textInfo(s.text) : ''}`;
   };
   const decor = [...r.masters.map((m) => ['master', m]), ...r.layouts.map((l) => ['layout ' + (l.name ?? ''), l])].map(([n, o]) => [n, o.shapes.filter((x) => !x.placeholder && x.kind !== 'other')]).filter(([, d]) => d.length);
   if (decor.length) {
@@ -887,7 +995,7 @@ function summarize(r) {
     if (s.error) { L.push(`### Slide ${s.index}: could not be read (${s.error})`, ''); continue; }
     const title = s.shapes.find((x) => x.placeholder && /title/i.test(x.placeholder.type) && x.text)?.text.paragraphs[0]?.text;
     L.push(`### Slide ${s.index}${title ? `: ${trunc(title, 60)}` : ''}${s.hidden ? ' (hidden)' : ''}`);
-    L.push(`layout: ${s.layout ?? '?'}; background: ${s.background ? (s.background.color ?? s.background.type) : '-'}${s.background?.from && s.background.from !== 'slide' ? ` (from ${s.background.from})` : ''}`);
+    L.push(`layout: ${s.layout ?? '?'}; background: ${s.background ? (s.background.color ? s.background.color + (s.background.alpha !== undefined ? ` at ${Math.round(s.background.alpha * 100)}%` : '') : s.background.type === 'image' ? `image ${s.background.media?.split('/').pop() ?? '?'}` : s.background.type) : '-'}${s.background?.from && s.background.from !== 'slide' ? ` (from ${s.background.from})` : ''}`);
     let shown = 0;
     const walk = (list, ind) => { for (const x of list) { if (shown >= 14) return; shown++; L.push(line(x, ind)); if (x.children) walk(x.children, ind + '  '); } };
     walk(s.shapes, '');
