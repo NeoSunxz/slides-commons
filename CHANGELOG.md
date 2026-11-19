@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-19
+
+### Fixed
+
+- Arrows (↗ and ✓/✕) no longer render as emoji on iOS: card and button arrows are inline SVG (`arrowIcon()` in `src/pages.mjs`), the card-title arrow is a CSS mask, and ✓/✕ carry U+FE0E.
+
 ## [0.3.0] - 2026-11-19
 
 ### Added
@@ -104,7 +110,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0
