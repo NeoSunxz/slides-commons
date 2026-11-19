@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from './font-cache.mjs';
 import {
-  SITE, ALL_SLUGS, UP_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, EXTERNAL_WHITELIST,
+  SITE, ALL_SLUGS, isOverlay, UP_SLUGS, DECK_STAGE_SLUGS, CDN_SLUGS, NO_WEBFONT_SLUGS, FONTSHARE_SLUGS, EXTERNAL_WHITELIST, isCjkPackFile,
   UPSTREAM_TEMPLATES, UPSTREAM_SKILL, upstreamDir, skillDesign, readZip, readSiteZip, hostOf,
 } from './helpers.mjs';
 
@@ -31,7 +31,8 @@ for (const slug of UP_SLUGS) {
     // fonts/ is verified in fonts.spec.mjs; here only that it exists exactly for templates with web fonts.
     const all = entries.filter((e) => !e.isDirectory && !e.isDir).map((e) => e.name).sort();
     const nonFont = all.filter((n) => !n.startsWith(`${slug}/fonts/`));
-    expect(all.some((n) => n.startsWith(`${slug}/fonts/`)), `${slug}: fonts/ presence`).toBe(!NO_WEBFONT_SLUGS.includes(slug));
+    // Bundled fonts exist exactly for templates with web fonts; the CJK embed tooling is covered by cjk-embed.spec.mjs.
+    expect(all.some((n) => n.startsWith(`${slug}/fonts/`) && !isCjkPackFile(n)), `${slug}: fonts/ presence`).toBe(!NO_WEBFONT_SLUGS.includes(slug));
     expect(nonFont).toEqual(expected);
     // deck-stage.js ships exactly for the deck-stage templates (and nothing else is a sibling).
     expect(siblings.filter((f) => f !== 'deck-stage.js'), 'unexpected sibling assets').toEqual([]);
@@ -75,7 +76,7 @@ test('prompts: file table mentions deck-stage.js exactly for the deck-stage temp
 test('prompts: CDN templates carry the Charts bullet, the others do not', async () => {
   expect(CDN_SLUGS.length).toBeGreaterThan(0);
   const wrong = [];
-  for (const slug of ALL_SLUGS) {
+  for (const slug of ALL_SLUGS.filter((s) => !isOverlay(s))) { // overlay prompts (guizang) forbid network requests in their own section 4
     const { entries } = readSiteZip(SITE, slug);
     const en = zipFile(entries, slug, 'PROMPT.md').toString();
     const zh = zipFile(entries, slug, 'PROMPT.zh.md').toString();

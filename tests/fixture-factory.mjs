@@ -85,7 +85,7 @@ export const GOOD_META = (slug, over = {}) => ({
   slug,
   name: `Fixture ${slug}`,
   tagline: 'A plain fixture deck for the contribution checks.',
-  mood: ['plain'], occasion: ['testing'], tone: ['neutral'],
+  mood: ['clean'], occasion: ['testing'], tone: ['neutral'],
   formality: 'medium', density: 'low',
   palette: { 'bg-primary': '#0f172a', 'text-primary': '#f8fafc', accent: '#38bdf8', description: 'Navy and sky.' },
   typography: { display: 'Inter', body: 'Inter', style: 'One family.' },

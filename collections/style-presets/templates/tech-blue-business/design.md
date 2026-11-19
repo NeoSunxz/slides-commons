@@ -178,11 +178,11 @@ components:
   process-steps:
     description: "Five equal columns. 104px circles (2px blue ring, white fill, 48px blue icon; the first step filled with the gradient and a white icon) joined by a 2px dashed blue line through their centres. Under each: mono meta ('01 · 2 weeks'), 30px title, small description (min-height 3 lines so deliverables align), then deliverables with 28px check icons."
   gantt:
-    description: "CSS grid: 300px label column + 24 week columns. Month headers span 4 weeks with a 1px left line that runs down the chart. Rows hold rounded 44px bars in {colors.blue-soft} with navy 600 text; the critical bar uses the gradient with white text; ongoing work is a dashed 2px outline. Milestones are 22px navy diamonds (rotated squares) with a 18px 600 label."
+    description: "CSS grid: 300px label column + 24 week columns. Month headers span 4 weeks with a 1px left line that runs down the chart. Rows hold rounded 44px bars in {colors.blue-soft} with navy 600 text; the critical bar uses the gradient with white text; ongoing work is a dashed 2px `{colors.blue}` outline. Milestones are 22px navy diamonds (rotated squares) with a 18px 600 label."
   service-matrix:
     description: "table-layout fixed, first column 560px. Head row 96px with a mono tier label above the 26px tier name and a 2px ink bottom rule; the recommended column has a solid blue head (14px top radius, white text) and {colors.blue-soft} body cells. Body rows 62px with 1px lines; included = 30px blue check-circle icon; not included = 20×2px grey dash; last row (price) bold with a 2px ink bottom rule."
   logo-wall:
-    description: "6 × 2 grid of 1px-ruled cells. Placeholder logotypes are text only, all in one grey (#5b6b82), varied by weight, tracking, case and mono to suggest different brands. Replace with real logos converted to the same single grey."
+    description: "6 × 2 grid of 1px-ruled cells. Placeholder logotypes are text only, all in one grey ({colors.ink-muted} #4c5b70), varied by weight, tracking, case and mono to suggest different brands. Replace with real logos converted to the same single grey."
   metric:
     description: "Case-study figure: 3px top border ({colors.line}; the lead metric uses the gradient via border-image), {typography.metric} in navy (lead in blue), small caption."
 ---
@@ -234,11 +234,13 @@ Tech Blue Business is the **reliable corporate deck**: white pages, navy text, t
 - **Ink** `{colors.ink}` #0e1b2e — headlines and primary text (navy-black, 16:1).
 - **Ink muted** `{colors.ink-muted}` #4c5b70 — body and captions (7:1).
 - **Ink faint** `{colors.ink-faint}` #8693a6 — chrome, mono labels, axis and table sub-labels; 18px and above only.
+- **On the gradient band:** headings and figures `{colors.paper}`; captions, labels and secondary text `{colors.blue-soft}` (never opacity-faded white). The only permitted transparency is the decorative white line-art and the rules inside the band (white at 18–55% opacity).
 - **Line** `{colors.line}` #dce3ee — hairlines, card borders, diagram box strokes, grid lines.
 - **Surface** `{colors.surface}` #f4f7fc — panels, edge-layer boxes, summary strip, partner chips.
 - **Blue** `{colors.blue}` #1e5eff — the accent: icons, label text, connectors, links, the recommended column head, check marks (4.9:1 on white).
 - **Blue deep** `{colors.blue-deep}` #0a2a80 — navy for big figures, milestone diamonds and text on pale-blue bars.
 - **Blue soft** `{colors.blue-soft}` #e8efff — icon tiles, the recommended column body, standard Gantt bars.
+- **Bar neutral** `{colors.bar-neutral}` #c7d1e0 — neutral bars and the "not included" dash in comparison tables.
 - **Cyan** `{colors.cyan}` #22b5f0 — gradient end stop only; never used on its own (fails contrast for text).
 - **Gradient** `{colors.gradient}` — 120°, navy → blue → cyan.
 
@@ -256,7 +258,7 @@ The gradient is the brand's loudest element; use it like a highlighter.
 ### Font Family
 
 - **Plus Jakarta Sans** (Google Fonts / Fontsource), 400 / 500 / 600 / 700 / 800 — headlines (700–800), body (400), UI text (500–600). Modern, geometric and slightly warm; supports tabular figures.
-- **IBM Plex Mono** (Google Fonts / Fontsource), 400 / 500 — labels, section numbers, codes, dates, step meta, table tier labels. Always uppercase with +0.06–0.08em tracking, except in codes and dates.
+- **IBM Plex Mono** (Google Fonts / Fontsource), 400 / 500 — labels, section numbers, codes, dates, step meta, table tier labels. Always uppercase with +0.06–0.08em tracking in Latin, except in codes and dates; Chinese has neither.
 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -453,12 +455,16 @@ Latin first, so Latin words and **all digits** keep Plus Jakarta Sans / Plex Mon
 --mono: 'IBM Plex Mono', 'Noto Sans SC', 'PingFang SC', monospace;
 ```
 
-Put `lang="zh-CN"` on `<html>` and add:
+Put `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
 :lang(zh) .head h2 { letter-spacing: 0; line-height: 1.25; }
 :lang(zh) .s-cover h1, :lang(zh) .s-close h2 { letter-spacing: 0; line-height: 1.22; font-weight: 900; }
-:lang(zh) .label, :lang(zh) .section, :lang(zh) .foot, :lang(zh) .cover-meta span { letter-spacing: 0.04em; }
+:lang(zh) :is(.section, .label, .cover-meta span, .agenda .pg, .facts-list dt, .caps .code, .callout .src, .imetric span,
+              .steps .meta, .tags span, .story h4, .bar-row span, .gantt .mh, .gantt .rl small, .gantt .ms,
+              .matrix thead th small, .s-close .band-label, .arch .t-layer, .arch .t-sub, .arch .t-mono) { font-size: 20px; text-transform: none; }
+/* CJK letter-spacing is 0 everywhere, including SVG text */
+:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 :lang(zh) .lede, :lang(zh) .body, :lang(zh) .small { line-height: 1.75; }
 :lang(zh) .small { font-size: 22px; }
 ```
@@ -468,8 +474,8 @@ Weight 800 has no exact Noto Sans SC match (it ships 100–900 in the variable f
 ### Universal CJK Adjustments
 
 - **Line-height:** titles 1.2–1.3; hero 1.2; body 1.7–1.8; table cells 1.4. Raise row heights in tables and cards if two-line Chinese cells appear.
-- **Tracking:** 0 on Chinese headlines and body; mono-style labels +0.04em max (uppercase has no effect).
-- **Sizes:** Chinese descriptions ≥ 22px (raise `.small` from 20px); table text 22–24px.
+- **Tracking:** 0 on every Chinese run, including mono-style labels and the footer (uppercase has no effect).
+- **Sizes:** Chinese descriptions ≥ 22px (raise `.small` from 20px); table text 22–24px; mono labels, meta, axis and Gantt text 20px. Only the footer line stays 18px.
 - **Title length:** the head title must stay on one line — ≤ 16 Chinese characters at 60px with a lead, ≤ 24 without. Card titles ≤ 10 characters; agenda titles ≤ 8.
 - **Punctuation:** full-width （，。：；！？「」）; no period at the end of titles, card titles or table cells.
 - **Spacing (盘古之白):** a space between Chinese and Latin or digits: `覆盖 14 个国家`, `基于 Northbridge Core`.

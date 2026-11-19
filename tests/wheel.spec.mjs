@@ -1,6 +1,6 @@
 // Mouse wheel over the preview pages the deck and never scrolls the outer page.
 import { test, expect } from './font-cache.mjs';
-import { ALL_SLUGS } from './helpers.mjs';
+import { ALL_SLUGS, isOverlay } from './helpers.mjs';
 
 test.describe.configure({ mode: 'parallel' });
 
@@ -20,7 +20,7 @@ const scrollY = (page) => page.evaluate(() => scrollY);
 // The bridge ignores wheel input for 620 ms after a gesture (plus inertia); wait it out.
 const LOCK = 700;
 
-for (const slug of ALL_SLUGS) {
+for (const slug of ALL_SLUGS.filter((s) => !isOverlay(s))) {
   test(`[en] ${slug}: wheel pages one slide per gesture and leaves the page alone`, async ({ page }) => {
     const { counter, N } = await setup(page, slug);
 
@@ -78,3 +78,35 @@ test('[en] daisy-days: navigating does not scroll the outer page', async ({ page
   await expect(counter).toHaveText(`3 / ${N}`, { timeout: 15_000 });
   expect(await scrollY(page), 'Prev button').toBe(120);
 });
+
+// Overlay decks (guizang) step through in-slide pipelines before a slide advances, so one gesture is
+// not always one slide. Strict part: the first gesture moves one slide and never scrolls the page.
+// Loose part: further gestures keep paging forward (within a few tries) and back, and never scroll the page.
+for (const slug of ALL_SLUGS.filter((s) => isOverlay(s))) {
+  test(`[en] ${slug}: wheel pages (first gesture exactly one slide) and leaves the page alone`, async ({ page }) => {
+    const { counter, N } = await setup(page, slug);
+    await page.mouse.wheel(0, 120);
+    await expect(counter, 'wheel down').toHaveText(`2 / ${N}`, { timeout: 15_000 });
+    expect(await scrollY(page), 'outer page scrolled by the wheel').toBe(120);
+    const now = () => counter.textContent().then((t) => Number(t.split('/')[0]));
+    let moved = false;
+    for (let k = 0; k < 4 && !moved; k++) {
+      await page.waitForTimeout(LOCK + 400);
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(1200);
+      moved = (await now()) >= 3;
+    }
+    expect(moved, 'a later wheel gesture eventually pages the deck forward').toBe(true);
+    expect(await scrollY(page)).toBe(120);
+    const before = await now();
+    let back = false;
+    for (let k = 0; k < 3 && !back; k++) {
+      await page.waitForTimeout(LOCK + 400);
+      await page.mouse.wheel(0, -120);
+      await page.waitForTimeout(1200);
+      back = (await now()) < before;
+    }
+    expect(back, 'wheel up pages back').toBe(true);
+    expect(await scrollY(page)).toBe(120);
+  });
+}

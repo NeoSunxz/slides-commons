@@ -28,6 +28,8 @@ colors:
   bad-fill: "#D9443A"
   bad-tint: "#FCE8E6"
   bad-strong: "#F5BDB7"
+  good-ink: "#0B5A28"
+  bad-ink: "#7A1610"
   stage-bg: "#E5E9EF"
 
 color-aliases:
@@ -105,7 +107,7 @@ typography:
     textTransform: uppercase
   table-head:
     fontFamily: "Hanken Grotesk, Noto Sans SC, sans-serif"
-    fontSize: 17px
+    fontSize: 18px
     fontWeight: 700
     letterSpacing: 0.05em
     textTransform: uppercase
@@ -202,7 +204,7 @@ The frame repeats on every content slide:
 - Headlines say what happened ("Revenue beat budget by 2.1%; sales and marketing overspend absorbed most of it"), not what the slide contains.
 - Footers carry definitions and sources so the body stays clean.
 
-**Density philosophy: high.** A board slide carries one message and all the numbers needed to trust it: six KPI cards, a nine-quarter trend, an 11-line P&L or a 7×10 heatmap is normal. Density is managed by alignment, tabular figures, hairlines and colour discipline — not by shrinking type below 17px.
+**Density philosophy: high.** A board slide carries one message and all the numbers needed to trust it: six KPI cards, a nine-quarter trend, an 11-line P&L or a 7×10 heatmap is normal. Density is managed by alignment, tabular figures, hairlines and colour discipline — not by shrinking type below the 18px floor.
 
 ## Signature Moves
 
@@ -223,6 +225,9 @@ The frame repeats on every content slide:
   - Good / favourable: `{colors.good}` #157F3B · `{colors.good-fill}` #2E9E57 · `{colors.good-tint}` #E3F4E9 · `{colors.good-strong}` #B9E3C8
   - Warn / at risk: `{colors.warn}` #A15C00 · `{colors.warn-fill}` #E09B12 · `{colors.warn-tint}` #FDF2DC
   - Bad / unfavourable: `{colors.bad}` #B42318 · `{colors.bad-fill}` #D9443A · `{colors.bad-tint}` #FCE8E6 · `{colors.bad-strong}` #F5BDB7
+  - Ink on the strongest fills: `{colors.good-ink}` #0B5A28 on `good-strong`, `{colors.bad-ink}` #7A1610 on `bad-strong` (the two end bins of the heatmap and its key). Used for nothing else.
+
+The tokens above are the complete palette. Do not introduce other hex values or `rgba()`; use the nearest token (`paper` for a panel that should read white, `rule` / `line` / `panel` for neutral bands).
 
 ### Rules
 
@@ -262,10 +267,10 @@ Set `font-variant-numeric: tabular-nums lining-nums` on `.slide`, and on SVG `te
 | `{typography.axis}` | 19 | 400 | Chart axis and category labels |
 | `{typography.kicker}` | 18, +0.1em, UPPER | 700 | Section kicker, blue |
 | `{typography.label}` | 18, +0.06em, UPPER | 600 | KPI labels, panel labels, section pills (not uppercase) |
-| `{typography.table-head}` | 17, +0.05em, UPPER | 700 | Table headers, heat key, chips |
+| `{typography.table-head}` | 18, +0.05em, UPPER | 700 | Table headers, heat key, chips |
 | `{typography.footer}` | 18 | 400 | Footer notes, deck label |
 
-**Floor:** 17px (table headers, chips, small chart labels). Running text ≥ 19px.
+**Size floor (stated once):** nothing on a slide is smaller than 18px, and 18px is for uppercase Latin labels, chips, table headers, delta comparison words and footer notes only. Running text, table cells and chart labels are ≥ 19px. Chinese text is never smaller than 20px, except the footer note line, which stays 18px in every language.
 
 ### Writing headlines
 
@@ -360,7 +365,7 @@ Do not put two y-axes on one panel. Stack two panels on one x axis: top panel li
 ### Bullet chart (CSS)
 
 - Row grid `250px 1fr 120px 110px`, 90px high: name + small descriptor | scale | value + `tgt` | attainment chip.
-- Scale 0–120% of target: bands `0–90` `#EEF1F5`, `90–100` `#E2E7EE`, `100–120` `#F6F8FA`; bar 16px blue with `width: calc(var(--v) / 120 * 100%)`; target tick 4px ink at 100%.
+- Scale 0–120% of target: bands `0–90` `{colors.rule}`, `90–100` `{colors.line}`, `100–120` `{colors.panel}`; bar 16px blue with `width: calc(var(--v) / 120 * 100%)`; target tick 4px ink at 100%.
 - Chip colours: ≥ 100% good, 95–99% warn, < 95% bad (state thresholds in the footer). Total row behind a 1.5px ink rule; tick labels under the last row.
 
 ### Heatmap table
@@ -385,13 +390,24 @@ Columns: initiative | owner | next milestone | due | budget used (90px bar + %) 
 - **Decision box** (`.decide`): blue-tint panel with blue-30 border, blue label, numbered items (30px blue circles) with a 22px bold title and a 19px muted detail.
 - **Agenda table**: time (faint) | item (bold lead) | lead | purpose chip (`.chip`, `.chip.dec` for decisions).
 - **Went well / needs attention panels**: panel with a 4px good-fill or warn-fill top border, square bullet in the same colour, bold lead phrase.
-- **Appendix**: dark `A1` tag in the kicker, descriptive headline, dense table (19px, 46px rows) with a definition column (17px faint) and a coloured QoQ column.
+- **Appendix**: dark `A1` tag in the kicker, descriptive headline, dense table (19px, 46px rows) with a definition column (18px faint) and a coloured QoQ column.
+
+### Chrome the user did not provide
+
+The frame is fixed, but its contents come from the user. Do not invent facts to fill it:
+
+- **Brand bar:** logo square + the company name the user gave, then the deck name. No company name → omit the name and keep only the deck name; never make up a company.
+- **Confidentiality chip (cover):** only when the user asks for one (`Confidential`). Otherwise omit it.
+- **Meta row and cover names (presenters, meeting date, period):** only fields the user gave; omit the rest.
+- **Footer note:** a real definition, threshold or source. When the user gives no source, use a neutral line (`Source: figures provided by the presenter` / 「资料来源：汇报人提供的数据」) and list it as drafted in your final reply; never name an organisation, report or system the user did not mention.
+- **Pre-reads, owners, escalation text:** from the user's material only.
+
 
 ## Slide Archetypes
 
 The demo deck (12 slides) implements each of these.
 
-1. **Cover** — logo + company, confidentiality chip; blue label, `Q3 FY27` (period in blue), "Quarterly Business Review"; meta row (meeting date, presenters, period); abstract 6×6 tile grid in slate → blue with two green and one amber tile.
+1. **Cover** — logo + company (as given), optional confidentiality chip (only if requested); blue label, `Q3 FY27` (period in blue), "Quarterly Business Review"; meta row (meeting date, presenters, period); abstract 6×6 tile grid in slate → blue with two green and one amber tile.
 2. **Agenda + decisions** — timed agenda table with purpose chips; decision box with three asks; pre-reads.
 3. **Quarter at a glance** — six KPI cards with status strips, deltas and sparklines; "What went well" and "Needs attention" panels (4 items each).
 4. **Trend** — SVG line chart (actual, plan, forecast) + net-new bridge with diverging bars + forecast-basis note.
@@ -429,7 +445,7 @@ Minimal. `.reveal` fades and rises 12px (0.5s, 70ms stagger). Horizontal bars `.
 - Don't use pie, donut, gauge or 3D charts; use bars, bullets or a table.
 - Don't use tinted slide backgrounds, gradients, drop shadows or glassmorphism; the canvas is white and flat.
 - Don't use Inter, Roboto, Arial or system fonts as the display face; don't use the generic indigo `#6366f1` or purple gradients.
-- Don't shrink text below 17px to fit; cut columns or move detail to the appendix.
+- Don't shrink text below the 18px floor to fit; cut columns or move detail to the appendix.
 - Don't negate CSS functions directly: `-clamp(...)` / `-min(...)` are silently ignored — use `calc(-1 * ...)`.
 
 ## CJK & International Content
@@ -466,19 +482,22 @@ Latin letters and all digits render in Hanken Grotesk (tabular), Chinese falls t
 
 ### Universal CJK Adjustments
 
-Set `lang="zh-CN"` on `<html>` and add:
+Set `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
 :lang(zh) .title             { line-height: 1.3; letter-spacing: 0; }
 :lang(zh) .s-cover .h1b      { line-height: 1.3; letter-spacing: 0; }
 :lang(zh) .slide             { line-height: 1.6; }
 :lang(zh) .wn li, :lang(zh) .small, :lang(zh) .decide li p { line-height: 1.65; }
-:lang(zh) .label, :lang(zh) .kicker,
-:lang(zh) table.fin th, :lang(zh) table.heat th { letter-spacing: 0.04em; text-transform: none; }
+:lang(zh) :is(.label, .kicker, table.fin th, table.heat th, table.agenda th, .chip, .rag, .rid, .heat-key b,
+              .sections li) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) :is(.sub, .small, .delta, .chart-legend, .decide li p) { font-size: 20px; }
+/* CJK letter-spacing is 0 everywhere */
+:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 ```
 
 - **Weights:** Noto Sans SC 700 for headlines and bold leads, 500 for labels and pills, 400 for body and tables. Avoid 300 and below on projected slides.
-- **Sizes:** body ≥ 20px, table cells ≥ 20px, KPI labels ≥ 18px. The 17px table-head token becomes 18px for Chinese.
+- **Sizes:** every Chinese run is ≥ 20px: body, table cells, labels, kickers, section pills, chips, table heads, deltas, chart labels and legends (the floor in Typography). Only the footer note and deck label stay 18px. Latin labels keep 18px.
 - **Headline length:** ≤ 30 characters on one line at 44px; up to two lines of ≤ 28 characters. Structure: 结论 + 数字 + 原因/请求 — 「营收超预算 2.1%，销售与市场费用超支抵消了大部分」.
 - **Line breaking:** break long headlines manually at a phrase boundary with `<br>`; never leave one character alone on a line; keep numbers with their units (`<span style="white-space:nowrap">184.6 百万美元</span>`). Do not use `word-break: keep-all` for Chinese.
 - **Punctuation:** full-width （，。：；！？「」） in Chinese text, no final 。 in headlines; half-width inside numbers, units and English names.
@@ -492,7 +511,7 @@ Set `lang="zh-CN"` on `<html>` and add:
 
 ### Aesthetic Notes for This System
 
-The system's calm comes from slate type, generous hairline structure and disciplined colour; all of it carries over. Chinese headlines in Noto Sans SC 700 are visually heavier than Latin at the same size — keep 44px and do not add letter-spacing. Chinese text is shorter per idea, so the "What went well / Needs attention" panels hold four items comfortably; do not add a fifth to fill space.
+The system's calm comes from slate type, generous hairline structure and disciplined colour; all of it carries over. Chinese headlines in Noto Sans SC 700 are visually heavier than Latin at the same size — keep 44px; letter-spacing is 0 for every Chinese run. Chinese text is shorter per idea, so the "What went well / Needs attention" panels hold four items comfortably; do not add a fifth to fill space.
 
 ### Known CJK Gap
 

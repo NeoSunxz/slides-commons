@@ -12,13 +12,17 @@ const UPSTREAM_DIR = `https://github.com/zarazhangrui/beautiful-html-templates/t
 const PAGES = {
   en: [
     ['home', 'index.html', ['index.html']],
+    ['gallery', 'gallery/', ['gallery', 'index.html']],
     ['credits', 'credits.html', ['credits.html']],
     ['detail', `t/${SLUG}/`, ['t', SLUG, 'index.html']],
+    ['detail (AGPL overlay)', 't/guizang-swiss/', ['t', 'guizang-swiss', 'index.html']],
   ],
   zh: [
     ['home', 'zh/index.html', ['zh', 'index.html']],
+    ['gallery', 'zh/gallery/', ['zh', 'gallery', 'index.html']],
     ['credits', 'zh/credits.html', ['zh', 'credits.html']],
     ['detail', `zh/t/${SLUG}/`, ['zh', 't', SLUG, 'index.html']],
+    ['detail (AGPL overlay)', 'zh/t/guizang-swiss/', ['zh', 't', 'guizang-swiss', 'index.html']],
   ],
 };
 const fileUrl = (parts) => pathToFileURL(path.join(SITE, ...parts)).href;
@@ -100,7 +104,8 @@ test('zh pages: chrome is Chinese; no run of 3+ English words outside lang="en"'
   for (const [name, httpPath] of PAGES.zh) {
     await page.goto(httpPath);
     for (const t of await collectText(page)) {
-      if (t.lang.startsWith('en') || t.inCode) continue;
+      // .specimen is a glyph sample ("Aa Bb Cc 0123456789") set in the template's own font, not prose.
+      if (t.lang.startsWith('en') || t.inCode || /\bspecimen\b/.test(t.where)) continue;
       const runs = zhEnglishRuns(t.text, extra);
       if (runs.length) bad.push(`${name} <${t.tag}> .${t.where}: ${t.text.slice(0, 80)}  [English: ${runs.join(' | ').slice(0, 60)}]`);
     }
@@ -116,7 +121,7 @@ test('zh detail: upstream data is shown in Chinese (no lang="en" blocks except t
   await expect(note.locator(`a[href="https://github.com/zarazhangrui/beautiful-html-templates/tree/main/templates/${SLUG}"]`)).toHaveCount(1);
   const marked = await page.locator('main [lang="en"]').evaluateAll((els) => els.map((e) => `${e.tagName.toLowerCase()}: ${e.textContent.trim().slice(0, 40)}`));
   expect(marked, 'English-marked elements in main').toEqual(['h1: Neo-Grid Bold']);
-  for (const sel of ['.hero .tagline', 'section.about > p:not(.source-note)', 'dl.meta dd', 'section.about .muted']) {
+  for (const sel of ['.hero .tagline', 'section.about .desc p', 'dl.meta dd', 'section.about .muted']) {
     const texts = await page.locator(`main ${sel}`).allTextContents();
     for (const t of texts) if (/[A-Za-z]{4,}/.test(t) && !CJK.test(t)) expect.soft(CJK.test(t), `${sel} is English-only: ${t.slice(0, 50)}`).toBe(true);
   }
@@ -174,7 +179,7 @@ test('language choice: 中文 is remembered for "/", detail pages never redirect
 
   // Detail and credits pages never redirect: they carry no redirect code at all
   // (deterministic), and loading them with 'zh' stored keeps the URL.
-  for (const parts of [['t', SLUG, 'index.html'], ['credits.html'], ['zh', 'index.html'], ['zh', 't', SLUG, 'index.html'], ['zh', 'credits.html']]) {
+  for (const parts of [['t', SLUG, 'index.html'], ['gallery', 'index.html'], ['zh', 'gallery', 'index.html'], ['credits.html'], ['zh', 'index.html'], ['zh', 't', SLUG, 'index.html'], ['zh', 'credits.html']]) {
     const html = fs.readFileSync(path.join(SITE, ...parts), 'utf8');
     expect(html, `${parts.join('/')} contains redirect code`).not.toMatch(/location\.(replace|assign|href\s*=)|slides-commons:lang/);
   }

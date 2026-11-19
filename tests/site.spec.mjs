@@ -21,8 +21,8 @@ const deckState = (frame) => frame.evaluate(() => {
 // ---------------------------------------------------------------------------
 test.describe('gallery', () => {
   test('card shows thumbnail, name, tagline, author and links to the detail page', async ({ page }) => {
-    await page.goto('index.html');
-    const card = page.locator(`a.card[href="t/${SLUG}/"]`);
+    await page.goto('gallery/');
+    const card = page.locator(`a.card[href="../t/${SLUG}/"]`);
     await expect(card).toHaveCount(1);
     await expect(card.locator('h2')).toHaveText(meta.name);
     await expect(card).toContainText(meta.tagline);
@@ -221,20 +221,20 @@ test.describe('detail page', () => {
   test('design description and palette swatches render', async ({ page }) => {
     await page.goto(DETAIL);
     const about = page.locator('section.about');
-    const desc = (await about.locator('> p').first().textContent()).trim();
+    const desc = (await about.locator('.desc p').first().textContent()).trim();
     expect(desc.length, 'design description').toBeGreaterThan(20);
     expect(desc).not.toBe(meta.tagline); // should come from design.md front matter
 
-    const sw = about.locator('.swatches li');
+    const sw = about.locator('.palette-strip li');
     const expectedColors = Object.entries(meta.palette).filter(([k]) => k !== 'description');
     await expect(sw).toHaveCount(expectedColors.length);
     for (let i = 0; i < expectedColors.length; i++) {
-      const s = sw.nth(i).locator('.sw');
+      const s = sw.nth(i).locator('.swatch');
       const bb = await s.boundingBox();
       expect(bb && bb.width > 0 && bb.height > 0, `swatch ${i} has no size`).toBe(true);
       const bg = await s.evaluate((el) => getComputedStyle(el).backgroundColor);
       expect(bg, `swatch ${i} background`).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
-      await expect(sw.nth(i)).toContainText(expectedColors[i][1]);
+      await expect(sw.nth(i).locator('.swatch-tip')).toContainText(expectedColors[i][1]);
     }
   });
 });

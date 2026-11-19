@@ -3,7 +3,7 @@
   "name": "bad-host",
   "tagline": "Validation fixture.",
   "mood": [
-    "plain"
+    "clean"
   ],
   "occasion": [
     "testing"

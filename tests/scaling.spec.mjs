@@ -130,9 +130,9 @@ for (const lang of ['en', 'zh']) {
       const det = await rect(page, '.detail > .details');
       expect(det.r).toBeLessThanOrEqual(pv.r + 1);
 
-      // Sticky panel keeps top:16px after scrolling.
+      // Sticky panel sits below the sticky header (top:88px) after scrolling.
       await page.evaluate(() => scrollTo(0, 600));
-      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(16);
+      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(88);
       const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(over).toBeLessThanOrEqual(0);
       await page.evaluate(() => scrollTo(0, 0));
@@ -146,7 +146,7 @@ for (const lang of ['en', 'zh']) {
       await page.locator('.actions details > summary').click();
       await expect(page.locator('.actions pre.prompt')).toBeVisible();
       await page.evaluate(() => scrollTo(0, 400));
-      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(16);
+      await expect.poll(async () => Math.round((await rect(page, '.detail > .actions')).top)).toBe(88);
       const panel = await rect(page, '.detail > .actions');
       expect(panel.bottom, 'panel bottom within the viewport').toBeLessThanOrEqual(h + 0.5);
       const scrollable = await page.locator('.actions').evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight, oy: getComputedStyle(el).overflowY }));

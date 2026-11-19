@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Render the screenshots of templates that live in this repository.
+// Render the screenshots of templates that live in this repository, and of overlay templates.
 //
 //   npm run screenshots [-- --only <slug>[,<slug>…]] [--sources <file>]
 //
@@ -9,6 +9,12 @@
 // Slides come from the source's `screenshots.slides` in sources.json (1-based numbers or
 // "middle" / "last"; default [1, "middle", "last"]); the n in the file name is the position in
 // that list, so a template always gets <slug>-1.png, -2.png, -3.png.
+//
+// Overlay sources (sources.json `overlay`, see scripts/overlay.mjs) are read-only upstreams whose
+// templates are mapped onto upstream files: the same preview page the site shows (demo slides,
+// local modules inlined) is rendered and the PNGs go to <overlay.metaDir>/screenshots/. There
+// the current slide is read from window.__currentSlideIndex (or the `.active` slide) and each
+// slide gets time for its entrance animation.
 //
 // Latin fonts are embedded exactly like in the site preview (scripts/fonts.mjs), so the
 // result does not depend on Google Fonts being reachable; Fontshare is still fetched online.
@@ -20,6 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { overlayPreviewHtml, screenshotsDirOf, inlineLocalAssets } from './overlay.mjs';
 import { createFontStore, planTemplateFonts, rewriteGoogleFonts, fontFaceCss, dataUrl } from './fonts.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,7 +62,8 @@ const sourcesFile = cliOption('sources') ?? path.join(ROOT, 'sources.json');
 const cfg = JSON.parse(fs.readFileSync(sourcesFile, 'utf8'));
 const subs = submodulePaths();
 const own = cfg.sources.filter((s) => !subs.some((p) => s.path === p || s.path.startsWith(p + '/')));
-if (!own.length) die('no source inside this repository');
+const overlays = cfg.sources.filter((s) => s.overlay);
+if (!own.length && !overlays.length) die('no source inside this repository');
 const only = cliOption('only')?.split(',').filter(Boolean);
 
 let chromium;
@@ -65,21 +73,43 @@ const browser = await chromium.launch();
 let written = 0;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'slides-commons-shots-'));
 try {
+  // One job per template: { src, slug, htmlName, workDir (copy of the files), outDir, overlay }.
+  const jobs = [];
   for (const src of own) {
     const L = { templatesDir: 'templates', htmlFile: 'template.html', metaFile: 'template.json', screenshotsDir: 'screenshots', ...(src.layout ?? {}) };
     const sdir = path.join(ROOT, ...src.path.split('/'));
     const tdir = path.join(sdir, ...L.templatesDir.split('/'));
     const outDir = path.join(sdir, ...L.screenshotsDir.split('/'));
-    const spec = src.screenshots?.slides ?? [1, 'middle', 'last'];
     const slugs = fs.readdirSync(tdir, { withFileTypes: true })
       .filter((d) => d.isDirectory() && fs.existsSync(path.join(tdir, d.name, L.metaFile)) && fs.existsSync(path.join(tdir, d.name, L.htmlFile)))
-      .map((d) => d.name).sort().filter((s) => !only || only.includes(s));
-    fs.mkdirSync(outDir, { recursive: true });
-    for (const slug of slugs) {
+      .map((d) => d.name).sort();
+    for (const slug of slugs) jobs.push({ src, slug, htmlName: L.htmlFile, from: path.join(tdir, slug), outDir, overlay: null });
+  }
+  for (const src of overlays) {
+    for (const slug of Object.keys(src.overlay.templates).sort()) {
+      jobs.push({ src, slug, htmlName: 'template.html', from: null, outDir: screenshotsDirOf(ROOT, src), overlay: src.overlay.templates[slug] });
+    }
+  }
+  for (const job of jobs.filter((j) => !only || only.includes(j.slug))) {
+    const { src, slug, htmlName, overlay } = job;
+    const L = { htmlFile: htmlName };
+    const outDir = job.outDir;
+    const spec = src.screenshots?.slides ?? [1, 'middle', 'last'];
+    {
+      fs.mkdirSync(outDir, { recursive: true });
       // Working copy with the Latin fonts embedded.
       const work = path.join(tmp, src.id, slug);
-      fs.cpSync(path.join(tdir, slug), work, { recursive: true });
-      let html = fs.readFileSync(path.join(work, L.htmlFile), 'utf8');
+      let html;
+      if (overlay) {
+        fs.mkdirSync(work, { recursive: true });
+        const srcDir = path.join(ROOT, ...src.path.split('/'));
+        html = overlayPreviewHtml(fs.readFileSync(path.join(srcDir, ...overlay.html.split('/')), 'utf8'), { entry: overlay, srcDir, root: ROOT }).html;
+        // keepPaths: the HTML loads shared files by their upstream paths; inline them like the site build does.
+        if (overlay.keepPaths) html = inlineLocalAssets(html, path.dirname(path.join(srcDir, ...overlay.html.split('/'))), slug, srcDir);
+      } else {
+        fs.cpSync(job.from, work, { recursive: true });
+        html = fs.readFileSync(path.join(work, L.htmlFile), 'utf8');
+      }
       const plan = planTemplateFonts(html, store);
       if (plan.errors.length) die(`${slug}: ${plan.errors.join('; ')}`);
       if (plan.faces.length) {
@@ -95,9 +125,12 @@ try {
       page.on('pageerror', (e) => errors.push(e.message));
       await page.goto(pathToFileURL(path.join(work, L.htmlFile)).href, { waitUntil: 'load' });
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      const total = await page.evaluate(() => document.querySelectorAll('.slide').length);
+      // Slides cloned into an overview grid (html-ppt's runtime) are not slides of the deck.
+      const total = await page.evaluate(() => [...document.querySelectorAll('.slide')].filter((s) => !s.closest('.overview')).length);
       if (!total) die(`${slug}: no .slide elements found`);
-      const current = () => page.evaluate(() => [...document.querySelectorAll('.slide')].findIndex((s) => s.classList.contains('active')) + 1);
+      const current = () => page.evaluate(() => (typeof window.__currentSlideIndex === 'number'
+        ? window.__currentSlideIndex + 1
+        : [...document.querySelectorAll('.slide')].filter((s) => !s.closest('.overview')).findIndex((s) => s.classList.contains('active') || s.classList.contains('is-active')) + 1));
       // Wait until finite animations/transitions have finished and the page has painted.
       const settle = async () => {
         await page.evaluate(async () => {
@@ -106,7 +139,7 @@ try {
             .map((a) => a.finished.catch(() => undefined)));
           await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         });
-        await page.waitForTimeout(150);
+        await page.waitForTimeout(overlay ? 1800 : 150);
       };
       await page.evaluate(() => window.focus());
       const wanted = slideNumbers(spec, total);

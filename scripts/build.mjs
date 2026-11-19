@@ -33,11 +33,12 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
-import { createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, dataUrl, relativeUrl } from './fonts.mjs';
+import { parseRequests, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
 import { checkCollectionTemplate } from './collection-checks.mjs';
+import { overlayPreviewHtml, metaFileOf, screenshotsDirOf, inlineLocalAssets as inlineLocal } from './overlay.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
-import { indexPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
+import { indexPage, galleryPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -88,13 +89,44 @@ const repoName = (url) => url.replace(/\/+$/, '').split('/').pop();
 const toPosix = (p) => p.split(path.sep).join('/');
 // Back-link to a template's directory in the source's repository. `repoPath` is where the
 // source directory lives inside the repo (empty for a repo of its own, e.g. a submodule).
-const templateDirUrl = (src, slug) => urlJoin(src.repo, 'tree', src.branch, src.repoPath ?? '', src.layout.templatesDir, slug);
+// Overlay sources link to the mapped file (or directory) of the upstream repo instead.
+const templateDirUrl = (src, slug) => {
+  const o = src.overlay?.templates?.[slug];
+  if (o) {
+    const target = o.link ?? o.html;
+    return urlJoin(src.repo, /\.[a-z0-9]+$/i.test(target) ? 'blob' : 'tree', src.branch, target);
+  }
+  return urlJoin(src.repo, 'tree', src.branch, src.repoPath ?? '', src.layout.templatesDir, slug);
+};
 
 // Source-level derivedFrom applies to the listed slugs only (all templates if no list).
 const derivedOf = (src, slug) => {
   const d = src.derivedFrom;
   if (!d) return null;
   return !d.slugs || d.slugs.includes(slug) ? d : null;
+};
+
+// Mood filter groups (src/tags.json): every mood tag of every template must belong to one.
+let TAG_GROUPS = null;
+function tagGroups() {
+  if (!TAG_GROUPS) {
+    const groups = readJson(path.join(SRC, 'tags.json')).groups;
+    const byTag = new Map();
+    for (const g of groups) for (const tag of g.tags) {
+      if (byTag.has(tag)) fail(`src/tags.json: mood tag "${tag}" is in two groups ("${byTag.get(tag)}" and "${g.id}")`);
+      byTag.set(tag, g.id);
+    }
+    TAG_GROUPS = { groups, byTag };
+  }
+  return TAG_GROUPS;
+}
+// Group ids of a template's mood tags (in the order of tags.json), or null for unmapped tags.
+const moodGroupsOf = (t) => {
+  const { groups, byTag } = tagGroups();
+  const ids = new Set();
+  const missing = [];
+  for (const m of t.mood ?? []) { const id = byTag.get(String(m).toLowerCase()); if (id) ids.add(id); else missing.push(m); }
+  return { ids: groups.map((g) => g.id).filter((id) => ids.has(id)), missing };
 };
 
 function readJson(p) {
@@ -417,6 +449,15 @@ function loadSources() {
       companion = { ...c, dir: cdir };
     }
     if (s.include != null && !Array.isArray(s.include)) fail(`${where}: "include" must be an array of slugs`);
+    if (s.overlay) {
+      const mdir = path.join(ROOT, ...s.overlay.metaDir.split('/'));
+      if (!exists(mdir)) fail(`${where}: overlay.metaDir ${s.overlay.metaDir} not found`);
+      for (const [slug, o] of Object.entries(s.overlay.templates)) {
+        for (const f of [o.html, ...(o.assets ?? []), ...o.docs.map((d) => d.path)]) {
+          if (!exists(path.join(dir, ...f.split('/')))) fail(`${where}: overlay template "${slug}": ${s.path}/${f} not found (run: git submodule update --init)`);
+        }
+      }
+    }
     return { ...s, dir, layout, companion };
   });
 }
@@ -429,10 +470,12 @@ function loadTemplates(sources, schema, problems = null) {
   const report = (msg) => { if (problems) problems.push(msg); else fail(msg); };
   for (const src of sources) {
     const tdir = path.join(src.dir, ...src.layout.templatesDir.split('/'));
-    if (!exists(tdir)) fail(`source ${src.id}: templates dir ${rel(tdir)} not found`);
-    let slugs = fs.readdirSync(tdir, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && exists(path.join(tdir, d.name, src.layout.metaFile)))
-      .map((d) => d.name).sort();
+    if (!src.overlay && !exists(tdir)) fail(`source ${src.id}: templates dir ${rel(tdir)} not found`);
+    let slugs = src.overlay
+      ? Object.keys(src.overlay.templates).sort()
+      : fs.readdirSync(tdir, { withFileTypes: true })
+        .filter((d) => d.isDirectory() && exists(path.join(tdir, d.name, src.layout.metaFile)))
+        .map((d) => d.name).sort();
     if (src.include) {
       const missing = src.include.filter((s) => !slugs.includes(s));
       if (missing.length) fail(`source ${src.id}: include lists unknown template(s): ${missing.join(', ')}`);
@@ -443,8 +486,8 @@ function loadTemplates(sources, schema, problems = null) {
       if (unknown.length) fail(`source ${src.id}: derivedFrom.slugs lists unknown template(s): ${unknown.join(', ')}`);
     }
     for (const dirName of slugs) {
-      const dir = path.join(tdir, dirName);
-      const metaPath = path.join(dir, src.layout.metaFile);
+      const dir = src.overlay ? src.dir : path.join(tdir, dirName);
+      const metaPath = src.overlay ? metaFileOf(ROOT, src, dirName) : path.join(dir, src.layout.metaFile);
       let meta;
       try { meta = readJson(metaPath); } catch (e) {
         if (e instanceof BuildError && problems) { problems.push(e.message); continue; }
@@ -464,7 +507,7 @@ function loadTemplates(sources, schema, problems = null) {
         report(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)})`);
         continue;
       }
-      const t = { ...record, dir, src, metaExplicit: { authors: meta.authors != null, license: meta.license != null }, metaPath };
+      const t = { ...record, dir, src, overlay: src.overlay?.templates[dirName] ?? null, metaExplicit: { authors: meta.authors != null, license: meta.license != null }, metaPath };
       bySlug.set(t.slug, t);
       all.push(t);
     }
@@ -499,7 +542,7 @@ function pngSizeOf(buf) {
 }
 
 function screenshotsFor(src, slug) {
-  const dir = path.join(src.dir, ...src.layout.screenshotsDir.split('/'));
+  const dir = src.overlay ? screenshotsDirOf(ROOT, src) : path.join(src.dir, ...src.layout.screenshotsDir.split('/'));
   if (!exists(dir)) return [];
   const re = new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)\\.(png|jpe?g|webp)$`, 'i');
   return fs.readdirSync(dir)
@@ -621,22 +664,42 @@ function deriveSlideBg(designMd, colorMap) {
   return null;
 }
 
+// Licenses that need no special emphasis. Anything else (AGPL, GPL, CC-BY-SA, unknown, ...)
+// gets a license badge on the card and a notice on the detail page, pack README and prompts.
+const PERMISSIVE = /^(MIT|ISC|Apache-2\.0|BSD-[23]-Clause|0BSD|Zlib|CC0-1\.0|CC-BY-4\.0|Unlicense)$/i;
+const strongLicense = (license) => typeof license === 'string' && !PERMISSIVE.test(license.trim());
+function licenseNoticeInfo(t) {
+  const { src } = t;
+  return {
+    license: t.license,
+    author: t.authors.map((a) => a.name).join(', '),
+    authorUrl: t.authors[0]?.url ?? src.authorUrl ?? null,
+    authorZh: src.authorZh ?? null,
+    repoUrl: src.repo,
+    licenseUrl: src.licenseUrl ?? urlJoin(src.repo, 'blob', src.branch, 'LICENSE'),
+    network: /^agpl/i.test(t.license),
+  };
+}
+
 function buildContext(t) {
   const { src } = t;
   const L = src.layout;
   const comp = src.companion;
 
-  // design.md: companion override first, template's own as fallback.
-  let designPath = path.join(t.dir, L.designFile);
-  let designFrom = 'template';
-  if (comp?.designOverride) {
+  // design.md: companion override first, template's own as fallback. Overlay templates have
+  // no design.md: their design documents are listed in sources.json (`docs`), the summary
+  // comes from the metadata file.
+  const ov = t.overlay;
+  let designPath = ov ? null : path.join(t.dir, L.designFile);
+  let designFrom = ov ? 'overlay' : 'template';
+  if (!ov && comp?.designOverride) {
     const p = joinCfg(comp.dir, comp.designOverride, t.slug);
     if (exists(p)) { designPath = p; designFrom = 'companion'; }
     else warn(`${t.slug}: companion design.md not found at ${rel(p)}; using the template's own design.md`);
   }
-  if (!exists(designPath)) fail(`${t.slug}: no design.md (looked at ${rel(designPath)})`);
-  const designMd = read(designPath);
-  const fm = frontMatter(designMd);
+  if (!ov && !exists(designPath)) fail(`${t.slug}: no design.md (looked at ${rel(designPath)})`);
+  const designMd = ov ? '' : read(designPath);
+  const fm = ov ? { description: t.description ?? '' } : frontMatter(designMd);
 
   let preview = { palette: [], typography: [], moves: [] };
   if (comp?.previewCard) {
@@ -651,7 +714,7 @@ function buildContext(t) {
     if (!exists(viewportBasePath)) fail(`${t.slug}: companion viewportBase not found at ${rel(viewportBasePath)}`);
   }
 
-  const htmlPath = path.join(t.dir, L.htmlFile);
+  const htmlPath = path.join(t.dir, ...(ov ? ov.html : L.htmlFile).split('/'));
   if (!exists(htmlPath)) fail(`${t.slug}: ${rel(htmlPath)} not found`);
   const html = read(htmlPath);
 
@@ -671,7 +734,7 @@ function buildContext(t) {
 
   // Sibling assets shipped with template.html (never the meta / design files).
   const skip = new Set([L.metaFile, L.htmlFile, L.designFile, ...(src.perTemplateLicense ? [L.licenseFile] : [])].map((f) => path.normalize(f)));
-  const assets = walk(t.dir).filter((f) => !skip.has(path.normalize(f)) && !/(^|[\\/])\.[^\\/]+$/.test(f)).map(toPosix);
+  const assets = ov ? (ov.assets ?? []) : walk(t.dir).filter((f) => !skip.has(path.normalize(f)) && !/(^|[\\/])\.[^\\/]+$/.test(f)).map(toPosix);
 
   // perTemplateLicense: every template directory carries its own LICENSE (community contributions).
   const srcLicense = src.perTemplateLicense ? path.join(t.dir, L.licenseFile) : path.join(src.dir, L.licenseFile);
@@ -686,9 +749,39 @@ function buildContext(t) {
     licenses.push({ file: 'LICENSE-skill', path: p });
   }
 
-  // Latin fonts served locally (see scripts/fonts.mjs).
-  const fontPlan = planTemplateFonts(html, FONT_STORE);
+  // Latin fonts served locally (see scripts/fonts.mjs). Overlay templates may request their
+  // fonts from a shared stylesheet (@import lines only, a "font manifest" such as assets/fonts.css
+  // that every deck of the upstream loads): the requests are read from the shipped stylesheets too,
+  // and a family only requested there is kept only if the template's own files mention it.
+  let fontText = html;
+  let fontPlan;
+  if (ov) {
+    const css = assets.filter((a) => /\.css$/i.test(a)).map((a) => read(path.join(t.dir, ...a.split('/'))));
+    const stripCss = (c) => c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@import\s+[^;]+;/g, '').trim();
+    const rest = [html, ...css.filter((c) => stripCss(c))].join('\n');
+    fontText = [html, ...css].join('\n');
+    fontPlan = planTemplateFonts(fontText, FONT_STORE);
+    const mentioned = (fam) => new RegExp(`(^|[^\\w-])${fam.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\w-]|$)`).test(rest);
+    fontPlan.faces = fontPlan.faces.filter((f) => mentioned(f.family));
+    // Latin families no longer requested from Google Fonts in the preview copy, used or not.
+    fontPlan.localNames = new Set(fontPlan.requests.flatMap((r) => r.families.map((f) => f.name)).filter((n) => !isCjkFamily(n)));
+  } else {
+    fontPlan = planTemplateFonts(html, FONT_STORE);
+  }
 
+  const cjk = cjkFamiliesIn(ROOT, [fontText, designMd]);
+  // Weights of those families the template's links ask for (ranges expand to the published weights).
+  const cjkWeights = new Map();
+  for (const text of [fontText, designMd]) {
+    for (const req of parseRequests(text)) {
+      for (const fam of req.families) {
+        const e = cjk.get(fam.name);
+        if (!e) continue;
+        if (!cjkWeights.has(e.id)) cjkWeights.set(e.id, new Set());
+        for (const v of fam.variants) for (const w of e.weights) if (w >= v.wght[0] && w <= v.wght[1]) cjkWeights.get(e.id).add(w);
+      }
+    }
+  }
   const ctx = {
     slug: t.slug,
     name: t.name,
@@ -703,20 +796,32 @@ function buildContext(t) {
     paletteNote: (t.palette.description ?? '').replace(/\.\s*$/, ''),
     typography,
     typographyStyle: t.typography.style ?? '',
-    fontLinks: fontLinks(html),
+    fontLinks: fontLinks(fontText),
     // Font stylesheets from hosts that cannot be self-hosted (Fontshare): kept as links.
-    remoteFontLinks: fontLinks(html).filter((u) => new URL(u).hostname !== 'fonts.googleapis.com'),
+    remoteFontLinks: fontLinks(fontText).filter((u) => new URL(u).hostname !== 'fonts.googleapis.com'),
     localFonts: fontPlan.faces.length > 0,
-    cjkFontLinks: cjkOnlyLinks(fontLinks(cjkSection(designMd))),
+    // Overlay: the CJK families the template itself requests (there is no design.md CJK section).
+    cjkFontLinks: cjkOnlyLinks(fontLinks(ov ? fontText : cjkSection(designMd))),
+    // The pack carries fonts/embed-cjk.mjs when a CJK family Fontsource has is requested anywhere in the template or its design.md.
+    cjkEmbed: cjk.size > 0,
     signatureMoves: (preview.moves.length ? preview.moves : designSignatureMoves(designMd)).map((m) => resolveTokens(m, colorMap)),
     slideBg,
     stageBg: stageKey ? { name: stageKey, value: colorMap[stageKey] } : null,
     // Detected from the template itself, never from slugs:
-    systemFontsOnly: fontLinks(html).length === 0 && !/@font-face/i.test(html),
+    systemFontsOnly: fontLinks(fontText).length === 0 && !/@font-face/i.test(fontText),
     cdnScripts: [...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["'](https?:\/\/[^"']+)["']/gi)].map((m) => m[1]),
     assets,
     hasViewportBase: Boolean(viewportBasePath),
     licenses,
+    // Overlay templates: the author's own docs replace design.md in the prompt (paths as in the pack).
+    docs: ov ? ov.docs : null,
+    promptKind: ov?.prompt ?? null,
+    credit: { author: t.authors.map((a) => a.name).join(', '), license: t.license, repoUrl: src.repo },
+    // Overlay `keepPaths`: the HTML ships at its upstream path; deckDir is its folder in the pack.
+    htmlName: ov?.keepPaths ? ov.html : L.htmlFile,
+    deckDir: ov?.keepPaths ? path.posix.dirname(ov.html) : null,
+    slideCount: t.slide_count,
+    licenseNotice: strongLicense(t.license) ? licenseNoticeInfo(t) : null,
   };
 
   const sourceDirUrl = templateDirUrl(src, t.slug);
@@ -730,7 +835,7 @@ function buildContext(t) {
       : comp.repo,
   } : null;
 
-  return { ctx, fontPlan, designPath, designFrom, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
+  return { ctx, cjk, cjkWeights, fontPlan, designPath, designFrom, overlay: ov, viewportBasePath, htmlPath, html, assets, licenses, sourceDirUrl, companionInfo, paletteColors };
 }
 
 // ---------------------------------------------------------------------------
@@ -782,10 +887,10 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
     // Attribution and back-link target.
     const L = t.src.layout;
     const expected = templateDirUrl(t.src, t.slug);
-    if (!/^https:\/\/.+\/tree\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
+    if (!/^https:\/\/.+\/(?:tree|blob)\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
 
     if (!t.src.collection && !screenshotsFor(t.src, t.slug).length) { // collections get the stricter check below
-      const msg = `${at} no screenshot in ${rel(path.join(t.src.dir, ...L.screenshotsDir.split('/')))} named ${t.slug}-<n>.png`;
+      const msg = `${at} no screenshot in ${rel(t.src.overlay ? screenshotsDirOf(ROOT, t.src) : path.join(t.src.dir, ...L.screenshotsDir.split('/')))} named ${t.slug}-<n>.png${t.src.overlay ? ' (run: npm run screenshots)' : ''}`;
       if (strictScreenshots) problems.push(msg); else warn(msg);
     }
 
@@ -794,9 +899,11 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
       if (e instanceof BuildError) { problems.push(e.message); continue; }
       throw e;
     }
+    const mg = moodGroupsOf(t);
+    if (mg.missing.length) problems.push(`${at} mood tag(s) not in any group of src/tags.json: ${mg.missing.map((m) => `"${m}"`).join(', ')}. Fix: add each tag to the matching group (bold, warm, editorial, calm, elegant, playful, professional, modern, retro, tech, crafted, artistic).`);
     for (const e of info.fontPlan.errors) problems.push(`${at} local font: ${e} (run npm ci; or add the package to devDependencies)`);
     items.push({ t, description: info.ctx.description });
-    if (!info.ctx.description) problems.push(`${at} ${rel(info.designPath)} has no front matter "description"`);
+    if (!info.ctx.description) problems.push(info.designPath ? `${at} ${rel(info.designPath)} has no front matter "description"` : `${at} ${rel(t.metaPath)} needs a "description"`);
 
     // derivedFrom must point at a template of this gallery.
     if (t.derivedFrom) {
@@ -811,7 +918,7 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
         t, rel,
         metaPath: t.metaPath, metaExplicit: t.metaExplicit,
         html: info.html, htmlPath: info.htmlPath,
-        designMd: read(info.designPath), designPath: info.designPath,
+        designMd: info.designPath ? read(info.designPath) : '', designPath: info.designPath,
         screenshots: screenshotsFor(t.src, t.slug),
         screenshotsDir: path.join(t.src.dir, ...L.screenshotsDir.split('/')),
         assets: info.assets,
@@ -823,14 +930,50 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
     // Static host scan of the template and its sibling stylesheets.
     const texts = [[L.htmlFile, info.html]];
     for (const a of info.assets) {
-      if (/\.css$/i.test(a)) texts.push([a, read(path.join(t.dir, ...a.split('/')))]);
+      if (/\.css$/i.test(a)) texts.push([a, `<style>${read(path.join(t.dir, ...a.split('/')))}</style>`]);
     }
     for (const [name, text] of texts) {
-      const bad = externalHosts(text).filter((h) => !HOST_WHITELIST.includes(h));
+      const bad = externalHosts(text).filter((h) => !HOST_WHITELIST.includes(h) && !(t.overlay?.allowHosts ?? []).includes(h));
       if (bad.length) problems.push(`${at} ${name} loads from non-whitelisted host(s): ${bad.join(', ')}`);
     }
   }
   return items;
+}
+
+
+// Which slide a screenshot shows: a number, "middle" or "last" (resolved against the live deck).
+// Upstream templates number their screenshots by slide; collections and overlay sources are
+// rendered by scripts/screenshots.mjs, where <slug>-<n> is the n-th entry of `screenshots.slides`.
+function screenshotSlide(src, n) {
+  if (!src.collection && !src.overlay) return n;
+  const spec = src.screenshots?.slides ?? [1, 'middle', 'last'];
+  return spec[n - 1] ?? null;
+}
+
+// Typography specimen: the fonts of a template that are self-hosted (Latin subset only), as a
+// small stylesheet shared by both languages. Roles whose font is not available (system stacks,
+// CJK families) get no specimen.
+function specimenFor(t, faces) {
+  const latin = faces.filter((f) => /-latin-/.test(f.file) && !/-latin-ext-/.test(f.file) && f.style === 'normal');
+  const roles = {};
+  const used = new Map();
+  for (const [role, value] of Object.entries(t.typography ?? {})) {
+    if (role === 'style' || typeof value !== 'string') continue;
+    const name = value.split(/[,/]/)[0].trim();
+    const cands = latin.filter((f) => f.family === name);
+    if (!cands.length) continue;
+    const target = role === 'display' ? 700 : 400;
+    let best = null;
+    for (const f of cands) {
+      const [lo, hi = lo] = String(f.weight).split(/\s+/).map(Number);
+      const w = Math.min(Math.max(target, lo), hi);
+      const d = Math.abs(w - target);
+      if (!best || d < best.d) best = { f, w, d };
+    }
+    roles[role] = { family: name, weight: best.w };
+    used.set(best.f.file, best.f);
+  }
+  return Object.keys(roles).length ? { roles, faces: [...used.values()] } : null;
 }
 
 // Load sources and templates and run all checks. Returns what the build needs.
@@ -898,56 +1041,10 @@ function prepareOutDir(sources) {
 // sandbox="allow-scripts" (opaque origin), and under file:// Chrome refuses to load local
 // subresources into such a frame. Inlining makes the preview work over http and file://.
 // Remote URLs (font CSS, CDNs) are left as they are.
-const isLocalRef = (ref) => ref && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(ref.trim());
+const inlineLocalAssets = (html, dir, slug, root = dir) => inlineLocal(html, dir, slug, root, warn);
 
-function readLocalRef(dir, ref, slug) {
-  let rel;
-  try { rel = decodeURI(ref.trim().split(/[?#]/)[0]); } catch { return null; }
-  const file = path.resolve(dir, ...rel.split('/'));
-  if (!isInside(dir, file) || !exists(file) || !fs.statSync(file).isFile()) {
-    warn(`${slug}: preview cannot inline ${ref} (not a file inside the template directory)`);
-    return null;
-  }
-  return read(file);
-}
-
-const attrValue = (attrs, name) => {
-  const m = attrs.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'));
-  return m ? (m[1] ?? m[2] ?? m[3]) : null;
-};
-
-function inlineLocalAssets(html, dir, slug) {
-  let out = html.replace(/<script\b([^>]*)>\s*<\/script\s*>/gi, (tag, attrs) => {
-    const src = attrValue(attrs, 'src');
-    if (!isLocalRef(src)) return tag;
-    const code = readLocalRef(dir, src, slug);
-    if (code == null) return tag;
-    if (/\b(defer|async)\b/i.test(attrs) && !/type\s*=\s*["']?module/i.test(attrs)) {
-      warn(`${slug}: preview inlines ${src}, which was loaded with defer/async; it now runs in place`);
-    }
-    const kept = attrs
-      .replace(/\s+(?:src|defer|async|integrity|crossorigin)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
-      .trim();
-    // "</script" inside the code would end the element early; "<\/" is equivalent in JS
-    // strings, templates, regexes and comments.
-    const safe = code.replace(/<\/script/gi, '<\\/script');
-    return `<script${kept ? ' ' + kept : ''} data-inlined-from="${src.replace(/"/g, '&quot;')}">\n${safe}\n</script>`;
-  });
-  out = out.replace(/<link\b[^>]*>/gi, (tag) => {
-    const rel = (attrValue(tag, 'rel') || '').toLowerCase().split(/\s+/);
-    const href = attrValue(tag, 'href');
-    if (!rel.includes('stylesheet') || !isLocalRef(href)) return tag;
-    const css = readLocalRef(dir, href, slug);
-    if (css == null) return tag;
-    const media = attrValue(tag, 'media');
-    const safe = css.replace(/<\/style/gi, '<\\/style');
-    return `<style${media ? ` media="${media.replace(/"/g, '&quot;')}"` : ''} data-inlined-from="${href.replace(/"/g, '&quot;')}">\n${safe}\n</style>`;
-  });
-  return out;
-}
-
-function preparePreview(html, bridge, dir, slug) {
-  let out = inlineLocalAssets(html, dir, slug);
+function preparePreview(html, bridge, dir, slug, root = dir) {
+  let out = inlineLocalAssets(html, dir, slug, root);
   // deck-stage.js sets a system font-family on its :host, which overrides the font the
   // template sets on <body>. An outer-document rule beats :host, so restore inheritance.
   if (/<deck-stage[\s>]/i.test(out)) {
@@ -1011,6 +1108,37 @@ function packFontEntries(z, faces) {
   return out;
 }
 
+// fonts/embed-cjk.mjs + fonts/cjk-ranges.json (the shard table) + the families' licenses.
+// No font files: the script downloads the shards a finished deck needs (see src/embed-cjk.mjs).
+function packCjkEntries(z, cjk, siteUrl) {
+  if (!cjk.size) return [];
+  const out = [
+    { name: z + 'fonts/embed-cjk.mjs', data: fs.readFileSync(path.join(SRC, 'embed-cjk.mjs')) },
+    { name: z + 'fonts/cjk-ranges.json', data: Buffer.from(cjkRangesJson(cjk, siteUrl ?? null), 'utf8') },
+  ];
+  for (const [, e] of cjk) if (e.license) out.push({ name: `${z}fonts/cjk-licenses/${e.id}-${fontLicenseName({ license: e.license })}`, data: fs.readFileSync(e.license) });
+  return out;
+}
+
+// Shards the packs' embed script may fetch from this site (only when siteUrl is set; otherwise
+// jsDelivr is the only source). Only weights some template requests; written once per family.
+const hostedCjk = new Map();
+function hostCjk(e, weights) {
+  const done = hostedCjk.get(e.id) ?? new Set();
+  hostedCjk.set(e.id, done);
+  for (const w of [...(weights ?? [])].sort((a, b) => a - b)) {
+    if (done.has(w)) continue;
+    done.add(w);
+    for (const k of e.shardsByWeight[w]) {
+      const f = `${e.id}-${k}-${w}-normal.woff2`;
+      const dest = path.join(SITE, 'fonts', 'cjk', e.id, f);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(path.join(e.dir, 'files', f), dest);
+    }
+  }
+  if (e.license) writeFile(path.join(SITE, 'fonts', 'cjk', e.id, fontLicenseName({ license: e.license })), fs.readFileSync(e.license));
+}
+
 function main() {
   const started = Date.now();
   const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
@@ -1023,10 +1151,32 @@ function main() {
   writeFile(path.join(SITE, '.nojekyll'), '');
   writeFile(path.join(SITE, MARKER), MARKER_TEXT);
   fs.mkdirSync(path.join(SITE, 'assets'), { recursive: true });
-  fs.copyFileSync(path.join(SRC, 'styles.css'), path.join(SITE, 'assets', 'site.css'));
+  // The site's own type (OFL, from the Fontsource packages) is embedded in the stylesheet, so the
+  // site makes no font requests and also renders from file://. Copies + licenses go to assets/type/.
+  let siteCss = read(path.join(SRC, 'styles.css'));
+  for (const font of [
+    { package: '@fontsource-variable/dm-sans', file: 'dm-sans-latin-wght-normal.woff2', name: 'dm-sans' },
+    { package: '@fontsource/barlow-condensed', file: 'barlow-condensed-latin-700-normal.woff2', name: 'barlow-condensed' },
+  ]) {
+    const packageDir = path.join(ROOT, 'node_modules', ...font.package.split('/'));
+    const bytes = fs.readFileSync(path.join(packageDir, 'files', font.file));
+    siteCss = siteCss.replace(`./type/${font.name}.woff2`, `data:font/woff2;base64,${bytes.toString('base64')}`);
+    writeFile(path.join(SITE, 'assets', 'type', font.name + '.woff2'), bytes);
+    writeFile(path.join(SITE, 'assets', 'type', font.name + '-LICENSE.txt'), fs.readFileSync(path.join(packageDir, 'LICENSE')));
+  }
+  writeFile(path.join(SITE, 'assets', 'site.css'), siteCss);
   fs.copyFileSync(path.join(SRC, 'detail.js'), path.join(SITE, 'assets', 'detail.js'));
   fs.copyFileSync(path.join(SRC, 'site.js'), path.join(SITE, 'assets', 'site.js'));
   fs.copyFileSync(path.join(SRC, 'gallery.js'), path.join(SITE, 'assets', 'gallery.js'));
+
+  fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
+  fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
+  // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
+  const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
+  // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
+  if (path.resolve(SOURCES_FILE) === path.join(ROOT, 'sources.json')) {
+    for (const slug of homeSlugs) if (!templates.some((t) => t.slug === slug)) fail(`src/home.json: carousel template "${slug}" does not exist`);
+  }
 
   setSources(sources.filter((s) => templates.some((t) => t.source === s.id)));
   setAutoDownload(Boolean(siteUrl));
@@ -1043,6 +1193,7 @@ function main() {
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);
     for (const s of shots) {
+      s.slide = screenshotSlide(t.src, s.n);
       const dest = path.join(SITE, 'assets', 'screenshots', s.file);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(s.path, dest);
@@ -1060,16 +1211,29 @@ function main() {
     // Preview copy: template dir minus meta/design files, bridge injected into the HTML copy.
     const pdir = path.join(SITE, 'preview', t.slug);
     let previewHtml = info.html;
+    if (t.overlay) {
+      try { previewHtml = overlayPreviewHtml(previewHtml, { entry: t.overlay, srcDir: t.dir, root: ROOT }).html; } catch (e) { fail(`${t.slug}: ${e.message}`); }
+    }
     const faces = info.fontPlan.faces;
+    // keepPaths templates load shared files from above their own directory; inline them first
+    // so the font requests inside shared stylesheets are rewritten as well.
+    const baseDir = t.overlay?.keepPaths ? path.dirname(info.htmlPath) : t.dir;
+    if (t.overlay?.keepPaths) previewHtml = inlineLocalAssets(previewHtml, baseDir, t.slug, t.dir);
     if (faces.length) {
-      previewHtml = rewriteGoogleFonts(previewHtml, info.fontPlan.requests, new Set(faces.map((f) => f.family)));
+      previewHtml = rewriteGoogleFonts(previewHtml, info.fontPlan.requests, info.fontPlan.localNames ?? new Set(faces.map((f) => f.family)));
       const rules = `\n<style data-slides-commons-fonts>/* self-hosted Latin fonts, embedded because a sandboxed preview frame cannot fetch font files over file:// or without CORS (added by the site build; the original loads them from Google Fonts; licenses: fonts/<family>/OFL.txt) */\n${fontFaceCss(faces, dataUrl)}\n</style>\n`;
       const m = previewHtml.match(/<head\b[^>]*>/i);
       previewHtml = m ? previewHtml.slice(0, m.index + m[0].length) + rules + previewHtml.slice(m.index + m[0].length) : rules + previewHtml;
     }
-    writeFile(path.join(pdir, t.src.layout.htmlFile), preparePreview(previewHtml, bridge, t.dir, t.slug));
+    const previewOut = preparePreview(previewHtml, bridge, baseDir, t.slug, t.dir);
+    if (t.overlay) {
+      // The preview copy of an overlay template must not reach beyond the whitelist (allowHosts only covers the original).
+      const bad = externalHosts(previewOut).filter((h) => !HOST_WHITELIST.includes(h));
+      if (bad.length) fail(`${t.slug}: preview copy still loads from non-whitelisted host(s): ${bad.join(', ')} (see overlay preview.replaceScripts in sources.json)`);
+    }
+    writeFile(path.join(pdir, t.src.layout.htmlFile), previewOut);
     for (const f of faces) copyFontLicense(f);
-    for (const a of info.assets) {
+    for (const a of (t.overlay ? [] : info.assets)) {
       const dest = path.join(pdir, ...a.split('/'));
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(path.join(t.dir, ...a.split('/')), dest);
@@ -1079,7 +1243,7 @@ function main() {
     const en = promptEn(ctx);
     const zh = promptZh(ctx);
     const credits = [{
-      what: `Template "${t.name}" (${['template.html', ...info.assets].map((f) => '`' + f + '`').join(', ')}${info.designFrom === 'template' ? ', `design.md`' : ''})`,
+      what: `Template "${t.name}" (${[t.overlay?.keepPaths ? t.overlay.html : 'template.html', ...info.assets, ...(t.overlay ? t.overlay.docs.map((d) => d.path) : [])].map((f) => '`' + f + '`').join(', ')}${info.designFrom === 'template' ? ', `design.md`' : ''})`,
       author: t.authors.map((a) => a.name).join(', '),
       project: repoName(t.src.repo),
       license: t.license,
@@ -1113,11 +1277,21 @@ function main() {
     }
     if (faces.length) {
       credits.push({
-        what: 'Latin web fonts in `fonts/` (the families `template.html` requests from Google Fonts)',
+        what: 'Latin web fonts in `fonts/` (the families the template requests from Google Fonts)',
         author: 'their respective authors (named in each font license)',
         project: 'Fontsource',
         license: fontLicenseSummary(faces).license,
         licenseFile: fontLicenseSummary(faces).licenseFile,
+        url: 'https://fontsource.org',
+      });
+    }
+    if (info.cjk.size) {
+      credits.push({
+        what: 'CJK web fonts: `fonts/embed-cjk.mjs` downloads the pieces a finished deck needs (the pack holds only the script, a table of font slices and the licenses in `fonts/cjk-licenses/`)',
+        author: 'their respective authors (named in each font license)',
+        project: 'Fontsource',
+        license: fontLicenseSummary([...info.cjk].map(([family, e]) => ({ family, license: e.license }))).license,
+        licenseFile: fontLicenseSummary([...info.cjk].map(([family, e]) => ({ family, license: e.license }))).licenseFile?.replace(/fonts\/<family>\/(OFL|LICENSE)\.txt/g, 'fonts/cjk-licenses/<family>-$1.txt') ?? null,
         url: 'https://fontsource.org',
       });
     }
@@ -1153,14 +1327,17 @@ function main() {
         : undefined,
     }, credits, SITE_NAME);
 
+    if (siteUrl) for (const [, e] of info.cjk) hostCjk(e, info.cjkWeights.get(e.id));
     const z = `${t.slug}/`;
     const entries = [
       { name: z },
-      { name: z + t.src.layout.htmlFile, data: fs.readFileSync(info.htmlPath) },
+      { name: z + (t.overlay?.keepPaths ? t.overlay.html : t.src.layout.htmlFile), data: fs.readFileSync(info.htmlPath) },
       ...info.assets.map((a) => ({ name: z + a, data: fs.readFileSync(path.join(t.dir, ...a.split('/'))) })),
-      { name: z + 'design.md', data: fs.readFileSync(info.designPath) },
+      ...(info.designPath ? [{ name: z + 'design.md', data: fs.readFileSync(info.designPath) }] : []),
+      ...(t.overlay ? t.overlay.docs.map((d) => ({ name: z + d.path, data: fs.readFileSync(path.join(t.dir, ...d.path.split('/'))) })) : []),
       ...(info.viewportBasePath ? [{ name: z + 'viewport-base.css', data: fs.readFileSync(info.viewportBasePath) }] : []),
       ...packFontEntries(z, faces),
+      ...packCjkEntries(z, info.cjk, siteUrl),
       ...[...info.licenses, ...extraLicenses].map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
       { name: z + 'PROMPT.md', data: Buffer.from(en, 'utf8') },
       { name: z + 'PROMPT.zh.md', data: Buffer.from(zh, 'utf8') },
@@ -1190,8 +1367,13 @@ function main() {
       };
     }
 
+    const spec = specimenFor(t, info.fontPlan.faces);
+    if (spec) writeFile(path.join(SITE, 'assets', 'specimen', `${t.slug}.css`), `/* Latin subsets of this template's self-hosted fonts, for the typography specimen (licenses: fonts/<family>/OFL.txt). */\n${fontFaceCss(spec.faces, dataUrl)}\n`);
+
     const data = {
       ...t,
+      moodGroups: moodGroupsOf(t).ids,
+      specimen: spec ? { css: `assets/specimen/${t.slug}.css`, roles: spec.roles } : null,
       htmlFile: t.src.layout.htmlFile,
       description: ctx.description,
       zh: tz,
@@ -1206,6 +1388,8 @@ function main() {
       derived,
       promptEn: en,
       promptZh: zh,
+      licenseNotice: ctx.licenseNotice,
+      demoSlides: Boolean(t.overlay?.preview?.slides),
     };
     for (const lang of LANGS) {
       writeFile(path.join(SITE, ...pagePath(lang, `t/${t.slug}/index.html`).split('/')), detailPage(data, lang));
@@ -1214,7 +1398,8 @@ function main() {
   }
 
   for (const lang of LANGS) {
-    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, zhTerm: (m) => zhTerm(zhData, m) }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, featured: homeSlugs }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'gallery/index.html').split('/')), galleryPage({ templates: pageData, lang, tags: tagGroups().groups }));
     writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources: sources.filter((s) => templates.some((t) => t.source === s.id)), templates: pageData, lang }));
   }
 

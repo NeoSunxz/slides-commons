@@ -1,4 +1,4 @@
-/* slides-commons gallery filters: search, author, scheme and mood.
+/* slides-commons gallery filters: search, author, license, scheme and mood.
  * State lives in the URL hash (#q=…&scheme=dark&mood=warm,bold&author=Name) so a filtered
  * view can be linked; it works from file:// too. Without JS every card stays visible. */
 (function () {
@@ -9,14 +9,15 @@
   panel.hidden = false;
 
   var input = document.getElementById('q');
+  input.closest('.fsearch').hidden = false;
   var countEl = document.getElementById('fcount');
   var clearBtn = document.getElementById('fclear');
   var noneEl = document.getElementById('fnone');
   var cards = Array.prototype.slice.call(grid.children);
   var chips = Array.prototype.slice.call(panel.querySelectorAll('button.chip'));
-  var GROUPS = ['author', 'scheme', 'mood'];
+  var GROUPS = ['author', 'license', 'scheme', 'mood'];
 
-  function emptyState() { return { q: '', author: [], scheme: [], mood: [] }; }
+  function emptyState() { return { q: '', author: [], license: [], scheme: [], mood: [] }; }
 
   function parseHash() {
     var st = emptyState();
@@ -28,7 +29,7 @@
     // Old links used source=<id>; it no longer matches any chip, so ignore it quietly.
     GROUPS.forEach(function (g) {
       var v = params.get(g);
-      st[g] = v ? v.split(g === 'author' ? '|' : ',').filter(Boolean) : [];
+      st[g] = v ? v.split((g === 'author' || g === 'license') ? '|' : ',').filter(Boolean) : [];
     });
     return st;
   }
@@ -36,7 +37,7 @@
   function toHash(st) {
     var params = new URLSearchParams();
     if (st.q) params.set('q', st.q);
-    GROUPS.forEach(function (g) { if (st[g].length) params.set(g, st[g].join(g === 'author' ? '|' : ',')); });
+    GROUPS.forEach(function (g) { if (st[g].length) params.set(g, st[g].join((g === 'author' || g === 'license') ? '|' : ',')); });
     var s = params.toString().replace(/%2C/gi, ',');
     return s ? '#' + s : '';
   }
@@ -47,6 +48,7 @@
       var authors = card.getAttribute('data-author').split('|');
       if (!st.author.some(function (a) { return authors.indexOf(a) >= 0; })) return false;
     }
+    if (st.license.length && st.license.indexOf(card.getAttribute('data-license')) < 0) return false;
     if (st.scheme.length && st.scheme.indexOf(card.getAttribute('data-scheme')) < 0) return false;
     if (st.mood.length) {
       var moods = card.getAttribute('data-mood').split('|');
@@ -74,12 +76,12 @@
     if (input.value !== state.q) input.value = state.q;
     var total = Number(countEl.getAttribute('data-total'));
     countEl.textContent = countEl.getAttribute('data-template').replace('{n}', shown).replace('{total}', total);
-    var active = Boolean(state.q || state.author.length || state.scheme.length || state.mood.length);
+    var active = Boolean(state.q || state.author.length || state.license.length || state.scheme.length || state.mood.length);
     clearBtn.hidden = !active;
     noneEl.hidden = shown !== 0;
-    // A chip hidden inside a closed "more" list must not hide an active filter.
-    var more = panel.querySelector('details.more');
-    if (more && state.mood.some(function (m) { return !!more.querySelector('[data-value="' + m + '"]'); })) more.open = true;
+    // Author / license chips live in a collapsed "More filters" list: open it while one is active.
+    var extra = panel.querySelector('.filter-extra');
+    if (extra && (state.author.length || state.license.length)) extra.open = true;
     // Keep the language switcher on the same filtered view.
     var h = toHash(state);
     Array.prototype.forEach.call(document.querySelectorAll('a[data-lang-switch]'), function (a) {

@@ -261,6 +261,17 @@ h1 + .lede, h2 + .lede, h2 + .body { margin-top: 40px; }
 .hl { color: var(--accent); }
 
 /* ===========================================
+   CJK OVERRIDES: active when <html lang="zh-CN">
+   Chinese labels 20px / 500 / no uppercase; body >= 24px; footer and source stay 18px; letter-spacing 0 everywhere.
+   =========================================== */
+:lang(zh) h1, :lang(zh) h2, :lang(zh) .stat-xl { font-weight: 700; line-height: 1.2; }
+:lang(zh) .t-hero { line-height: 1.15; }
+:lang(zh) .body, :lang(zh) .small, :lang(zh) .lede { line-height: 1.75; }
+:lang(zh) :is(.section, .label, .yaxis, .xaxis, .notes .n) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) .small { font-size: 24px; }
+:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+
+/* ===========================================
    MOTION — quiet fade-up on entry
    =========================================== */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); transition-delay: calc(var(--i, 0) * 80ms + 80ms); }
@@ -317,7 +328,7 @@ h1 + .lede, h2 + .lede, h2 + .body { margin-top: 40px; }
 .mock-rows li.flag { background: var(--accent-tint); margin: 0 -20px; padding: 0 20px; border-radius: 12px; border-bottom-color: transparent; }
 .mock-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid var(--rule); }
 .btn { font-size: 22px; font-weight: 600; background: var(--ink); color: var(--paper); padding: 14px 28px; border-radius: 999px; }
-.pin { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--paper); font-size: 16px; font-weight: 700; margin-left: 12px; vertical-align: middle; letter-spacing: 0; }
+.pin { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--paper); font-size: 18px; font-weight: 700; margin-left: 12px; vertical-align: middle; letter-spacing: 0; }
 
 /* ===========================================
    05 WHY NOW — three numbered shifts
@@ -395,7 +406,7 @@ h1 + .lede, h2 + .lede, h2 + .body { margin-top: 40px; }
 .mono { width: 120px; height: 120px; border-radius: 50%; background: var(--wash); display: grid; place-items: center; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
 .people li:first-child .mono { background: var(--accent); color: var(--paper); }
 .people h3 { font-size: 34px; letter-spacing: -0.02em; margin-top: 32px; }
-.people .role { font-size: 22px; font-weight: 600; color: var(--accent); margin-top: 6px; }
+.people .role { font-size: 22px; font-weight: 600; color: var(--ink-muted); margin-top: 6px; }
 .people p { margin-top: 14px; }
 
 /* ===========================================
@@ -579,9 +590,9 @@ h1 + .lede, h2 + .lede, h2 + .body { margin-top: 40px; }
                     <g font-family="Manrope, sans-serif" text-anchor="middle">
                         <text x="372" y="84" font-size="20" font-weight="600" fill="#8a8e95" letter-spacing="2.4">TAM</text>
                         <text x="372" y="146" font-size="56" font-weight="600" fill="#111214" letter-spacing="-2">$38B</text>
-                        <text x="372" y="322" font-size="20" font-weight="600" fill="#0b7a55" letter-spacing="2.4">SAM</text>
+                        <text x="372" y="322" font-size="20" font-weight="600" fill="#55585e" letter-spacing="2.4">SAM</text>
                         <text x="372" y="380" font-size="56" font-weight="600" fill="#111214" letter-spacing="-2">$6.2B</text>
-                        <text x="372" y="600" font-size="20" font-weight="600" fill="#ffffff" letter-spacing="2.4" opacity="0.8">SOM</text>
+                        <text x="372" y="600" font-size="20" font-weight="600" fill="#e3f1ea" letter-spacing="2.4">SOM</text>
                         <text x="372" y="658" font-size="56" font-weight="600" fill="#ffffff" letter-spacing="-2">$410M</text>
                     </g>
                 </svg>

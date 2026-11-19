@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
-import { SITE, ALL_SLUGS, readZip } from './helpers.mjs';
+import { SITE, ALL_SLUGS, DESIGN_SLUGS, OVERLAY_SLUGS, readZip } from './helpers.mjs';
 
 const GENERIC = ['broadside', 'editorial-tri-tone', 'pin-and-paper', 'pink-script', 'retro-windows', 'scatterbrain', 'signal', 'stencil-tablet', 'studio'];
 const CONCRETE_EXPECTED = { 'neo-grid-bold': ['#ECECE8', 'bg'], vellum: ['#2A3870', 'navy'], 'swiss-modern': ['#ffffff', 'white'] };
@@ -48,14 +48,14 @@ test.describe('--slide-bg in prompts', () => {
 
   test('every slug is concrete or generic, never both/neither; generic set is exactly the known nine (EN+ZH agree)', () => {
     const bad = [], generic = { en: [], zh: [] };
-    for (const slug of ALL_SLUGS) for (const lang of ['en', 'zh']) {
+    for (const slug of DESIGN_SLUGS) for (const lang of ['en', 'zh']) {
       const { m, generic: g } = info(slug, lang);
       if (!!m === g) bad.push(`${slug} ${lang}: concrete=${!!m} generic=${g}`);
       if (g) generic[lang].push(slug);
     }
     expect(bad).toEqual([]);
     expect(generic.en).toEqual(generic.zh);
-    const known = GENERIC.filter((s) => ALL_SLUGS.includes(s)).sort();
+    const known = GENERIC.filter((s) => DESIGN_SLUGS.includes(s)).sort();
     expect([...generic.en].sort()).toEqual(known);
   });
 

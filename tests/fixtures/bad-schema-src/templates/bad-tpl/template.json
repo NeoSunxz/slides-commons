@@ -1,7 +1,7 @@
 {
   "slug": "bad-tpl",
   "name": "Bad Template",
-  "mood": ["plain"],
+  "mood": ["clean"],
   "occasion": ["testing"],
   "tone": ["neutral"],
   "formality": "medium",

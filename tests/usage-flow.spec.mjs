@@ -77,19 +77,18 @@ test.describe('1. usage steps and button order', () => {
         expect(strip(aside)).not.toContain(AUTO[lang].offline);
       });
     }
-    test(`[home ${lang}] intro/steps change only with a site URL`, () => {
+    test(`[home ${lang}] process step 2 changes only with a site URL (see also home.spec.mjs)`, () => {
       const rel = lang === 'zh' ? ['zh', 'index.html'] : ['index.html'];
       const withUrl = read(urlOut, ...rel), plain = read(SITE, ...rel);
-      const lead = (h) => strip(h.match(/<p class="lead">([\s\S]*?)<\/p>/)[1]);
-      const steps = (h) => olItems(h, 'steps');
-      expect(lead(withUrl)).not.toBe(lead(plain));
+      const steps = (h) => [...h.matchAll(/<li><span class="home-step-number">\d+<\/span><div><h3>[^<]*<\/h3><p>([^<]*)<\/p>/g)].map((m) => m[1]);
       expect(steps(withUrl)).toHaveLength(3);
       expect(steps(plain)).toHaveLength(3);
-      expect(steps(withUrl)[1]).toMatch(lang === 'en' ? /Copy the prompt/ : /复制提示词/);
+      expect(steps(withUrl)[1]).toMatch(lang === 'en' ? /Copy the prompt/ : /复制模板页的提示词/);
       expect(steps(withUrl)[1]).toMatch(lang === 'en' ? /downloads the template pack itself/ : /自己下载模板素材包/);
       expect(steps(plain)[1]).toMatch(lang === 'en' ? /Download/ : /下载/);
       expect(steps(plain).join(' ')).not.toMatch(/downloads the template pack itself|自己下载模板素材包/);
-      expect(lead(withUrl)).toMatch(lang === 'en' ? /copy its prompt/ : /复制它的提示词/);
+      expect(steps(withUrl)[0]).toBe(steps(plain)[0]);
+      expect(steps(withUrl)[2]).toBe(steps(plain)[2]);
     });
   }
   test('every detail page in both modes uses the matching step set (all templates, EN+ZH)', () => {

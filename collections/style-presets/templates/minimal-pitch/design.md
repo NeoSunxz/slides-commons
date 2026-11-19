@@ -184,6 +184,7 @@ Minimal Pitch is a **white, quiet, one-idea-per-slide** system for investor deck
 - Titles anchored **bottom-left** of their cell, with a small accent label 32px above.
 - Figures sit on hairlines, never in boxes or cards. No shadows except the single product mock.
 - Chrome is identical on every slide: wordmark top-left, section name top-right, footer note bottom-left, page number bottom-right.
+- Chrome content comes from the user: the wordmark is the company name they gave (no name → omit the wordmark text, keep only the section name); the footer note is a real source or "Illustrative figures" (no source given → a neutral line such as "Figures provided by the presenter", listed as drafted); cover meta fields (presented by / raising / contact), dates, team names and metrics only when given. Never invent them.
 
 **Density philosophy: low.** One idea per slide. A slide is complete with a label, a headline and either one visual or up to four figures. If you need a second idea, add a slide. Twelve slides for a seed pitch is normal; 15–18 is fine; cramming is not.
 
@@ -200,10 +201,11 @@ Minimal Pitch is a **white, quiet, one-idea-per-slide** system for investor deck
 - **Accent** `{colors.accent}` #0b7a55 — the only hue (5.4:1 on white, AA for all text sizes).
 - **Accent tint** `{colors.accent-tint}` #e3f1ea — low-strength accent fill: SAM circle, winning quadrant, highlighted product row.
 - **Neutral mid** `{colors.neutral-mid}` #c9cbcf — third segment of a stacked bar only.
+- The tokens above are the complete palette. The one exception is the product mock's shadow, `rgba(17,18,20,.18)` (ink at 18%). Do not use opacity-faded text or other `rgba()`: on an accent fill, labels use `{colors.accent-tint}`.
 
 ### Accent rules
 
-- **One accent moment per slide.** Choose the single most important thing: a phrase in the headline, the latest bar, the SOM, "us" in the 2×2, the biggest use of funds. The accent label above the title and the accent dot of the wordmark do not count.
+- **One accent moment per slide.** Choose the single most important thing: a phrase in the headline, the latest bar, the SOM, "us" in the 2×2, the biggest use of funds. The moment may show in several parts that depict that same thing (the latest bar and its value; the SOM circle and the tint ladder around it; the numbered pins and their notes; the amount and the first segment of the funds bar). It may not be repeated across parallel items (four team roles, every row of a table). The accent label above the title and the accent dot of the wordmark do not count. Text that sits beside an accent moment but is not part of it (SAM label, roles) is ink-muted.
 - The accent is a **color for text or a flat fill**. No accent gradients, glows or outlines thicker than 2px.
 - To re-theme, change `--accent` and `--accent-tint` together (tint ≈ accent at 12% on white). Keep the accent dark enough for 4.5:1 on white — e.g. ink blue #1d4ed8, oxblood #9b2335, graphite teal #0f6e78. Never use a second accent alongside.
 
@@ -236,7 +238,7 @@ Minimal Pitch is a **white, quiet, one-idea-per-slide** system for investor deck
 | `{typography.label}` | 18, 600, +0.12em, uppercase | 600 | Slide label (accent), chrome, quiet labels |
 | `{typography.source}` | 18 / 1.5 | 400 | Data sources and footnotes |
 
-Running text never goes below 22px; 18px is only for labels, axes, sources and chrome.
+**Size floor (stated once):** nothing on a slide is smaller than 18px. 18px is only for uppercase Latin labels, axis ticks, sources and chrome. Latin running text is ≥ 22px. Chinese is never smaller than 20px (labels, axes, section name) and Chinese running text ≥ 24px; only the footer note and the source line stay 18px in every language.
 
 ### Signature Treatments
 
@@ -321,7 +323,7 @@ The demo deck implements each of these, in classic pitch order.
 7. **Traction** — 5-column text: label, title, three KPIs in a row at the bottom. 7-column bar chart, 12 months, last bar accent with its value.
 8. **Business model** — `stat-xl` price with a `/ month` suffix (48px, muted) and a lede; four unit-economics rows on the right (columns 8–12), one figure in accent.
 9. **Competition** — 5-column text (label, title, body naming the alternatives) + 7-column 2×2 with "us" in the tinted quadrant.
-10. **Team** — `title` in rows 1–2; four people in rows 3–6: monogram, name, accent role, one-line track record.
+10. **Team** — `title` in rows 1–2; four people in rows 3–6: monogram (the presenter's in accent, the rest wash), name, role in ink-muted, one-line track record.
 11. **The ask** — `display` "Raising $X" with the amount in accent, a one-line body (round, runway); three goal rows on the right (now → target); use-of-funds stacked bar with legend across rows 4–6.
 12. **Closing** — `hero` two-line sign-off with an accent period, contact rows (hairline, label, 28px value) in columns 9–12, the accent cover-dot top-right.
 
@@ -383,12 +385,15 @@ One stack, Latin first, so Latin words and **all digits stay in Manrope** (Manro
 --font: 'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 ```
 
-Put `lang="zh-CN"` on `<html>` and add:
+Put `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
 :lang(zh) h1, :lang(zh) h2, :lang(zh) .stat-xl { font-weight: 700; letter-spacing: 0; line-height: 1.2; }
 :lang(zh) .t-hero { line-height: 1.15; }
-:lang(zh) .label, :lang(zh) .section, :lang(zh) .foot { letter-spacing: 0.04em; }
+:lang(zh) :is(.section, .label, .yaxis, .xaxis, .notes .n) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) .small { font-size: 24px; }
+/* CJK letter-spacing is 0 everywhere, including SVG text */
+:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 :lang(zh) .body, :lang(zh) .small, :lang(zh) .lede { line-height: 1.75; }
 ```
 
@@ -397,12 +402,12 @@ Manrope 700 exists, so Latin words inside a 700 Chinese headline render with a t
 ### Universal CJK Adjustments
 
 - **Line-height:** headlines 1.15–1.25 (the Latin 0.98–1.08 makes Chinese lines touch); body 1.7–1.8; captions 1.6.
-- **Tracking:** 0 on Chinese headlines and body (drop the −0.03 to −0.045em tracking); labels +0.04em at most. `text-transform: uppercase` has no effect on Chinese.
+- **Tracking:** 0 on Chinese headlines and body (drop the −0.03 to −0.045em tracking); labels and the chrome too: 0 for every Chinese run. `text-transform: uppercase` has no effect on Chinese.
 - **Length:** a Chinese headline of 8–14 characters fills the space of a 20–30 character English one. `hero` holds 2 lines of ≤ 7 characters; `display` 2 lines of ≤ 12; `title` 2 lines of ≤ 14 in a 5-column cell.
 - **Punctuation:** full-width （，。：；！？「」）. Chinese statement headlines end **without** a period; drop the accent-period treatment and use an accent phrase instead.
 - **Spacing (盘古之白):** a space between Chinese and Latin words or numbers: `融资 4500 万元`, `使用 Mise 的餐厅`.
 - **No orphans:** keep `text-wrap: balance` and check that no line holds a single character; rebalance with `<br>` or shorten.
-- **Minimum sizes:** Chinese body text ≥ 24px for presentations (22px reads small in CJK); labels ≥ 18px.
+- **Minimum sizes:** Chinese body text ≥ 24px for presentations (22px reads small in CJK); every other Chinese run ≥ 20px, except the footer note and source line (18px).
 
 ### Numbers in Chinese decks
 
@@ -414,7 +419,7 @@ Manrope 700 exists, so Latin words inside a 700 Chinese headline render with a t
 
 ### Aesthetic Notes for This System
 
-The quietness transfers well to Chinese: large Noto Sans SC 700 headlines with lots of white space read as calm and premium. Keep the accent phrase short (2–6 characters, e.g. `七分之一`). Chinese labels above titles work without letter-spacing (`问题`, `市场规模`, `融资计划`). In the chrome, the section name can be 2–4 characters.
+The quietness transfers well to Chinese: large Noto Sans SC 700 headlines with lots of white space read as calm and premium. Keep the accent phrase short (2–6 characters, e.g. `七分之一`). Chinese labels above titles use no letter-spacing (`问题`, `市场规模`, `融资计划`). In the chrome, the section name can be 2–4 characters.
 
 ### Known CJK Gap
 

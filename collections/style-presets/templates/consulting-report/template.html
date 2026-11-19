@@ -288,7 +288,7 @@ svg {
 .label {
     font-size: 18px;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
 }
@@ -363,9 +363,9 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
     font-size: 19px; font-weight: 500; color: var(--ink);
     border-top: 2px solid var(--paper);
 }
-.seg.c1 { background: var(--accent); color: #fff; }
-.seg.c2 { background: var(--navy); color: #fff; }
-.seg.c3 { background: var(--navy-60); color: #fff; }
+.seg.c1 { background: var(--accent); color: var(--paper); }
+.seg.c2 { background: var(--navy); color: var(--paper); }
+.seg.c3 { background: var(--navy-60); color: var(--paper); }
 .seg.c4 { background: var(--navy-30); }
 .seg.c5 { background: var(--navy-12); }
 
@@ -395,10 +395,10 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
 /* ===========================================
    CHART: HORIZONTAL BARS (CSS grid rows)
    =========================================== */
-.hbars { display: grid; gap: 18px; }
+.hbars { display: grid; gap: var(--row-gap, 18px); }
 .hrow { display: grid; grid-template-columns: 230px 1fr 92px; align-items: center; gap: 16px; }
 .hrow .name { font-size: 21px; color: var(--ink); line-height: 1.25; }
-.hrow .track { position: relative; height: 40px; }
+.hrow .track { position: relative; height: var(--track, 40px); }
 .hrow .fill { height: 100%; width: calc(var(--v) / var(--max) * 100%); background: var(--navy-30); transform-origin: left; }
 .hrow.hi .fill { background: var(--accent); }
 .hrow.hi .name, .hrow.hi .val { color: var(--accent); font-weight: 600; }
@@ -463,7 +463,7 @@ table.data th {
     padding: 0 14px 10px; border-bottom: 2px solid var(--ink); line-height: 1.25;
 }
 table.data td {
-    font-size: 21px; padding: 0 14px; height: 44px; border-bottom: 1px solid var(--rule);
+    font-size: 21px; padding: 0 14px; height: var(--row, 44px); border-bottom: 1px solid var(--rule);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 table.data .r { text-align: right; }
@@ -474,7 +474,7 @@ table.data tr.total td { font-weight: 600; border-top: 2px solid var(--ink); bor
 .util i { flex: 0 0 120px; height: 12px; background: var(--navy-12); position: relative; }
 .util i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--v) * 1%); background: var(--navy-60); }
 tr.flag .util i::after { background: var(--accent); }
-.pill { display: inline-block; font-size: 17px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 10px; border: 1.5px solid currentColor; }
+.pill { display: inline-block; font-size: 18px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 10px; border: 1.5px solid currentColor; }
 .pill.a { color: var(--accent); }
 .pill.n { color: var(--navy-60); }
 
@@ -508,8 +508,8 @@ tr.flag .util i::after { background: var(--accent); }
     display: grid; place-items: center;
     font-size: 22px; font-weight: 600; color: var(--navy);
 }
-.bubble.a { background: var(--accent); color: #fff; }
-.bubble.n { background: var(--navy); color: #fff; }
+.bubble.a { background: var(--accent); color: var(--paper); }
+.bubble.n { background: var(--navy); color: var(--paper); }
 .mx-bubbles { position: absolute; left: 64px; top: 0; right: 0; bottom: 56px; }
 .mx-y {
     position: absolute; left: 0; top: 0; bottom: 56px; width: 40px;
@@ -584,6 +584,7 @@ tr.flag .util i::after { background: var(--accent); }
    =========================================== */
 .toc { display: grid; grid-template-columns: 1fr 560px; gap: 96px; height: 100%; }
 .toc ol { list-style: none; }
+.toc > ol { display: grid; grid-auto-rows: 1fr; height: 100%; }   /* rows share the band height */
 .toc li {
     display: grid; grid-template-columns: 90px 1fr 80px; align-items: baseline;
     padding: 20px 0; border-bottom: 1px solid var(--rule);
@@ -594,12 +595,15 @@ tr.flag .util i::after { background: var(--accent); }
 .toc li .pg { text-align: right; font-size: 22px; color: var(--muted); }
 .toc li.on .n, .toc li.on h3 { color: var(--accent); }
 .toc li.on { box-shadow: inset 0 3px 0 var(--accent); border-top: none; }
-.toc aside { align-self: start; }
+.toc aside { display: flex; flex-direction: column; height: 100%; }
+.toc .ask { margin-top: auto; background: var(--navy-05); padding: 26px 30px 28px; }
+.toc .ask .label { color: var(--navy); margin-bottom: 10px; }
+.toc .ask p:last-child { font-size: 22px; line-height: 1.42; color: var(--ink); }
 .toc aside ol { counter-reset: q; margin-top: 8px; }
 .toc aside li { display: block; padding: 18px 0 18px 52px; position: relative; font-size: 23px; line-height: 1.4; }
 .toc aside li::before {
     counter-increment: q; content: counter(q); position: absolute; left: 0; top: 18px;
-    width: 34px; height: 34px; background: var(--navy); color: #fff;
+    width: 34px; height: 34px; background: var(--navy); color: var(--paper);
     font-size: 19px; font-weight: 600; display: grid; place-items: center; line-height: 1;
 }
 
@@ -607,13 +611,15 @@ tr.flag .util i::after { background: var(--accent); }
    SLIDE 4 / 5 / 6 — CHART SLIDES
    =========================================== */
 .split { display: grid; height: 100%; gap: 72px; }
+.split > .col { display: flex; flex-direction: column; height: 100%; }   /* closing element: margin-top:auto */
+.split > .col > .end { margin-top: auto; }
 .split.c-7-5 { grid-template-columns: 7fr 5fr; }
 .split.c-8-4 { grid-template-columns: 1180px 1fr; }
 .split.c-6-6 { grid-template-columns: 1fr 1fr; }
 .findings { display: grid; gap: 0; align-content: start; }
 .findings > div { display: grid; grid-template-columns: 52px 1fr; padding: 18px 0; border-bottom: 1px solid var(--rule); }
 .findings > div:first-child { padding-top: 0; }
-.findings .k { font-family: var(--font-title); font-size: 34px; font-weight: 600; color: var(--accent); line-height: 1.05; }
+.findings .k { font-family: var(--font-title); font-size: 34px; font-weight: 600; color: var(--navy); line-height: 1.05; }
 .findings p { font-size: 22px; line-height: 1.42; }
 .findings p b { font-weight: 600; color: var(--navy); }
 
@@ -640,20 +646,21 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
    =========================================== */
 .reco { display: grid; grid-template-columns: 760px 1fr; gap: 72px; height: 100%; }
 .reco-panel {
-    background: var(--navy); color: #fff; padding: 44px 48px;
+    background: var(--navy); color: var(--paper); padding: 44px 48px;
     display: flex; flex-direction: column; justify-content: space-between;
 }
-.reco-panel .label { color: #9FD8D3; }
+.reco-panel .label { color: var(--navy-30); }   /* on-navy-muted */
 .reco-panel h3 { font-family: var(--font-title); font-size: 40px; font-weight: 600; line-height: 1.22; margin-top: 18px; }
-.reco-figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; border-top: 1px solid rgba(255,255,255,0.28); padding-top: 24px; }
+.reco-figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; border-top: 1px solid var(--navy-60); padding-top: 24px; }   /* on-navy-rule */
 .reco-figs b { display: block; font-size: 46px; font-weight: 600; line-height: 1; }
-.reco-figs span { display: block; font-size: 19px; color: rgba(255,255,255,0.78); margin-top: 10px; line-height: 1.3; }
+.reco-figs span { display: block; font-size: 19px; color: var(--navy-30); margin-top: 10px; line-height: 1.3; }   /* on-navy-muted */
+.decisions { display: flex; flex-direction: column; height: 100%; }
 .decisions ol { list-style: none; }
 .decisions li { display: grid; grid-template-columns: 56px 1fr; padding: 18px 0; border-bottom: 1px solid var(--rule); }
 .decisions li .n { width: 36px; height: 36px; border: 2px solid var(--accent); color: var(--accent); font-size: 19px; font-weight: 600; display: grid; place-items: center; }
 .decisions li h4 { font-size: 24px; font-weight: 600; color: var(--navy); line-height: 1.3; }
 .decisions li p { font-size: 20px; color: var(--muted); line-height: 1.4; margin-top: 4px; }
-.risks { margin-top: 30px; }
+.risks { margin-top: auto; padding-top: 30px; }
 .risks table.data td { white-space: normal; height: 50px; font-size: 20px; line-height: 1.3; padding-top: 8px; padding-bottom: 8px; }
 
 /* ===========================================
@@ -678,10 +685,10 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
     position: absolute; top: 20px; height: 36px;
     left: calc(var(--s) / 7 * 100% + 4px); width: calc(var(--w) / 7 * 100% - 8px);
     background: var(--navy-30); color: var(--navy);
-    font-size: 17px; font-weight: 600; display: flex; align-items: center; padding: 0 12px; white-space: nowrap; overflow: hidden;
+    font-size: 18px; font-weight: 600; display: flex; align-items: center; padding: 0 12px; white-space: nowrap; overflow: hidden;
 }
-.gbar.n { background: var(--navy); color: #fff; }
-.gbar.a { background: var(--accent); color: #fff; }
+.gbar.n { background: var(--navy); color: var(--paper); }
+.gbar.m { background: var(--navy-60); color: var(--paper); }
 .ms {
     position: absolute; top: 28px; left: calc(var(--at) / 7 * 100% - 10px);
     width: 20px; height: 20px; background: var(--paper); border: 3px solid var(--navy); transform: rotate(45deg);
@@ -692,6 +699,20 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
 .lane.sum span:last-child { color: var(--accent); }
 .gantt-legend { margin-top: 18px; }
 .gantt-legend .ms-key { display: inline-block; width: 16px; height: 16px; border: 3px solid var(--navy); transform: rotate(45deg); margin-right: 12px; vertical-align: -1px; }
+
+/* ===========================================
+   CJK OVERRIDES: active when <html lang="zh-CN">
+   Labels 20px / 500 / no uppercase; letter-spacing 0 for all Chinese text.
+   =========================================== */
+:lang(zh) .action      { font-size: 44px; font-weight: 700; line-height: 1.3; }
+:lang(zh) .s-cover h1  { font-size: 84px; line-height: 1.2; }
+:lang(zh) .lead        { line-height: 1.5; }
+:lang(zh) .slide       { line-height: 1.6; }
+:lang(zh) ul.dash li, :lang(zh) .findings p { line-height: 1.65; }
+:lang(zh) :is(.label, .tracker li, .tag, table.data th, .gantt > .h, .gantt > .ws small,
+              .pill, .gbar, .hbars-plot .refline span) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) .tracker li.on { font-weight: 700; }
+:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 
 /* ===========================================
    MOTION: quiet fade + chart growth on the active slide
@@ -769,7 +790,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
     <!-- ============== 3. CONTENTS ========================================= -->
     <section class="slide content" data-label="Contents">
         <header class="chrome">
-            <ol class="tracker"><li class="on">Summary</li><li>Diagnosis</li><li>Options</li><li>Recommendation</li><li>Roadmap</li></ol>
+            <ol class="tracker"><li>Summary</li><li class="on">Diagnosis</li><li>Options</li><li>Recommendation</li><li>Roadmap</li></ol>
             <span class="tag">Preliminary</span>
         </header>
         <h2 class="action">This document answers three questions the steering committee asked in February</h2>
@@ -789,6 +810,10 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         <li>Which levers move margin fastest, and what do they cost?</li>
                         <li>What must be decided now to see results in FY25?</li>
                     </ol>
+                    <div class="ask">
+                        <p class="label">Asked of the committee today</p>
+                        <p>Three decisions on page 10: Phase 1 consolidation, energy indexation at renewal and a full-time transformation lead.</p>
+                    </div>
                 </aside>
             </div>
         </div>
@@ -806,7 +831,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
             <div class="split c-6-6">
                 <div class="reveal" style="--i:1">
                     <div class="ch-head"><p class="ch-title">Meridian operating margin</p><p class="ch-unit">% of revenue, FY21–FY24</p></div>
-                    <div class="colchart" style="--n:4; --max:10; --ph:400px;">
+                    <div class="colchart" style="--n:4; --max:10; --ph:500px;">
                         <div class="plot">
                             <div class="bar focus grow" style="--v:8.9;--i:1"><b>8.9</b></div>
                             <div class="bar focus grow" style="--v:7.4;--i:2"><b>7.4</b></div>
@@ -818,9 +843,9 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         <div class="xlab"><span>FY21</span><span>FY22</span><span>FY23</span><span>FY24</span></div>
                     </div>
                 </div>
-                <div class="reveal" style="--i:2">
+                <div class="col reveal" style="--i:2">
                     <div class="ch-head"><p class="ch-title">Change in operating margin vs. peers</p><p class="ch-unit">Percentage points, FY21–FY24</p></div>
-                    <div class="hbars-wrap" style="--max:7">
+                    <div class="hbars-wrap" style="--max:7; --track:48px; --row-gap:24px;">
                         <div class="hbars">
                             <div class="hrow"><span class="name">Peer A (NL)</span><div class="track"><div class="fill growx" style="--v:1.2;--i:1"></div></div><span class="val">−1.2</span></div>
                             <div class="hrow"><span class="name">Peer B (DE)</span><div class="track"><div class="fill growx" style="--v:2.0;--i:2"></div></div><span class="val">−2.0</span></div>
@@ -830,7 +855,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         </div>
                         <div class="hbars-plot"><div class="refline" style="--v:2.3"><span>Peer median −2.3</span></div></div>
                     </div>
-                    <div class="callout" style="margin-top:40px">
+                    <div class="callout end">
                         <p class="label">So what</p>
                         <p style="font-size:22px; line-height:1.42;">Peers faced the same energy shock. The extra <b class="hl">3.8 points</b> Meridian lost are company-specific and therefore addressable.</p>
                     </div>
@@ -855,7 +880,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         <div><p class="ch-title">Cost per pallet by component</p><p class="ch-unit">% of total; total cost per pallet in € above each column</p></div>
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 210px; gap: 32px;">
-                        <div class="colchart" style="--n:4; --max:100; --ph:400px; --bw:58%; margin-top:36px;">
+                        <div class="colchart" style="--n:4; --max:100; --ph:470px; --bw:58%; margin-top:36px;">
                             <div class="plot">
                                 <div class="bar stack grow" style="--v:100;--i:1"><b>€61</b><span class="seg c1" style="--s:16">16%</span><span class="seg c2" style="--s:28">28%</span><span class="seg c3" style="--s:24">24%</span><span class="seg c4" style="--s:18">18%</span><span class="seg c5" style="--s:14">14%</span></div>
                                 <div class="bar stack grow" style="--v:100;--i:2"><b>€66</b><span class="seg c1" style="--s:18">18%</span><span class="seg c2" style="--s:29">29%</span><span class="seg c3" style="--s:23">23%</span><span class="seg c4" style="--s:17">17%</span><span class="seg c5" style="--s:13">13%</span></div>
@@ -864,7 +889,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                             </div>
                             <div class="xlab"><span>FY21</span><span>FY22</span><span>FY23</span><span>FY24</span></div>
                         </div>
-                        <ul class="legend" style="flex-direction:column; justify-content:flex-end; gap:0; margin-top:36px; height:400px; list-style:none;">
+                        <ul class="legend" style="flex-direction:column; justify-content:flex-end; gap:0; margin-top:36px; height:470px; list-style:none;">
                             <li style="height:10%; display:flex; align-items:center;"><i style="background:var(--navy-12)"></i>Overhead</li>
                             <li style="height:13%; display:flex; align-items:center;"><i style="background:var(--navy-30)"></i>Facilities</li>
                             <li style="height:19%; display:flex; align-items:center;"><i style="background:var(--navy-60)"></i>Fleet &amp; fuel</li>
@@ -873,12 +898,17 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         </ul>
                     </div>
                 </div>
-                <div class="reveal" style="--i:2">
+                <div class="col reveal" style="--i:2">
                     <div class="ch-head"><p class="ch-title">What drove the shift</p><p class="ch-unit">Interviews and cost ledger, 11 depots</p></div>
                     <div class="findings">
                         <div><span class="k">1</span><p><b>Energy tariff reset in FY23</b> at +84% per kWh; 62% of contracts carry no indexation clause, so none of it was passed on.</p></div>
                         <div><span class="k">2</span><p><b>Overtime reached 14% of hours</b> against a 6% benchmark, driven by unplanned peaks at four depots.</p></div>
                         <div><span class="k">3</span><p><b>Fleet and facility shares fell</b> only because energy and labour grew faster; their cost per pallet is flat in euro terms.</p></div>
+                    </div>
+                    <div class="callout end">
+                        <p class="label">Energy and labour share</p>
+                        <p class="big">+14 pts</p>
+                        <p style="font-size:22px; line-height:1.42;">58% of a €79 pallet in FY24, against 44% of €61 in FY21.</p>
                     </div>
                 </div>
             </div>
@@ -898,7 +928,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
             <div class="split c-8-4">
                 <div class="reveal" style="--i:1">
                     <div class="ch-head"><p class="ch-title">Operating margin bridge, FY21 to FY24</p><p class="ch-unit">Percentage points of revenue</p></div>
-                    <div class="wf" style="--n:8; --max:12; --ph:410px; margin-top:34px;">
+                    <div class="wf" style="--n:8; --max:12; --ph:460px; margin-top:34px;">
                         <div class="plot">
                             <div class="step total"><div class="b grow" style="--lo:0;--hi:8.9;--i:1"></div><span class="v" style="--lo:0;--hi:8.9">8.9</span></div>
                             <div class="step up"><div class="b grow" style="--lo:8.9;--hi:10.5;--i:2"></div><span class="v" style="--lo:8.9;--hi:10.5">+1.6</span></div>
@@ -912,7 +942,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                         <div class="xlab"><span class="t">FY21 margin</span><span>Pricing</span><span>Volume &amp; mix</span><span>Energy</span><span>Empty running</span><span>Labour</span><span>Facilities &amp; other</span><span class="t">FY24 margin</span></div>
                     </div>
                 </div>
-                <div class="reveal" style="--i:2">
+                <div class="col reveal" style="--i:2">
                     <div class="callout">
                         <p class="label">Two drivers, both addressable</p>
                         <p class="big">4.8 pts</p>
@@ -921,12 +951,20 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                     <ul class="dash" style="margin-top:28px; gap:14px;">
                         <li>Energy: contract indexation would have recovered an estimated 2.2 points</li>
                         <li>Empty running rose from 18% to 27% of truck-km as four depots lost backhaul volume</li>
-                        <li>Labour is partly structural (wage agreements); overtime is the controllable share</li>
                     </ul>
+                    <table class="data end">
+                        <colgroup><col><col style="width:110px"><col style="width:150px"></colgroup>
+                        <thead><tr><th>Driver → lever</th><th class="r">Lost</th><th class="r">Recovered</th></tr></thead>
+                        <tbody>
+                            <tr><td>Energy → A</td><td class="r">−3.1</td><td class="r">+1.5</td></tr>
+                            <tr><td>Empty running → B</td><td class="r">−1.7</td><td class="r">+1.0</td></tr>
+                            <tr class="total"><td>Both drivers, pts</td><td class="r">−4.8</td><td class="r">+2.5</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <p class="source"><b>Source:</b> Meridian management accounts; fleet telematics FY21–FY24; North Quay analysis. Demo data. <b>Note:</b> “Facilities &amp; other” includes rent indexation and IT.</p>
+        <p class="source"><b>Source:</b> Meridian management accounts; fleet telematics FY21–FY24; North Quay analysis. Demo data. <b>Note:</b> “Facilities &amp; other” includes rent indexation and IT; “Recovered” = run-rate uplift of levers A and B (page 8) as points of FY24 revenue.</p>
         <footer class="foot"><span>Meridian Cold Chain · Margin recovery · Steering committee 3</span><span class="pagenum" data-pagenum></span></footer>
     </section>
 
@@ -938,7 +976,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
         </header>
         <h2 class="action">Four of eleven depots run below 60% utilisation and lose €4.6m a year, erasing a quarter of the network’s depot profit</h2>
         <div class="body">
-            <table class="data reveal" style="--i:1">
+            <table class="data reveal" style="--i:1; --row:50px;">
                 <colgroup><col style="width:250px"><col style="width:130px"><col style="width:190px"><col style="width:270px"><col style="width:200px"><col style="width:180px"><col><col style="width:260px"></colgroup>
                 <thead><tr><th>Depot</th><th>Country</th><th class="r">Revenue, €m</th><th>Utilisation</th><th class="r">Op. margin</th><th class="r">EBIT, €m</th><th>Constraint</th><th>Proposed action</th></tr></thead>
                 <tbody>
@@ -1064,7 +1102,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
                     </div>
                     <div class="reco-figs">
                         <div><b>+€23.6m</b><span>EBIT a year at run rate</span></div>
-                        <div><b>€31m</b><span>One-off capital, FY25–26</span></div>
+                        <div><b>€31m</b><span>One-off capital, FY25–FY26</span></div>
                         <div><b>8.5%</b><span>Operating margin, FY26</span></div>
                     </div>
                 </div>
@@ -1104,23 +1142,23 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
             <div class="gantt reveal" style="--i:1">
                 <span class="h">Workstream</span><span class="h">Q2 25</span><span class="h">Q3 25</span><span class="h">Q4 25</span><span class="h">Q1 26</span><span class="h">Q2 26</span><span class="h">Q3 26</span><span class="h">Q4 26</span>
                 <div class="ws">Energy indexation <small>Lever A · Commercial</small></div>
-                <div class="lane"><span class="gbar a growx" style="--s:0;--w:3;--i:1">Renewals with index clause</span><i class="ms" style="--at:3"></i></div>
+                <div class="lane"><span class="gbar n growx" style="--s:0;--w:3;--i:1">Renewals with index clause</span><i class="ms" style="--at:3"></i></div>
                 <div class="ws">Tail re-pricing <small>Lever C · Commercial</small></div>
-                <div class="lane"><span class="gbar a growx" style="--s:0;--w:2;--i:2">Re-price 380 accounts</span></div>
+                <div class="lane"><span class="gbar n growx" style="--s:0;--w:2;--i:2">Re-price 380 accounts</span></div>
                 <div class="ws">Route re-planning <small>Lever B · Operations</small></div>
-                <div class="lane"><span class="gbar n growx" style="--s:1;--w:3;--i:3">Backhaul network design</span><i class="ms" style="--at:4"></i></div>
+                <div class="lane"><span class="gbar m growx" style="--s:1;--w:3;--i:3">Backhaul network design</span><i class="ms" style="--at:4"></i></div>
                 <div class="ws">Overtime controls <small>Lever E · Operations</small></div>
                 <div class="lane"><span class="gbar growx" style="--s:0;--w:4;--i:4">Shift planning roll-out, 11 depots</span></div>
                 <div class="ws">Phase 1: Liège, Metz <small>Lever D · Network</small></div>
-                <div class="lane"><span class="gbar n growx" style="--s:0;--w:4;--i:5">Consultation · transfer · exit</span><i class="ms" style="--at:4"></i></div>
+                <div class="lane"><span class="gbar m growx" style="--s:0;--w:4;--i:5">Consultation · transfer · exit</span><i class="ms" style="--at:4"></i></div>
                 <div class="ws">Phase 2: Aachen, Breda <small>Lever D · Network</small></div>
-                <div class="lane"><span class="gbar n growx" style="--s:2;--w:4;--i:6">Consultation · transfer · exit</span><i class="ms" style="--at:6"></i></div>
+                <div class="lane"><span class="gbar m growx" style="--s:2;--w:4;--i:6">Consultation · transfer · exit</span><i class="ms" style="--at:6"></i></div>
                 <div class="ws sum"><b>EBIT run rate, €m</b></div>
                 <div class="lane sum"><span>2.1</span><span>6.8</span><span>11.4</span><span>15.0</span><span>18.9</span><span>21.7</span><span>23.6</span></div>
             </div>
             <div class="legend gantt-legend">
-                <span><i style="background:var(--accent)"></i>Commercial</span>
-                <span><i style="background:var(--navy)"></i>Network &amp; routing</span>
+                <span><i style="background:var(--navy)"></i>Commercial</span>
+                <span><i style="background:var(--navy-60)"></i>Network &amp; routing</span>
                 <span><i style="background:var(--navy-30)"></i>Productivity</span>
                 <span><span class="ms-key"></span>Steering committee gate</span>
             </div>

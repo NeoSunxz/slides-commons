@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
+### Added
+
+- CJK font embedding: packs ship `fonts/embed-cjk.mjs` (zero-dependency Node script), `fonts/cjk-ranges.json` and `fonts/cjk-licenses/`. It embeds the Fontsource unicode-range shards a deck uses as base64 `@font-face` (site `fonts/cjk/` first, then jsDelivr), subsets with `pyftsubset` when available, verifies cmap coverage and keeps the Google link as fallback.
+- When a site URL is set, the build hosts the CJK shards at `site/fonts/cjk/` (about 67MB); seven `@fontsource` CJK packages added as devDependencies.
+- Tests for CJK embedding (`tests/cjk-embed.spec.mjs`).
+- New home page and a separate gallery page (`gallery/`) with a license filter and 12 mood groups (`src/tags.json`; original tags remain searchable).
+- GitHub icon in the header; footer lists every source with author and license plus a shortened disclaimer.
+- Overlay sources (`scripts/overlay.mjs`, `sources-meta/`): Guizang PPT Skill by 歸藏 (AGPL-3.0, read-only submodule `upstream/guizang`) adds 2 templates, with AGPL notices on the card, detail page, prompt, pack README and credits.
+- Reference-only submodule `upstream/html-ppt-skill` (lewislulu); no templates in the gallery.
+- Tests for the home page, redesign, Guizang source and validation.
+
+### Changed
+
+- Prompt: new "Embed the CJK fonts" step, an explicit exception for `fonts/embed-cjk.mjs` to the "pack is data" rule, trimming the CJK link to the families and weights actually used, and a TC-face rule for Simplified Chinese decks (8 LXGW WenKai TC templates).
+- Detail page rework: collapsible description, good-for/avoid-for cards, palette strip with hover values, typography specimen, screenshot click jumps to the preview, attribution card. Author label is now NeoSun.
+- Prompt: balanced density option and a CJK line-wrap hint.
+- Four business templates in Style Presets revised (design.md, template.html, screenshots).
+- Chinese translations updated.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added
@@ -83,6 +104,7 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0

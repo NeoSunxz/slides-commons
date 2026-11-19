@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { test, expect } from './font-cache.mjs';
 import {
-  ROOT, SITE, ALL_SLUGS, dirUrl, isUpstream, ZH_JSON, ZH_SOURCES, upstreamMeta, readSiteZip, zhNameTokens, zhEnglishRuns,
+  ROOT, SITE, ALL_SLUGS, dirUrl, isOverlay, isUpstream, ZH_JSON, ZH_SOURCES, upstreamMeta, readSiteZip, zhNameTokens, zhEnglishRuns,
 } from './helpers.mjs';
 
 test.describe.configure({ mode: 'parallel' });
@@ -100,8 +100,8 @@ test('zh detail pages (all templates): upstream data is the zh.json translation,
       lang: d.documentElement.lang,
       tagline: t(d.querySelector('.hero .tagline')),
       taglineLang: d.querySelector('.hero .tagline')?.closest('[lang]')?.getAttribute('lang'),
-      description: t(d.querySelector('section.about > p:not(.source-note)')),
-      bestFor: t(dd('适用场景')), avoidFor: t(dd('不适用场景')),
+      description: t(d.querySelector('section.about .desc p')),
+      bestFor: t(d.querySelector('.fit-card.good p')), avoidFor: t(d.querySelector('.fit-card.avoid p')),
       mood: [...(dd('情绪')?.querySelectorAll('.tag') ?? [])].map(t),
       tone: [...(dd('语气')?.querySelectorAll('.tag') ?? [])].map(t),
       palNote: palNote?.classList.contains('muted') ? t(palNote) : null,
@@ -129,7 +129,8 @@ test('zh detail pages (all templates): upstream data is the zh.json translation,
     if (JSON.stringify(r.mood) !== JSON.stringify(m.mood.map(term))) bad.push(`${r.slug} mood chips ${r.mood} != ${m.mood.map(term)}`);
     if (JSON.stringify(r.tone) !== JSON.stringify(m.tone.map(term))) bad.push(`${r.slug} tone chips ${r.tone} != ${m.tone.map(term)}`);
     if (!r.note || !/以下介绍由本站翻译，以英文原文为准。/.test(r.note)) bad.push(`${r.slug}: source note text "${r.note}"`);
-    const dir = dirUrl(r.slug);
+    // Overlay sources (guizang): the English text was written for this site, so the note links the English detail page.
+    const dir = isOverlay(r.slug) ? `../../../t/${r.slug}/` : dirUrl(r.slug);
     if (!r.noteLinks.includes(dir)) bad.push(`${r.slug}: source note does not link ${dir}`);
     if (r.enMarked.length !== 1 || !r.enMarked[0].startsWith('h1:')) bad.push(`${r.slug}: lang="en" blocks in main: ${r.enMarked.join(', ')}`);
     if (r.tagLangs.some((l) => l && l.startsWith('en'))) bad.push(`${r.slug}: tag chips marked English`);
@@ -142,7 +143,7 @@ test('zh detail pages (all templates): no run of 3+ English words outside lang="
   const jobs = ALL_SLUGS.map((slug) => ({ slug, html: fs.readFileSync(path.join(SITE, 'zh', 't', slug, 'index.html'), 'utf8') }));
   const texts = await page.evaluate((list) => list.map(({ slug, html }) => {
     const d = new DOMParser().parseFromString(html, 'text/html');
-    d.querySelectorAll('script,style,pre,code,[lang="en"],a[hreflang="en"]').forEach((e) => e.remove());
+    d.querySelectorAll('script,style,pre,code,.specimen,[lang="en"],a[hreflang="en"]').forEach((e) => e.remove());
     return { slug, parts: [...d.querySelectorAll('main p, main li, main dd, main dt, main h1, main h2, main h3, main summary, main button, main a, footer p, header a, header span')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean) };
   }), jobs);
   const extra = zhNameTokens();
@@ -176,15 +177,16 @@ test('en detail pages (all templates): no CJK anywhere except the language switc
 // ---------------------------------------------------------------------------
 const visibleSlugs = (page) => page.evaluate(() => [...document.querySelectorAll('#grid > li')]
   .filter((li) => !li.hidden && getComputedStyle(li).display !== 'none')
-  .map((li) => li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, '')).sort());
+  .map((li) => li.querySelector('a.card').getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, '')).sort());
+const TAG_GROUPS = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'tags.json'), 'utf8')).groups;
 const tagsOf = (slug) => [...upstreamMeta(slug).mood, ...upstreamMeta(slug).tone].map((t) => t.toLowerCase());
 
 test.describe('zh gallery', () => {
-  test.beforeEach(async ({ page }) => { await page.goto('zh/index.html'); await expect(page.locator('#filters')).toBeVisible(); });
+  test.beforeEach(async ({ page }) => { await page.goto('zh/gallery/'); await expect(page.locator('#filters')).toBeVisible(); });
 
   test('card taglines are Chinese and equal zh.json; mood chips are Chinese with English data-value', async ({ page }) => {
     const cards = await page.evaluate(() => [...document.querySelectorAll('#grid > li')].map((li) => ({
-      slug: li.querySelector('a.card').getAttribute('href').replace(/^t\/|\/(index\.html)?$/g, ''),
+      slug: li.querySelector('a.card').getAttribute('href').replace(/^(?:\.\.\/)*(?:zh\/)?t\/|\/(index\.html)?$/g, ''),
       tagline: li.querySelector('.card-body p:not(.by)').textContent.trim(),
     })));
     expect(cards).toHaveLength(ALL_SLUGS.length);
@@ -194,9 +196,11 @@ test.describe('zh gallery', () => {
       value: b.getAttribute('data-value'), label: b.cloneNode(true), text: [...b.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim(),
     })).map(({ value, text }) => ({ value, text })));
     expect(chips.length).toBeGreaterThan(5);
+    // Mood chips are the 12 groups of src/tags.json: data-value is the (English) group id, the label its Chinese name.
+    expect(chips.map((c) => c.value)).toEqual(TAG_GROUPS.map((g) => g.id));
     for (const c of chips) {
       expect.soft(c.value, 'data-value stays English').toMatch(/^[a-z0-9-]+$/i);
-      expect.soft(c.text, `chip ${c.value} label`).toBe(term(c.value));
+      expect.soft(c.text, `chip ${c.value} label`).toBe(TAG_GROUPS.find((g) => g.id === c.value).zh);
       expect.soft(CJK.test(c.text) || /^[A-Za-z0-9-]+$/.test(c.text), `chip ${c.value} label "${c.text}"`).toBe(true);
     }
   });
@@ -215,12 +219,13 @@ test.describe('zh gallery', () => {
     }
   });
 
-  test('#mood=retro yields the same card set on / and /zh/', async ({ page }) => {
-    const expected = ALL_SLUGS.filter((s) => upstreamMeta(s).mood.map((m) => m.toLowerCase()).includes('retro')).sort();
+  test('#mood=retro (the Retro group) yields the same card set on /gallery/ and /zh/gallery/', async ({ page }) => {
+    const retro = new Set(TAG_GROUPS.find((g) => g.id === 'retro').tags);
+    const expected = ALL_SLUGS.filter((s) => upstreamMeta(s).mood.some((m) => retro.has(m.toLowerCase()))).sort();
     expect(expected.length).toBeGreaterThan(0);
-    await page.goto('zh/index.html#mood=retro');
+    await page.goto('zh/gallery/#mood=retro');
     const zh = await visibleSlugs(page);
-    await page.goto('index.html#mood=retro');
+    await page.goto('gallery/#mood=retro');
     const en = await visibleSlugs(page);
     expect(zh).toEqual(expected);
     expect(en).toEqual(expected);
@@ -228,7 +233,7 @@ test.describe('zh gallery', () => {
 });
 
 test('EN gallery: data-search attributes contain no CJK', async () => {
-  const html = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(SITE, 'gallery', 'index.html'), 'utf8');
   const attrs = [...html.matchAll(/data-search="([^"]*)"/g)].map((m) => m[1]);
   expect(attrs).toHaveLength(ALL_SLUGS.length);
   expect(attrs.filter((a) => CJK.test(a)).length).toBe(0);
