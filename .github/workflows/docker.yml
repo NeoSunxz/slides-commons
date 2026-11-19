@@ -1,0 +1,189 @@
+# Docker image: build + smoke test on pull requests; publish to GHCR on version tags.
+#
+#   ghcr.io/<owner>/slides-commons:<version> and :latest   (public image)
+#
+# The image builds the site when the container starts (see Dockerfile, docker/entrypoint.sh).
+# Requires (once): the package becomes public after its first push (Package settings ->
+# Change visibility), and Actions must be allowed to write packages for this repository.
+name: Docker
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker/**
+      - docker-compose.example.yml
+      - examples/private-source/**
+      - scripts/**
+      - src/**
+      - package.json
+      - package-lock.json
+      - sources.json
+      - .github/workflows/docker.yml
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# Read-only by default; the publish job adds packages: write for itself only.
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  smoke:
+    name: build + smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # upstream/ (git submodules) is part of the Docker build context.
+      - name: Check out (with upstream submodules)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: slides-commons:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test, public templates only
+        run: |
+          set -eu
+          wait_healthy() {
+            for i in $(seq 1 90); do
+              state="$(docker inspect -f '{{.State.Status}}' "$1")"
+              health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$1")"
+              [ "$health" = healthy ] && return 0
+              if [ "$state" != running ]; then echo "container $1 is $state"; docker logs "$1"; return 1; fi
+              sleep 4
+            done
+            echo "timed out waiting for $1 to be healthy"; docker logs "$1"; return 1
+          }
+          docker run -d --name sc-public -p 8080:80 -e SC_SITE_URL=http://localhost:8080/ slides-commons:ci
+          wait_healthy sc-public
+          curl -fsS http://localhost:8080/ | grep -q 'slides-commons'
+          curl -fsS http://localhost:8080/gallery/ | grep -q 'neo-grid-bold'
+          curl -fsSI http://localhost:8080/zip/neo-grid-bold.zip | grep -qi 'content-type: application/zip'
+          curl -fsS -o /tmp/pack.zip http://localhost:8080/zip/neo-grid-bold.zip
+          python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/pack.zip'); assert z.testzip() is None; assert 'neo-grid-bold/PROMPT.md' in z.namelist()"
+          curl -fsS http://localhost:8080/zh/gallery/ >/dev/null
+          curl -fsSI http://localhost:8080/zip/convert-kit.zip >/dev/null
+          curl -fsSI -H 'Accept-Encoding: gzip' http://localhost:8080/assets/site.css | grep -qi 'content-encoding: gzip'
+          docker rm -f sc-public
+
+      - name: Smoke test, example private source (SC_ONLY_SOURCES=acme)
+        run: |
+          set -eu
+          wait_healthy() {
+            for i in $(seq 1 90); do
+              state="$(docker inspect -f '{{.State.Status}}' "$1")"
+              health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$1")"
+              [ "$health" = healthy ] && return 0
+              if [ "$state" != running ]; then echo "container $1 is $state"; docker logs "$1"; return 1; fi
+              sleep 4
+            done
+            echo "timed out waiting for $1 to be healthy"; docker logs "$1"; return 1
+          }
+          docker run -d --name sc-private -p 8081:80 \
+            -e SC_SITE_URL=http://localhost:8081/ -e SC_ONLY_SOURCES=acme \
+            -v "$PWD/examples/private-source:/templates:ro" slides-commons:ci
+          wait_healthy sc-private
+          curl -fsS http://localhost:8081/gallery/ | grep -q 'acme-quarterly'
+          curl -fsS http://localhost:8081/gallery/ | grep -q 'Internal'
+          if curl -fsS http://localhost:8081/gallery/ | grep -q 'neo-grid-bold'; then echo 'public template found with SC_ONLY_SOURCES=acme'; exit 1; fi
+          curl -fsS -o /tmp/acme.zip http://localhost:8081/zip/acme-quarterly.zip
+          python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/acme.zip'); n=z.namelist(); assert 'acme-quarterly/NOTICE.txt' in n, n; assert 'MIT' not in z.read('acme-quarterly/PROMPT.md').decode()"
+          curl -fsS http://localhost:8081/zip/acme-quarterly.zip -o /dev/null
+          docker rm -f sc-private
+
+      - name: A failing build must not be served
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/broken"
+          echo '{ "schemaVersion": 1, "sources": [ { "id": "broken", "name": "Broken", "author": "x", "license": "x", "private": true, "path": "." } ] }' > "$RUNNER_TEMP/broken/sources.json"
+          # No templates/ directory: the build fails, so the container must exit non-zero.
+          code=0
+          docker run --name sc-broken -v "$RUNNER_TEMP/broken:/templates:ro" slides-commons:ci || code=$?
+          docker logs sc-broken | tail -5
+          [ "$code" -ne 0 ] || { echo 'container exited 0 after a failed build'; exit 1; }
+          docker rm -f sc-broken
+
+      - name: Image size
+        run: docker image ls slides-commons:ci
+
+  publish:
+    name: publish to GHCR
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out (with upstream submodules)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      # The tag must match package.json, so the image version and the site version agree.
+      - name: Check the tag against package.json
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -eu
+          version="$(node -p "require('./package.json').version")"
+          [ "v${version}" = "$TAG" ] || { echo "tag $TAG does not match package.json version $version"; exit 1; }
+
+      - name: Image name (lowercase owner)
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "IMAGE=ghcr.io/${OWNER,,}/slides-commons" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and OCI labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=slides-commons
+            org.opencontainers.image.description=Open HTML slide templates with prompts, for coding agents. Builds the gallery at start-up and serves it with nginx.
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

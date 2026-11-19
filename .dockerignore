@@ -1,0 +1,19 @@
+# Keep the build context small: only what the image's build needs goes in.
+.git
+.github
+.claude
+.devcontainer
+.cache
+node_modules
+site
+test-results
+playwright-report
+tests
+docs
+examples
+*.md
+!LICENSE
+sources.local.json
+Dockerfile
+.dockerignore
+docker-compose*.yml
