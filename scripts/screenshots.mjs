@@ -2,6 +2,11 @@
 // Render the screenshots of templates that live in this repository, and of overlay templates.
 //
 //   npm run screenshots [-- --only <slug>[,<slug>…]] [--sources <file>]
+//   npm run screenshots -- --source-dir <dir> [--only <slug>[,…]]
+//
+// --source-dir renders the templates of an external (private) source directory instead: the
+// sources in <dir>/sources.json, with their paths resolved from <dir> (screenshots are written to
+// <dir>/screenshots/). Needed because private templates must ship their own 3 screenshots.
 //
 // For every source that is NOT a git submodule (upstream/ is read-only third-party content,
 // its screenshots are never touched), every template is opened at 1920x1080 in Chromium
@@ -58,12 +63,15 @@ function slideNumbers(spec, total) {
   return out;
 }
 
-const sourcesFile = cliOption('sources') ?? path.join(ROOT, 'sources.json');
+const sourceDirOpt = cliOption('source-dir');
+const sourcesFile = sourceDirOpt ? path.join(path.resolve(sourceDirOpt), 'sources.json') : cliOption('sources') ?? path.join(ROOT, 'sources.json');
+if (!fs.existsSync(sourcesFile)) die(`${sourcesFile} not found`);
 const cfg = JSON.parse(fs.readFileSync(sourcesFile, 'utf8'));
-const subs = submodulePaths();
+const baseDir = sourceDirOpt ? path.resolve(sourceDirOpt) : ROOT;
+const subs = sourceDirOpt ? [] : submodulePaths();
 const own = cfg.sources.filter((s) => !subs.some((p) => s.path === p || s.path.startsWith(p + '/')));
-const overlays = cfg.sources.filter((s) => s.overlay);
-if (!own.length && !overlays.length) die('no source inside this repository');
+const overlays = sourceDirOpt ? [] : cfg.sources.filter((s) => s.overlay);
+if (!own.length && !overlays.length) die(sourceDirOpt ? `no source in ${sourcesFile}` : 'no source inside this repository');
 const only = cliOption('only')?.split(',').filter(Boolean);
 
 let chromium;
@@ -77,7 +85,7 @@ try {
   const jobs = [];
   for (const src of own) {
     const L = { templatesDir: 'templates', htmlFile: 'template.html', metaFile: 'template.json', screenshotsDir: 'screenshots', ...(src.layout ?? {}) };
-    const sdir = path.join(ROOT, ...src.path.split('/'));
+    const sdir = path.resolve(baseDir, src.path);
     const tdir = path.join(sdir, ...L.templatesDir.split('/'));
     const outDir = path.join(sdir, ...L.screenshotsDir.split('/'));
     const slugs = fs.readdirSync(tdir, { withFileTypes: true })
@@ -162,7 +170,7 @@ try {
         const file = path.join(outDir, `${slug}-${k + 1}.png`);
         await page.screenshot({ path: file });
         written++;
-        console.log(`${path.relative(ROOT, file)}  (slide ${at} of ${total})`);
+        console.log(`${(() => { const r = path.relative(ROOT, file); return r.startsWith('..') || path.isAbsolute(r) ? file : r; })()}  (slide ${at} of ${total})`);
       }
       if (errors.length) console.warn(`warning: ${slug}: page errors: ${errors.join(' | ')}`);
       await page.close();

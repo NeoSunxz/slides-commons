@@ -62,8 +62,12 @@ function readJsonFile(file, problems, what) {
   }
 }
 
-/** Load zh.json and zh.sources.json. Structural problems are pushed to `problems`. */
-export function loadZh(problems) {
+/**
+ * Load zh.json and zh.sources.json. Structural problems are pushed to `problems`.
+ * extraDirs: directories of extra sources (`<dir>/zh.json` + `<dir>/zh.sources.json`, same format),
+ * merged into the result; on a clash the repository's own term / template wins.
+ */
+export function loadZh(problems, extraDirs = []) {
   // An explicitly chosen directory without zh.json is a mistake (typo), not "no translations".
   if (optDir && !fs.existsSync(ZH_FILE)) problems.push(`${show(ZH_FILE)} not found (--i18n-dir / SC_I18N_DIR)`);
   const zh = readJsonFile(ZH_FILE, problems, show(ZH_FILE));
@@ -72,7 +76,23 @@ export function loadZh(problems) {
     problems.push(`${show(ZH_FILE)} needs "terms" and "templates" objects`);
     return { zh: null, sources };
   }
-  return { zh, sources };
+  const merged = zh ? { terms: { ...zh.terms }, templates: { ...zh.templates } } : { terms: {}, templates: {} };
+  let mergedSources = sources;
+  let any = Boolean(zh);
+  for (const d of extraDirs) {
+    const f = path.join(d, 'zh.json');
+    if (!fs.existsSync(f)) continue;
+    const ez = readJsonFile(f, problems, show(f));
+    if (!ez) continue;
+    if (typeof ez.terms !== 'object' || typeof ez.templates !== 'object') { problems.push(`${show(f)} needs "terms" and "templates" objects`); continue; }
+    any = true;
+    merged.terms = { ...ez.terms, ...merged.terms };
+    merged.templates = { ...ez.templates, ...merged.templates };
+    const es = readJsonFile(path.join(d, 'zh.sources.json'), problems, show(path.join(d, 'zh.sources.json')));
+    mergedSources = { ...(es ?? {}), ...(mergedSources ?? {}) };
+    if (!es && mergedSources && Object.keys(mergedSources).length === 0) mergedSources = mergedSources ?? null;
+  }
+  return { zh: any ? merged : null, sources: mergedSources };
 }
 
 const isNonEmpty = (v) => typeof v === 'string' && v.trim() !== '';

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<!--
+  Acme Quarterly: example template of the private-source skeleton (examples/private-source).
+  Simplified from the "minimal-pitch" idea of slides-commons (MIT): one family, one accent, one idea per slide.
+  Fixed 1920x1080 stage, scaled as a whole to the browser window.
+  Fictional demo content only: no real people, brands or photos.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acme Quarterly - demo deck</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg-primary: #0f172a;
+    --text-primary: #f8fafc;
+    --accent: #38bdf8;
+    --text-muted: rgba(248, 250, 252, 0.64);
+    --stage-bg: #020617;
+    --slide-bg: var(--bg-primary);
+    --font-display: 'Inter', Arial, sans-serif;
+    --font-body: 'Inter', Arial, sans-serif;
+    --pad-x: 120px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   TEMPLATE STYLES (authored at 1920x1080)
+   =========================================== */
+.slide { color: var(--text-primary); font-family: var(--font-body); padding: 120px var(--pad-x) 96px; }
+.slide > * { position: relative; }
+.eyebrow { font-size: 24px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-size: 144px; line-height: 1.02; font-weight: 700; margin-top: 32px; }
+h2 { font-family: var(--font-display); font-size: 80px; line-height: 1.1; font-weight: 700; }
+p.lede { font-size: 36px; line-height: 1.4; color: var(--text-muted); margin-top: 40px; max-width: 1200px; }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin-top: 72px; }
+.cols div { border-top: 4px solid var(--accent); padding-top: 24px; font-size: 32px; line-height: 1.4; }
+.cols b { display: block; font-size: 56px; margin-bottom: 8px; }
+.foot { position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 48px; display: flex; justify-content: space-between; font-size: 22px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+    <section class="slide active visible" data-label="Cover">
+        <p class="eyebrow">Q3 business review</p>
+        <h1>Steady growth,<br>sharper focus.</h1>
+        <p class="lede">Where the quarter landed, what we learned and what we do next.</p>
+        <footer class="foot"><span>Acme Templates</span><span data-pagenum></span></footer>
+    </section>
+
+    <section class="slide" data-label="Content">
+        <p class="eyebrow">Highlights</p>
+        <h2>Three numbers that matter</h2>
+        <div class="cols">
+            <div><b>+18%</b>Recurring revenue, quarter on quarter</div>
+            <div><b>94%</b>Customers renewed on time</div>
+            <div><b>6 days</b>Median time to first value</div>
+        </div>
+        <footer class="foot"><span>Acme Templates</span><span data-pagenum></span></footer>
+    </section>
+
+    <section class="slide" data-label="Closing">
+        <p class="eyebrow">Next steps</p>
+        <h2>Two priorities for Q4</h2>
+        <p class="lede">Shorten onboarding further, and open the second regional office.</p>
+        <footer class="foot"><span>Acme Templates</span><span data-pagenum></span></footer>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* Stage scaling, paging (keys, wheel, click, swipe) and page counter. Keep as is, or extend. */
+(function () {
+    const stage = document.getElementById('deckStage');
+    const slides = Array.from(stage.querySelectorAll(':scope > .slide'));
+    let current = 0;
+
+    const pad = (n) => String(n).padStart(2, '0');
+    slides.forEach((s, i) => s.querySelectorAll('[data-pagenum]').forEach((el) => { el.textContent = pad(i + 1) + ' / ' + pad(slides.length); }));
+
+    function fit() {
+        const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+        const x = (window.innerWidth - 1920 * f) / 2;
+        const y = (window.innerHeight - 1080 * f) / 2;
+        stage.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + f + ')';
+    }
+    fit();
+    window.addEventListener('resize', fit);
+
+    function show(i) {
+        current = Math.max(0, Math.min(i, slides.length - 1));
+        slides.forEach((s, n) => { s.classList.toggle('active', n === current); s.classList.toggle('visible', n === current); });
+    }
+    show(0);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(current + 1); }
+        else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+        else if (e.key === 'Home') { e.preventDefault(); show(0); }
+        else if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+    });
+    /* One slide per wheel gesture: accumulate, then lock while trackpad inertia keeps firing */
+    let acc = 0, last = 0, lockUntil = 0;
+    window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) return;
+        e.preventDefault();
+        const now = performance.now();
+        if (now < lockUntil) { if (now - last < 120) lockUntil = Math.max(lockUntil, now + 250); last = now; return; }
+        if (now - last > 200) acc = 0;
+        last = now;
+        acc += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+        if (Math.abs(acc) >= 40) { show(current + (acc > 0 ? 1 : -1)); acc = 0; lockUntil = now + 650; }
+    }, { passive: false });
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('a, button')) return;
+        show(current + (e.clientX < window.innerWidth / 3 ? -1 : 1));
+    });
+    let x0 = null;
+    document.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        x0 = null;
+        if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+    });
+})();
+</script>
+</body>
+</html>

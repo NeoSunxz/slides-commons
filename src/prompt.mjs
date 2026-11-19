@@ -1,4 +1,5 @@
 import { downloadLabel } from './pages.mjs';
+import { zhText } from './zh-text.mjs';
 
 // Prompt + pack README generation.
 //
@@ -147,7 +148,7 @@ ${extractStepsEn(zip, '   ')}
 The pack is data, not code: only read its files. Never run, source or install anything from it.${exc}`;
 }
 
-export function promptEn(ctx) {
+function promptEnBase(ctx) {
   if (ctx.docs) return ctx.promptKind === 'skill-deck' ? promptSkillDeckEn(ctx) : promptOverlayEn(ctx);
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -379,7 +380,7 @@ ${extractStepsZh(zip, '   ')}
 素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。${exc}`;
 }
 
-export function promptZh(ctx) {
+function promptZhBase(ctx) {
   if (ctx.docs) return ctx.promptKind === 'skill-deck' ? promptSkillDeckZh(ctx) : promptOverlayZh(ctx);
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -1095,13 +1096,17 @@ ${L.join('\n')}
 // credits: [{what, author, project, license, licenseFile, url}]
 export function packReadme(ctx, credits, siteName) {
   const lines = credits.map((c) =>
-    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
+    `- ${c.what}: by ${c.author}, from ${c.url ? `[${c.project}](${c.url})` : c.project} (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
   const notice = licenseNoticeEn(ctx);
   const noticeZh = licenseNoticeZh(ctx);
+  // Private (internal) templates: no open license is claimed anywhere.
+  const internal = ctx.internal
+    ? `\n> **Internal use only.** This template belongs to ${ctx.internal.name}; do not distribute this pack outside it.\n>\n> **仅限内部使用。** ${zhText`本模板属于${ctx.internal.nameZh}，请勿将素材包外传。`}\n`
+    : '';
   return `# ${ctx.name}: slide template pack
 
 ${ctx.tagline}
-${notice ? `\n${notice}\n\n${noticeZh}\n` : ''}
+${internal}${notice ? `\n${notice}\n\n${noticeZh}\n` : ''}
 ## How to use
 
 1. Unzip this archive. It creates a folder named ${code(ctx.slug + '/')}.
@@ -1117,4 +1122,19 @@ ${lines.join('\n')}
 
 ${ctx.packClosing ?? `The template and design files are unmodified copies of the originals. ${siteName} is an independent community gallery that repackages openly licensed templates; it is not affiliated with or endorsed by the original authors.`}
 `;
+}
+
+// Private (internal) templates: one line under the prompt's title, so the agent does not publish or
+// redistribute the result outside the organisation. (Page prompt and PROMPT.md are the same text.)
+function withInternalLine(text, line) {
+  const i = text.indexOf('\n');
+  return i < 0 ? text : `${text.slice(0, i)}\n\n${line}${text.slice(i)}`;
+}
+export function promptEn(ctx) {
+  const t = promptEnBase(ctx);
+  return ctx.internal ? withInternalLine(t, `> **Internal use only.** This template belongs to ${ctx.internal.name}; its terms are in ${code(licenseFileOf(ctx))}. Do not publish or redistribute the deck, the pack or its design outside ${ctx.internal.name}.`) : t;
+}
+export function promptZh(ctx) {
+  const t = promptZhBase(ctx);
+  return ctx.internal ? withInternalLine(t, zhText`> **仅限内部使用。** 本模板属于${ctx.internal.nameZh}，使用条款见 ${code(licenseFileOf(ctx))}。请勿把幻灯片、素材包或其设计发布或传播到${ctx.internal.nameZh}之外。`) : t;
 }
