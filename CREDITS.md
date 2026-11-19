@@ -25,6 +25,10 @@ The Style Presets collection (`collections/style-presets`) is a derivative work.
 
 The convert kit (`convert-kit.zip`) and the skills pack (`slides-commons-skills.zip`) are for personal reuse: they run locally and upload nothing. Both carry `viewport-base.css` from [frontend-slides](https://github.com/zarazhangrui/frontend-slides) by [Zara Zhang](https://github.com/zarazhangrui) (MIT, © 2025 Zara Zhang), with its `LICENSE` included as `LICENSE-skill`. They also include the Minimal Pitch example (written by this project, MIT) and the CJK font tooling (`embed-cjk.mjs`, shard table and licenses), whose fonts are credited in the Web fonts section above.
 
+## Docker image
+
+The optional Docker image (`Dockerfile`) is built on the official [nginx](https://hub.docker.com/_/nginx) image (BSD-2-Clause) and copies the [Node.js](https://nodejs.org/) binary (MIT) from the official `node` image. Neither is modified. The image contains this repository and its upstream submodules, so the notices above apply to it as well.
+
 ## html-ppt-skill (reference only)
 
 [html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) by [lewis](https://github.com/lewislulu) (MIT) is included as the read-only git submodule `upstream/html-ppt-skill` for future reference material. None of its files are currently shown on the site or shipped in packs.
