@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Convert kit and skills collection: pages `convert/` and `skills/` (EN and zh) with header links. `site/zip/convert-kit.zip` ships `pptx-extract.mjs`, `check-template.mjs`, spec, font map, deck prompts and `embed-cjk`; `site/zip/slides-commons-skills.zip` ships `slides-commons-deck`, `slides-commons-convert` and `slides-commons-cjk-fonts`. For personal reuse: turn your own PPT or images into a template locally, nothing is uploaded.
+- Tests for the kits (`tests/kits.spec.mjs`, `tests/pptx-fixture.mjs`).
+- Prompt: CJK span selector and flex-spacing pitfalls, CJK weights apply to CJK runs only, clearer section-number wording, note that Google Fonts failing offline is expected.
+- `embed-cjk.mjs` reports shard counts per download source.
+
+### Changed
+
+- Pages workflow zip count includes kits and checks the new pages.
+
+### Fixed
+
+- Home: mobile chapters are at least one screen tall (`svh`).
+- Style Presets / Consulting Report: no cross-template reference, own line-chart pattern, delta annotation gutter, CJK weights scoped to `.cjk`, Noto Serif SC 700 only, CJK labels at least 20px, cover omission rules, section ordinals, child span selectors, percentage-point style.
+
 ## [0.3.1] - 2026-11-19
 
 ### Fixed

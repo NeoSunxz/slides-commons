@@ -201,6 +201,8 @@ zip（以 `<slug>/` 为根）：
   - 已知：guizang 滚轮翻页偶发失效（模板的流水线步骤所致）；file:// 下 `motion.min.js` 动态 import 失败时回退到 CDN。
   - 下一步：维护者审阅改版与 `tags.json` 分组 → v0.3.0 PR（dev→main）。
 - 2026-11-19：v0.3.0 已发布（PR #3 合并，db4de6e，已打标签并建 Release，Pages 线上核实，`fonts/cjk` 以 CORS `*` 提供）。v0.3.1 修复 iOS 上 ↗ 箭头被显示为 emoji（改用内联 SVG / CSS mask，✓/✕ 加 U+FE0E）。
+- 2026-11-19：线上验收（consulting-report，只给提示词）通过：72 个中文字体分片全部来自 Pages，成稿 760KB。转换工具包与技能集合完成：`kits/`、`scripts/kits.mjs`、`src/kits.mjs`、`src/kit-pages.mjs`；页面 `convert/`、`skills/`（中英）与页头链接；`convert-kit.zip`（pptx-extract、check-template、规范、字体映射、deck 提示词、embed-cjk）、`slides-commons-skills.zip`（deck / convert / cjk-fonts 三个技能）；用途为个人复用，本地转换、不上传。提示词与 consulting-report 按验收反馈修订，`embed-cjk` 按来源统计分片。`npm test` 952 通过。
+  - 下一步：.pptx 转换验收，然后做私有来源（见下方计划）。
 
 ### 页面改版（维护者 2026-11-18）：已完成
 - 已从 `design/pages-refresh` 移植到 dev（新首页、`gallery/`、作者署名 NeoSun、页脚致谢与精简声明、12 大类情绪标签、详情页改版），详见 2026-11-18 进度。
@@ -241,3 +243,20 @@ zip（以 `<slug>/` 为根）：
 - template.json 的 slide_count 与实际页数可能不符（neo-grid-bold 写 13，实际 12）→ 以实际渲染为准
 - ~~zip 时间戳固定化（可复现构建）~~ M1 已完成（默认 1980-01-01，支持 `SOURCE_DATE_EPOCH`）
 - ~~serve.mjs 默认监听所有网卡~~ M1 已改为默认 127.0.0.1（`HOST=0.0.0.0` 可对外）
+
+### 计划：私有模板来源（维护者 2026-11-19 确认，转换功能完成后实施）
+- 公司本地部署时，自有模板放在项目目录之外（如独立仓库 `acme-templates/`：`sources.json` + `templates/<slug>/` + `screenshots/`），项目文件不改，`git pull` 升级无冲突。
+- 构建挂载：`--extra-sources <file>` / `SC_EXTRA_SOURCES`，或根目录 `sources.local.json`（加入 `.gitignore`）自动读取；可多个。
+- 来源 `private: true`：卡片显示「内部」标签；不强制 GitHub 回链，协议可写内部；沿用 design.md 章节、截图、无外部请求等校验，放宽开源相关要求；slug 与已有模板重名直接报错。
+- 默认与公开模板一起显示；`--only-sources <id,...>` 可隐藏其他来源。
+- 私有模板素材包：公司仓库有 LICENSE 则放入，否则附「内部使用，请勿外传」说明。
+- 「转换」功能产出的模板文件夹可直接放进私有来源目录。
+
+### 待办：线上验收（2026-11-19，consulting-report，通过）后的修改（已完成，2026-11-19；仅「补充」中的私有来源相关项待做）
+- 提示词（等转换功能的 site-builder 完成后再改 src/prompt.mjs）：`span.cjk` 包裹会被模板里的后代 `span` 选择器误匹配、flex 容器里中文与数字间空格被吞 → 通用提醒；CJK 字重规则只作用于 CJK 文字，拉丁保持已加载字重；章节序号与页码规则措辞澄清；离线自检时 Google Fonts 请求失败属预期。
+- `src/embed-cjk.mjs`：摘要按来源（本站 / jsDelivr）统计分片数。
+- consulting-report 的 design.md / template.html 问题由 template-designer 修（跨模板引用、delta 标注重叠、字重块、字号下限、封面、百分点写法）。
+- 补充（维护者 2026-11-19）：自有模板继续放本仓库 `collections/`，不另建仓库；同事的模板放公司自己的项目管理，本地部署时用私有来源接入。需同时提供：
+  - 私有来源仓库样板（`examples/private-source/`：sources.json、一个示例模板、README、给公司仓库用的 CI 示例，CI 中检出 slides-commons 并用 `--extra-sources` 跑 validate）。
+  - `npm run new-template -- <slug> --source-dir <dir>` 支持在外部来源目录建模板。
+  - 自托管文档（中英，如 `docs/self-hosting.md`）：克隆两个仓库 → 构建参数 → 任意静态服务器内网部署 → 升级方式 → 模板更新后重新构建。
