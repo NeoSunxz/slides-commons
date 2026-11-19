@@ -281,6 +281,7 @@ for (const m of missingWeights) warn(`${m} is not published for this family; the
 
 // --- download (site, then jsDelivr) -----------------------------------------------------------
 
+const sourceCounts = new Map(); // where each shard came from: host name -> count
 async function fetchBytes(url) {
   const res = await fetch(url, { signal: AbortSignal.timeout(45000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -299,7 +300,7 @@ async function download(p) {
   for (let round = 0; round < 3; round++) {
     if (round) await new Promise((r) => setTimeout(r, 1500 * round));
     for (const url of sourcesFor(p)) {
-      try { return await fetchBytes(url); } catch (e) { errors.push(`${url}: ${e.message}`); }
+      try { const b = await fetchBytes(url); const h = new URL(url).host; sourceCounts.set(h, (sourceCounts.get(h) ?? 0) + 1); return b; } catch (e) { errors.push(`${url}: ${e.message}`); }
     }
   }
   throw new Error(errors.join('; '));
@@ -424,6 +425,7 @@ for (const family of [...new Set(plan.map((p) => p.family))].sort()) {
   const total = embedded.filter((p) => p.family === family).reduce((s, p) => s + p.bytes.length, 0);
   note(`  ${family}: weights ${weights.join(', ')}; ${rowsF.length} shard(s), ${kb(total)} as woff2`);
 }
+note(`Shards downloaded from: ${[...sourceCounts].map(([h, n]) => `${h} ${n}`).join(', ') || 'none'}.`);
 note(`Added to the deck: ${kb(added)} (base64)${subsetter ? `; ${subsetCount}/${embedded.length} shard(s) cut down to the used characters with pyftsubset` : '; whole shards (install fonttools + brotli for pyftsubset to shrink them)'}.`);
 for (const [family, lack] of partial) {
   if (lack.some((cp) => !trulyUncovered.includes(cp) && !lostToDownload.has(cp))) {
