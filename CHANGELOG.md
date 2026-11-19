@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-19
+
 ### Added
 
 - Private template sources (planned for v0.4.0): `--extra-sources` / `SC_EXTRA_SOURCES` / `sources.local.json`, `private: true` sources with an internal-use prompt line and `NOTICE.txt`, `--only-sources`, `--no-kits`, `nameZh` and per-source `i18n/zh.json`, `new-template --source-dir`, and the starter repo `examples/private-source/`.
@@ -131,7 +133,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0

@@ -16,7 +16,7 @@ permissions:
 env:
   # Pin slides-commons to a release tag you have tested; bump it deliberately.
   SLIDES_COMMONS_REPO: NeoSunxz/slides-commons
-  SLIDES_COMMONS_REF: v0.3.1
+  SLIDES_COMMONS_REF: v0.4.0
   # The id of your source in sources.json.
   SOURCE_ID: acme
 
