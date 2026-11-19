@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
 ### Added
 
 - CJK font embedding: packs ship `fonts/embed-cjk.mjs` (zero-dependency Node script), `fonts/cjk-ranges.json` and `fonts/cjk-licenses/`. It embeds the Fontsource unicode-range shards a deck uses as base64 `@font-face` (site `fonts/cjk/` first, then jsDelivr), subsets with `pyftsubset` when available, verifies cmap coverage and keeps the Google link as fallback.
@@ -102,6 +104,7 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/NeoSunxz/slides-commons/releases/tag/v0.1.0
