@@ -31,7 +31,9 @@ The example template `acme-quarterly` is a tiny, valid template (3 slides) simpl
    npm run screenshots -- --source-dir ../acme-templates --only my-template
    ```
 
-   Or convert an existing deck with the convert kit and drop the resulting folder into `templates/`.
+   Or convert an existing deck with the Convert kit (the site's Convert page; input is a PowerPoint `.pptx`
+   or slide images, a PDF after `pdftoppm -png -r 80 deck.pdf page`; HTML decks are not supported) and drop
+   the resulting folder into `templates/`. Then run the `screenshots` command above for it.
 4. Check and build (in the slides-commons checkout):
 
    ```sh
@@ -55,7 +57,8 @@ Details, hosting and upgrades: [docs/self-hosting.md](https://github.com/NeoSunx
   3 PNG screenshots at 1920x1080, no requests except the font hosts, size limits, no `TODO`.
   Open-source rules do not: no license list, no author URL, no `derivedFrom`; logos as raster images are allowed.
 - A template slug must be unique across all sources, including slides-commons' own.
-- Chinese pages show your templates in English unless you provide translations.
+- Chinese pages show your templates in English unless you provide translations: `i18n/zh.json` and
+  `i18n/zh.sources.json` next to `sources.json` (format of `src/i18n/zh.json` in slides-commons; see the self-hosting guide).
 
 ---
 
@@ -90,7 +93,9 @@ LICENSE                      可选；没有时每个素材包会附 NOTICE.txt�
    npm run screenshots -- --source-dir ../acme-templates --only my-template
    ```
 
-   也可以用「转换」工具包把已有的幻灯片转成模板，再把生成的文件夹放进 `templates/`。
+   也可以用「转换」工具包（站点的「转换」页面；输入是 PowerPoint `.pptx` 或幻灯片图片，PDF 先用
+   `pdftoppm -png -r 80 deck.pdf page` 转成图片；不支持 HTML 幻灯片）把已有的幻灯片转成模板，再把生成的
+   文件夹放进 `templates/`，并为它运行上面的 `screenshots` 命令。
 4. 校验与构建（在 slides-commons 目录里）：
 
    ```sh
@@ -112,4 +117,5 @@ LICENSE                      可选；没有时每个素材包会附 NOTICE.txt�
   的 PNG 截图、除字体外无外部请求、体积上限、不得残留 `TODO`。开源相关规则放宽：不限协议列表、
   不要求作者链接、不要求 `derivedFrom`，允许位图（如公司 logo）。
 - 模板 slug 必须在所有来源（包括 slides-commons 自带的）中唯一。
-- 中文页面默认显示英文介绍，除非你提供译文。
+- 中文页面默认显示英文介绍，除非你提供译文：在 `sources.json` 旁放 `i18n/zh.json` 和 `i18n/zh.sources.json`
+  （格式同 slides-commons 的 `src/i18n/zh.json`，见自托管指南）。
