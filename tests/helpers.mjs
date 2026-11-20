@@ -196,10 +196,10 @@ const TDIR = path.join(UPSTREAM_TEMPLATES, 'templates');
 
 // Sources come from sources.json, templates from their directories on disk (not from site/,
 // which is rebuilt after the spec files are loaded).
-export const SOURCES_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources.json'), 'utf8'));
+export const SOURCES_JSON = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources', 'sources.json'), 'utf8'));
 const dirsOf = (src) => {
   if (src.overlay) {
-    // Overlay sources keep metadata outside the (read-only) upstream tree: sources-meta/<id>/<slug>.json.
+    // Overlay sources keep metadata outside the (read-only) upstream tree: sources/meta/<id>/<slug>.json.
     return Object.entries(src.overlay.templates).map(([slug, o]) => ({
       slug, source: src.id, overlay: true,
       dir: path.join(ROOT, src.overlay.metaDir),

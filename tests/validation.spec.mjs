@@ -78,7 +78,7 @@ test.describe('overlay source checks', () => {
   function overlayFixture() {
     const root = tmp('sc-ovl-');
     const meta = path.join(root, 'meta');
-    fs.cpSync(path.join(ROOT, 'sources-meta', 'guizang'), meta, { recursive: true });
+    fs.cpSync(path.join(ROOT, 'sources', 'meta', 'guizang'), meta, { recursive: true });
     const src = realSource('guizang');
     src.overlay.metaDir = relFromRoot(meta);
     const sf = writeSources(root, [src]);

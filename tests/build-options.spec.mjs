@@ -163,12 +163,13 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     fs.cpSync(path.join(ROOT, 'scripts'), path.join(root, 'scripts'), { recursive: true });
     fs.cpSync(path.join(ROOT, 'src'), path.join(root, 'src'), { recursive: true });
     fs.rmSync(path.join(root, 'src', 'i18n'), { recursive: true, force: true });
-    fs.copyFileSync(path.join(ROOT, 'sources.json'), path.join(root, 'sources.json'));
+    fs.mkdirSync(path.join(root, 'sources'), { recursive: true });
+    fs.copyFileSync(path.join(ROOT, 'sources', 'sources.json'), path.join(root, 'sources', 'sources.json'));
     fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
     try {
       fs.symlinkSync(path.join(ROOT, 'upstream'), path.join(root, 'upstream'), 'junction');
       fs.symlinkSync(path.join(ROOT, 'collections'), path.join(root, 'collections'), 'junction');
-      fs.symlinkSync(path.join(ROOT, 'sources-meta'), path.join(root, 'sources-meta'), 'junction'); // overlay metadata
+      fs.symlinkSync(path.join(ROOT, 'sources', 'meta'), path.join(root, 'sources', 'meta'), 'junction'); // overlay metadata
       fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(root, 'node_modules'), 'junction'); // Fontsource packages
     } catch (e) { test.skip(true, `cannot symlink upstream/ or node_modules/: ${e.code}`); }
     const out = path.join(root, 'out-site');

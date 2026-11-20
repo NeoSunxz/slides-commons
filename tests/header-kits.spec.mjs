@@ -9,8 +9,8 @@ const CJK = /[　-〿㐀-鿿豈-﫿＀-￯]/;
 const ORANGE = 'rgb(255, 117, 72)'; // #ff7548 = home hero-bottom / closing chapter
 const LIME = 'rgb(205, 234, 104)'; // #cdea68 = home process chapter
 const LANGS = {
-  en: { prefix: '', copied: 'Copied', copy: 'Copy', privacy: 'Privacy and use', details: 'Details', tabs: ['macOS and Linux', 'Windows PowerShell', 'One project'] },
-  zh: { prefix: 'zh/', copied: '已复制', copy: '复制', privacy: '隐私与使用', details: '详情', tabs: ['macOS 和 Linux', 'Windows PowerShell', '仅一个项目'] },
+  en: { prefix: '', copied: 'Copied', copy: 'Copy', privacy: 'Privacy and use', details: 'Details', tabs: ['macOS and Linux', 'Windows PowerShell', 'One project', 'Other agents'] },
+  zh: { prefix: 'zh/', copied: '已复制', copy: '复制', privacy: '隐私与使用', details: '详情', tabs: ['macOS 和 Linux', 'Windows PowerShell', '仅一个项目', '其他 agent'] },
 };
 const unescapeHtml = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 const bg = (loc) => loc.evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -65,10 +65,14 @@ for (const [lang, L] of Object.entries(LANGS)) {
       await page.goto(`${L.prefix}skills/`);
       const labels = page.locator('.kit-tabbar label');
       expect((await labels.allTextContents()).map((t) => t.trim())).toEqual(L.tabs);
-      for (let i = 0; i < 3; i++) {
+      await expect(page.locator('.kit-install-card')).toHaveCount(1);
+      await expect(page.locator('.kit-install-card .kit-tabbar')).toHaveCount(1);
+      await expect(page.locator('.kit-install-card .kit-after'), 'start-a-new-session line is inside the card').toBeVisible();
+      await expect(page.locator('.kit-others'), 'no separate Other agents card').toHaveCount(0);
+      for (let i = 0; i < L.tabs.length; i++) {
         await labels.nth(i).click();
         await expect(page.locator(`#kit-tab-${i}`)).toBeChecked();
-        for (let j = 0; j < 3; j++) {
+        for (let j = 0; j < L.tabs.length; j++) {
           const panel = page.locator(`.kit-panel-${j}`);
           if (i === j) await expect(panel, `panel ${j} visible when tab ${i} active`).toBeVisible();
           else await expect(panel, `panel ${j} hidden when tab ${i} active`).toBeHidden();
@@ -86,8 +90,11 @@ for (const [lang, L] of Object.entries(LANGS)) {
       await page.keyboard.press('ArrowRight');
       await expect(page.locator('#kit-tab-2')).toBeChecked();
       await expect(page.locator('.kit-panel-2')).toBeVisible();
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('#kit-tab-3')).toBeChecked();
+      await expect(page.locator('.kit-panel-3')).toBeVisible();
+      await expect(page.locator('.kit-panel-2')).toBeHidden();
+      for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');
       await expect(page.locator('#kit-tab-0')).toBeChecked();
       await expect(page.locator('.kit-panel-0')).toBeVisible();
     });
@@ -95,13 +102,14 @@ for (const [lang, L] of Object.entries(LANGS)) {
     test('Copy copies exactly the visible command, shows the "copied" label, then reverts', async ({ page, context, baseURL }) => {
       await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(baseURL).origin });
       await page.goto(`${L.prefix}skills/`);
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < L.tabs.length; i++) {
         await page.locator('.kit-tabbar label').nth(i).click();
         const btn = page.locator(`.kit-panel-${i} .kit-copy`);
         await expect(btn).toBeVisible();
         await expect(btn).toHaveText(L.copy);
         const expected = await page.locator(`#kit-cmd-${i}`).evaluate((el) => el.textContent);
         expect(expected.length).toBeGreaterThan(20);
+        if (i === 3) expect(expected, 'Other agents snippet is the AGENTS.md text').toMatch(/slides-commons|SKILL\.md/);
         await page.evaluate(() => navigator.clipboard.writeText('__sentinel__'));
         await btn.click();
         await expect(btn).toHaveText(L.copied);
@@ -112,6 +120,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
       // The command is the install command for this pack, not something else.
       expect(await page.locator('#kit-cmd-0').textContent()).toContain('slides-commons-skills');
       expect(await page.locator('#kit-cmd-1').textContent()).toContain('Expand-Archive');
+      expect((await page.locator('#kit-cmd-3').textContent()).trim().length, 'AGENTS.md snippet').toBeGreaterThan(20);
     });
   });
 
@@ -159,7 +168,7 @@ for (const [lang, L] of Object.entries(LANGS)) {
         await page.setViewportSize({ width: w, height: h });
         await page.goto(`${L.prefix}${kind}/`);
         await page.evaluate(() => document.querySelectorAll('main details').forEach((d) => { d.open = true; }));
-        if (kind === 'skills') for (const i of [0, 1, 2]) {
+        if (kind === 'skills') for (const i of [0, 1, 2, 3]) {
           await page.locator('.kit-tabbar label').nth(i).click();
           expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), `tab ${i}`).toBeLessThanOrEqual(0);
         }

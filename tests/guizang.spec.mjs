@@ -1,4 +1,4 @@
-// Overlay source "guizang" (AGPL-3.0): metadata in sources-meta/, template files read from the
+// Overlay source "guizang" (AGPL-3.0): metadata in sources/meta/, template files read from the
 // read-only upstream/guizang. Detail notice, modified-copy line, preview paging, no unpkg/jsdelivr from
 // the preview, zip contents, PROMPT notice, screenshots.
 import fs from 'node:fs';
@@ -18,7 +18,7 @@ const pageOf = (lang, slug) => fs.readFileSync(path.join(SITE, ...(lang === 'zh'
 const unescapeHtml = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 const pagePrompt = (html, id) => unescapeHtml(html.match(new RegExp(`<pre id="${id}"[^>]*>([\\s\\S]*?)</pre>`))[1]);
 
-test('sources.json: guizang is an overlay source with two templates, AGPL-3.0, with metadata for each', () => {
+test('sources/sources.json: guizang is an overlay source with two templates, AGPL-3.0, with metadata for each', () => {
   expect(OVERLAY_SOURCES.map((s) => s.id)).toContain('guizang');
   expect(SLUGS.sort()).toEqual(['guizang-editorial', 'guizang-swiss']);
   expect(SRC.license).toBe('AGPL-3.0');
@@ -35,7 +35,7 @@ test('upstream/guizang is untouched by the build (read-only submodule)', () => {
   expect(fs.readFileSync(path.join(UP, 'LICENSE'), 'utf8')).toMatch(/GNU AFFERO GENERAL PUBLIC LICENSE/);
 });
 
-test('screenshots exist in sources-meta/guizang/screenshots: three real 1920x1080 PNGs per template', () => {
+test('screenshots exist in sources/meta/guizang/screenshots: three real 1920x1080 PNGs per template', () => {
   for (const slug of SLUGS) {
     const files = fs.readdirSync(path.join(META_DIR, 'screenshots')).filter((f) => f.startsWith(`${slug}-`) && f.endsWith('.png'));
     expect(files.length, `${slug}: screenshots`).toBe(3);

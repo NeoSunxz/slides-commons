@@ -1,6 +1,7 @@
 // Private (internal) template sources: loading, validation, build output, packs, scaffolding, example CI.
 // Works on copies of examples/private-source/ in the OS temp dir (TMPDIR); nothing is written in the repo
-// except the sources.local.json test, which is skipped when a developer already has that file.
+// except the legacy root sources.local.json test, which is skipped when a developer already has that file.
+// The sources/sources.local.json and SC_NO_LOCAL_SOURCES tests run in a sandbox copy of the repo.
 // No browser. Builds are shared through beforeAll; most checks use the (fast) validate script.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -439,6 +440,65 @@ test.describe('loading extra sources', () => {
       expect(read(out, 'gallery', 'index.html')).toMatch(/internal-chip/);
     } finally {
       fs.rmSync(LOCAL_FILE, { force: true });
+    }
+  });
+
+  /** Sandbox repo copy (scripts, src, sources/sources.json; upstream, collections, meta, node_modules linked). */
+  function sandboxRepo() {
+    const root = tmp('sc-sbx-');
+    fs.cpSync(path.join(ROOT, 'scripts'), path.join(root, 'scripts'), { recursive: true });
+    fs.cpSync(path.join(ROOT, 'src'), path.join(root, 'src'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'sources'));
+    fs.copyFileSync(path.join(ROOT, 'sources', 'sources.json'), path.join(root, 'sources', 'sources.json'));
+    fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
+    try {
+      for (const [from, to] of [['upstream', 'upstream'], ['collections', 'collections'], [path.join('sources', 'meta'), path.join('sources', 'meta')], ['node_modules', 'node_modules']]) {
+        fs.symlinkSync(path.join(ROOT, from), path.join(root, to), 'junction');
+      }
+    } catch (e) { test.skip(true, `cannot symlink: ${e.code}`); }
+    return root;
+  }
+
+  for (const where of [['sources', 'sources.local.json'], ['sources.local.json']]) {
+    test(`${where.join('/')} in a repo copy is auto-loaded; relative paths resolve from its own folder; SC_NO_LOCAL_SOURCES=1 and --no-local-sources disable it`, () => {
+      const root = sandboxRepo();
+      const ex = cloneExample({ prefix: 'sc-sbxsrc-' });
+      const localFile = path.join(root, ...where);
+      const cfg = readJson(ex.sf);
+      cfg.sources[0].path = path.relative(path.dirname(localFile), ex.dir); // relative to the local file's own folder
+      expect(path.isAbsolute(cfg.sources[0].path)).toBe(false);
+      writeJson(localFile, cfg);
+      const script = path.join(root, 'scripts', 'validate.mjs');
+      const on = run(script, ['--only-sources', 'acme'], { cwd: root, env: { SC_NO_LOCAL_SOURCES: '' } });
+      expect(on.status, on.out).toBe(0);
+      expect(on.out).toMatch(/ok: 1 template/);
+      for (const [args, env] of [[['--no-local-sources'], { SC_NO_LOCAL_SOURCES: '' }], [[], { SC_NO_LOCAL_SOURCES: '1' }]]) {
+        const off = run(script, ['--only-sources', 'acme', ...args], { cwd: root, env });
+        expect(off.status, off.out).not.toBe(0);
+        expect(off.out).toMatch(/unknown source id\(s\) acme/);
+      }
+    });
+  }
+
+  test('both sources.local.json locations are loaded together; SC_NO_LOCAL_SOURCES=1 disables both', () => {
+    const root = sandboxRepo();
+    const a = cloneExample({ id: 'acme', slug: SLUG, prefix: 'sc-sbxa-' });
+    const b = cloneExample({ id: 'beta', slug: 'beta-quarterly', prefix: 'sc-sbxb-' });
+    for (const [ex, where] of [[a, ['sources.local.json']], [b, ['sources', 'sources.local.json']]]) {
+      const f = path.join(root, ...where);
+      const cfg = readJson(ex.sf);
+      cfg.sources[0].path = path.relative(path.dirname(f), ex.dir);
+      writeJson(f, cfg);
+    }
+    const script = path.join(root, 'scripts', 'validate.mjs');
+    const on = run(script, ['--only-sources', 'acme,beta'], { cwd: root, env: { SC_NO_LOCAL_SOURCES: '' } });
+    expect(on.status, on.out).toBe(0);
+    expect(on.out).toMatch(/ok: 2 template/);
+    const off = run(script, ['--only-sources', 'acme,beta'], { cwd: root, env: { SC_NO_LOCAL_SOURCES: '1' } });
+    expect(off.status, off.out).not.toBe(0);
+    expect(off.out).toMatch(/unknown source id\(s\)/);
+    for (const v of ['acme', 'beta']) {
+      expect(run(script, ['--only-sources', v], { cwd: root, env: { SC_NO_LOCAL_SOURCES: '1' } }).status, v).not.toBe(0);
     }
   });
 
