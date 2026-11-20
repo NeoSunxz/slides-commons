@@ -206,6 +206,8 @@ zip（以 `<slug>/` 为根）：
 - 2026-11-19：v0.3.0 已发布（PR #3 合并，db4de6e，已打标签并建 Release，Pages 线上核实，`fonts/cjk` 以 CORS `*` 提供）。v0.3.1 修复 iOS 上 ↗ 箭头被显示为 emoji（改用内联 SVG / CSS mask，✓/✕ 加 U+FE0E）。
 - 2026-11-19：线上验收（consulting-report，只给提示词）通过：72 个中文字体分片全部来自 Pages，成稿 760KB。转换工具包与技能集合完成：`kits/`、`scripts/kits.mjs`、`src/kits.mjs`、`src/kit-pages.mjs`；页面 `convert/`、`skills/`（中英）与页头链接；`convert-kit.zip`（pptx-extract、check-template、规范、字体映射、deck 提示词、embed-cjk）、`slides-commons-skills.zip`（deck / convert / cjk-fonts 三个技能）；用途为个人复用，本地转换、不上传。提示词与 consulting-report 按验收反馈修订，`embed-cjk` 按来源统计分片。`npm test` 952 通过。
   - 下一步：.pptx 转换验收，然后做私有来源（见下方计划）。
+- 2026-11-20：v0.4.1 页面改动：转换页与技能页重做（视觉主图、步骤流、对比卡、带缩略图的文件树、带复制按钮的安装标签、折叠详情，文案约减至三分之一）；页头在工具包页面随章节换色（共享 `src/header-theme.js`，home.js 与 kits.js 共用），移动端页头紧凑；页脚精简（品牌、声明、作者链接加协议标签、致谢链接，次要链接移到致谢页）；转换出的个人模板字体栈先写源字体名再写开源替代。dengfeng 私有模板的后续在本地 `.cache` 中完成（保留封面图、源字体名在前、字号用精确 pt 值，不入库）。`npm test` 1068 通过（Docker 4 项需 `SC_DOCKER_TESTS=1`），已修复不稳定的 filemode 测试，测试忽略浏览器中止跨文档 view transition 的报错。
+  - 下一步：维护者审阅 → v0.4.1 PR（dev→main）。
 
 ### 页面改版（维护者 2026-11-18）：已完成
 - 已从 `design/pages-refresh` 移植到 dev（新首页、`gallery/`、作者署名 NeoSun、页脚致谢与精简声明、12 大类情绪标签、详情页改版），详见 2026-11-18 进度。

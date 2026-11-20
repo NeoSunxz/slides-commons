@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-20
+
+### Changed
+
+- Convert and Skills pages redesigned: visual hero, step flow, comparison cards, file tree with thumbnails, install tabs with copy buttons, collapsed details, and about a third of the old copy.
+- The header follows the section colour on the kit pages (shared `header-theme.js`, also used by the home page); compact mobile header.
+- Compact site footer: brand, disclaimer, authors with repo links and licence tags, and a Credits link; secondary links moved to the Credits page.
+- Converted personal templates list the source's original font names first in the font stack, then the open replacement.
+
+### Fixed
+
+- Tests ignore the browser's aborted cross-document view transitions; the flaky file-mode test is stable.
+
 ## [0.4.0] - 2026-11-19
 
 ### Added
@@ -133,7 +146,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
