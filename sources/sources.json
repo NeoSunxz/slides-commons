@@ -53,7 +53,7 @@
         "licenseFile": "LICENSE"
       },
       "overlay": {
-        "metaDir": "sources-meta/guizang",
+        "metaDir": "sources/meta/guizang",
         "templates": {
           "guizang-editorial": {
             "html": "assets/template.html",
@@ -97,7 +97,7 @@
               "unpkg.com"
             ],
             "preview": {
-              "slides": "sources-meta/guizang/demo/guizang-editorial.slides.html",
+              "slides": "sources/meta/guizang/demo/guizang-editorial.slides.html",
               "replace": "(<div id=\"deck\">)[\\s\\S]*?(</div>\\s*<div id=\"nav\">)",
               "inlineModules": [
                 "assets/motion.min.js"
@@ -152,7 +152,7 @@
               "unpkg.com"
             ],
             "preview": {
-              "slides": "sources-meta/guizang/demo/guizang-swiss.slides.html",
+              "slides": "sources/meta/guizang/demo/guizang-swiss.slides.html",
               "replace": "(<div id=\"deck\">)[\\s\\S]*?(</div>\\s*<div id=\"nav\">)",
               "inlineModules": [
                 "assets/motion.min.js"

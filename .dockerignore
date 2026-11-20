@@ -2,7 +2,6 @@
 .git
 .github
 .claude
-.devcontainer
 .cache
 node_modules
 site
@@ -14,6 +13,7 @@ examples
 *.md
 !LICENSE
 sources.local.json
+sources/sources.local.json
 Dockerfile
 .dockerignore
-docker-compose*.yml
+docker/compose*.yml

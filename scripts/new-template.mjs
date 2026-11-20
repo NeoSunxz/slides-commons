@@ -34,7 +34,7 @@ for (let k = 0; k < args.length; k++) {
 if (!slug) die('usage: npm run new-template -- <slug> [--collection community]');
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) die(`slug "${slug}" must be lowercase letters, digits and single hyphens (e.g. "neon-harbor")`);
 
-const repoSourcesFile = opt.sources || process.env.SC_SOURCES || path.join(ROOT, 'sources.json');
+const repoSourcesFile = opt.sources || process.env.SC_SOURCES || path.join(ROOT, 'sources', 'sources.json');
 const sourceDir = opt['source-dir'] ? path.resolve(opt['source-dir']) : null;
 if (opt['source-dir'] !== undefined && !sourceDir) die('--source-dir needs a directory');
 const readJson = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
@@ -44,8 +44,9 @@ const sourceBlock = (cfg, base) => cfg.sources.map((s) => ({ s, base }));
 let target;
 let createdSourcesFile = false;
 const allSources = sourceBlock(readJson(repoSourcesFile), ROOT);
-const localFile = path.join(ROOT, 'sources.local.json');
-if (fs.existsSync(localFile)) allSources.push(...sourceBlock(readJson(localFile), path.dirname(localFile)));
+for (const localFile of [path.join(ROOT, 'sources.local.json'), path.join(ROOT, 'sources', 'sources.local.json')]) {
+  if (fs.existsSync(localFile)) allSources.push(...sourceBlock(readJson(localFile), path.dirname(localFile)));
+}
 if (sourceDir) {
   const file = path.join(sourceDir, 'sources.json');
   if (!fs.existsSync(file)) {

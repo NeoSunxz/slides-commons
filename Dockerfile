@@ -19,12 +19,12 @@ RUN npm ci \
  # The site build does not use Playwright (tests and screenshots do); the font packages stay.
  && rm -rf node_modules/@playwright node_modules/playwright node_modules/playwright-core node_modules/.bin/playwright*
 
-COPY LICENSE sources.json .gitmodules ./
+COPY LICENSE .gitmodules ./
+COPY sources ./sources
 COPY scripts ./scripts
 COPY src ./src
 COPY kits ./kits
 COPY collections ./collections
-COPY sources-meta ./sources-meta
 COPY upstream ./upstream
 
 # Fail fast, with a clear message, when the submodules were not checked out.

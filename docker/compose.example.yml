@@ -1,4 +1,4 @@
-# Example: slides-commons with your private templates. Copy to docker-compose.yml and adjust.
+# Example: slides-commons with your private templates. Copy to the repository root as compose.yml and adjust.
 #
 #   git submodule update --init      # once, before the first build
 #   docker compose up -d --build

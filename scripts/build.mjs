@@ -5,7 +5,7 @@
 //   node scripts/build.mjs --sources tests/fixtures/x.json --out /tmp/site-x
 //
 // Options (env vars as an alternative, CLI wins):
-//   --sources <file>  SC_SOURCES  alternate sources file (default: <repo>/sources.json).
+//   --sources <file>  SC_SOURCES  alternate sources file (default: <repo>/sources/sources.json).
 //                                 `path` entries inside it still resolve from the repo root.
 //   --out <dir>       SC_OUT      output directory (default: <repo>/site). Deleted and recreated, but
 //                                 only if it is missing, empty, the default site/, or holds the
@@ -19,7 +19,7 @@
 //                                 Repeatable; SC_EXTRA_SOURCES and a single option value may hold
 //                                 several paths separated by the platform's path delimiter. Paths
 //                                 inside such a file resolve from that file's own directory.
-//                                 <repo>/sources.local.json is loaded automatically when it exists
+//                                 <repo>/sources.local.json or <repo>/sources/sources.local.json is loaded automatically when it exists
 //                                 (only together with the default sources.json; --no-local-sources
 //                                 or SC_NO_LOCAL_SOURCES=1 turns that off).
 //   --only-sources <id,...>       SC_ONLY_SOURCES   build / validate only these sources (default: all).
@@ -80,18 +80,19 @@ const hasFlag = (name) => process.argv.slice(2).includes(`--${name}`);
 const envOn = (v) => v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false';
 const optSources = cliOption('sources') ?? process.env.SC_SOURCES;
 const optOut = cliOption('out') ?? process.env.SC_OUT;
-const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources.json');
+const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources', 'sources.json');
 const SITE = optOut ? path.resolve(optOut) : path.join(ROOT, 'site');
 const optSiteUrl = cliOption('site-url') ?? process.env.SC_SITE_URL;
-const DEFAULT_SOURCES_FILE = path.join(ROOT, 'sources.json');
-const LOCAL_SOURCES_FILE = path.join(ROOT, 'sources.local.json');
+const DEFAULT_SOURCES_FILE = path.join(ROOT, 'sources', 'sources.json');
+// Local (git-ignored) extra sources: <repo>/sources.local.json and <repo>/sources/sources.local.json.
+const LOCAL_SOURCES_FILES = [path.join(ROOT, 'sources.local.json'), path.join(ROOT, 'sources', 'sources.local.json')];
 const usesDefaultSources = SOURCES_FILE === DEFAULT_SOURCES_FILE;
 const splitPaths = (v) => String(v).split(path.delimiter).map((x) => x.trim()).filter(Boolean);
-// Sources files added on top of sources.json: <repo>/sources.local.json (only next to the default
-// sources.json), then --extra-sources / SC_EXTRA_SOURCES. Later duplicates of a path are dropped.
+// Sources files added on top of sources.json: <repo>/sources.local.json or <repo>/sources/sources.local.json (only next to the default
+// sources/sources.json), then --extra-sources / SC_EXTRA_SOURCES. Later duplicates of a path are dropped.
 const EXTRA_SOURCE_FILES = (() => {
   const list = [];
-  if (usesDefaultSources && !hasFlag('no-local-sources') && !envOn(process.env.SC_NO_LOCAL_SOURCES) && fs.existsSync(LOCAL_SOURCES_FILE)) list.push(LOCAL_SOURCES_FILE);
+  if (usesDefaultSources && !hasFlag('no-local-sources') && !envOn(process.env.SC_NO_LOCAL_SOURCES)) list.push(...LOCAL_SOURCES_FILES.filter((x) => fs.existsSync(x)));
   for (const v of [...cliOptions('extra-sources'), ...(process.env.SC_EXTRA_SOURCES ? [process.env.SC_EXTRA_SOURCES] : [])]) {
     for (const p of splitPaths(v)) list.push(path.resolve(p));
   }
@@ -1324,9 +1325,9 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
   fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
   fs.copyFileSync(path.join(SRC, 'kits.js'), path.join(SITE, 'assets', 'kits.js'));
-  // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   fs.copyFileSync(path.join(SRC, 'credits.css'), path.join(SITE, 'assets', 'credits.css'));
   fs.copyFileSync(path.join(SRC, 'credits.js'), path.join(SITE, 'assets', 'credits.js'));
+  // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
   // (A build restricted with --only-sources shows the curated slugs that exist, see below.)

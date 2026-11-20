@@ -31,16 +31,16 @@ The optional Docker image (`Dockerfile`) is built on the official [nginx](https:
 
 ## html-ppt-skill (reference only)
 
-[html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) by [lewis](https://github.com/lewislulu) (MIT) is included as the read-only git submodule `upstream/html-ppt-skill` for future reference material. None of its files are currently shown on the site or shipped in packs.
+[html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) by [lewis](https://github.com/lewislulu) (MIT) was used as reference only. It is not vendored in this repository, and none of its files are shown on the site or shipped in packs.
 
 ## Guizang PPT Skill
 
 Templates `guizang-editorial` and `guizang-swiss` come from [guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) by [歸藏 (Guizang)](https://github.com/op7418), included as the read-only git submodule `upstream/guizang`.
 
 - **License: AGPL-3.0 (copyleft).** Every pack ships the full text as `LICENSE`. Decks built from these templates may be derivative works and may have to be released under the AGPL-3.0. This is general information, not legal advice.
-- Used files: `assets/template.html`, `assets/template-swiss.html`, `assets/motion.min.js`, `SKILL.md` and the `references/*.md` listed in `sources.json`, unmodified in the packs. The site preview is a modified copy (paging bridge, self-hosted fonts, demo slides); the modifications are published in this repository.
+- Used files: `assets/template.html`, `assets/template-swiss.html`, `assets/motion.min.js`, `SKILL.md` and the `references/*.md` listed in `sources/sources.json`, unmodified in the packs. The site preview is a modified copy (paging bridge, self-hosted fonts, demo slides); the modifications are published in this repository.
 - Third-party code inside the upstream template: Motion (`motion.min.js`, MIT, https://motion.dev); Lucide (ISC), which the packs do not load.
-- Metadata (`sources-meta/guizang/*.json`), demo slides and screenshots were written by slides-commons from the author's README and SKILL.md; the demo slides are adapted from the author's layout skeletons and are therefore also AGPL-3.0. They were not made or endorsed by the author.
+- Metadata (`sources/meta/guizang/*.json`), demo slides and screenshots were written by slides-commons from the author's README and SKILL.md; the demo slides are adapted from the author's layout skeletons and are therefore also AGPL-3.0. They were not made or endorsed by the author.
 
 ## Derived content
 

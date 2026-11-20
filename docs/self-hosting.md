@@ -27,7 +27,7 @@ Windows PowerShell. Useful options (each has an environment variable):
 | Option | Env | Meaning |
 |---|---|---|
 | `--extra-sources <file>` | `SC_EXTRA_SOURCES` | Add a sources file (same format as `sources.json`). Repeat the option, or separate several paths with the platform's path delimiter (`:` on Linux/macOS, `;` on Windows). Paths inside the file resolve from the file's own directory. |
-| *(file)* | | `sources.local.json` in the slides-commons root (git-ignored) is added automatically. `--no-local-sources` turns that off. |
+| *(file)* | | `sources.local.json` in the slides-commons root or in `sources/` (git-ignored) is added automatically. `--no-local-sources` turns that off. |
 | `--only-sources <id,...>` | `SC_ONLY_SOURCES` | Build only these sources, for example only yours: `--only-sources acme`. Default: all. |
 | `--site-url <url>` | `SC_SITE_URL` | Public base URL of your site, see below. |
 | `--no-kits` | `SC_NO_KITS=1` | Skip the Convert and Skills pages and zips. |
@@ -126,5 +126,5 @@ git submodule update --init
 docker build -t slides-commons .
 ```
 
-[`docker-compose.example.yml`](../docker-compose.example.yml) shows the same with Compose. Windows:
+[`docker/compose.example.yml`](../docker/compose.example.yml) shows the same with Compose. Windows:
 use the same commands in PowerShell (use `${PWD}/acme-templates` instead of `./acme-templates` for the volume).

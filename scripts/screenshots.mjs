@@ -64,7 +64,7 @@ function slideNumbers(spec, total) {
 }
 
 const sourceDirOpt = cliOption('source-dir');
-const sourcesFile = sourceDirOpt ? path.join(path.resolve(sourceDirOpt), 'sources.json') : cliOption('sources') ?? path.join(ROOT, 'sources.json');
+const sourcesFile = sourceDirOpt ? path.join(path.resolve(sourceDirOpt), 'sources.json') : cliOption('sources') ?? path.join(ROOT, 'sources', 'sources.json');
 if (!fs.existsSync(sourcesFile)) die(`${sourcesFile} not found`);
 const cfg = JSON.parse(fs.readFileSync(sourcesFile, 'utf8'));
 const baseDir = sourceDirOpt ? path.resolve(sourceDirOpt) : ROOT;

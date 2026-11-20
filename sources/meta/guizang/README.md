@@ -1,4 +1,4 @@
-# sources-meta/guizang
+# sources/meta/guizang
 
 slides-commons data for the templates taken from [op7418/guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill)
 (Guizang PPT Skill by 歸藏 / op7418), which is licensed under the **AGPL-3.0**

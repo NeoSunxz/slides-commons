@@ -27,7 +27,7 @@ node scripts/build.mjs --extra-sources ../acme-templates/sources.json
 | 参数 | 环境变量 | 含义 |
 |---|---|---|
 | `--extra-sources <文件>` | `SC_EXTRA_SOURCES` | 追加一个来源文件（格式同 `sources.json`）。参数可重复，也可用平台的路径分隔符（Linux/macOS 为 `:`，Windows 为 `;`）写多个路径。文件里的路径相对于该文件所在目录。 |
-| （文件） | | slides-commons 根目录下的 `sources.local.json`（已被 git 忽略）会自动加入；`--no-local-sources` 可关闭。 |
+| （文件） | | slides-commons 根目录或 `sources/` 下的 `sources.local.json`（已被 git 忽略）会自动加入；`--no-local-sources` 可关闭。 |
 | `--only-sources <id,...>` | `SC_ONLY_SOURCES` | 只构建这些来源，例如只要自己的：`--only-sources acme`。默认全部。 |
 | `--site-url <网址>` | `SC_SITE_URL` | 站点对外网址，见下文。 |
 | `--no-kits` | `SC_NO_KITS=1` | 不生成「转换」与「技能」页面和 zip。 |
@@ -120,5 +120,5 @@ git submodule update --init
 docker build -t slides-commons .
 ```
 
-[`docker-compose.example.yml`](../docker-compose.example.yml) 给出了 Compose 的写法。Windows：在
+[`docker/compose.example.yml`](../docker/compose.example.yml) 给出了 Compose 的写法。Windows：在
 PowerShell 里用同样的命令（卷写成 `${PWD}/acme-templates`，不要写 `./acme-templates`）。
