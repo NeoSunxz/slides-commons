@@ -76,14 +76,11 @@ const TEXT = {
       },
       installTitle: 'Install',
       installLede: 'Easiest: paste the install prompt above. Or copy the folders by hand.',
-      tabs: ['macOS and Linux', 'Windows PowerShell', 'One project'],
-      tabHints: ['For all your projects (Claude Code).', 'For all your projects (Claude Code).', 'Run it inside the project folder.'],
+      tabs: ['macOS and Linux', 'Windows PowerShell', 'One project', 'Other agents'],
+      tabHints: ['For all your projects (Claude Code).', 'For all your projects (Claude Code).', 'Run it inside the project folder.', 'Any agent can follow a SKILL.md. Add this to its AGENTS.md and point it at the folders.'],
       copyCode: 'Copy',
       copiedCode: 'Copied',
       afterInstall: 'Then start a new session and just ask for what you want.',
-      othersTitle: 'Other agents',
-      others: 'Any agent can follow a SKILL.md. Point it at the folders.',
-      othersSnippet: 'AGENTS.md snippet',
       detailsTitle: 'Details',
       details: [
         'Nothing is uploaded. The skills are instructions and a few local Node 18+ scripts. Your agent may be a cloud service.',
@@ -161,14 +158,11 @@ const TEXT = {
       },
       installTitle: '安装',
       installLede: '最省事：粘贴上面的安装提示词。也可以手动复制文件夹。',
-      tabs: ['macOS 和 Linux', 'Windows PowerShell', '仅一个项目'],
-      tabHints: ['对所有项目生效（Claude Code）。', '对所有项目生效（Claude Code）。', '在项目文件夹里运行。'],
+      tabs: ['macOS 和 Linux', 'Windows PowerShell', '仅一个项目', '其他 agent'],
+      tabHints: ['对所有项目生效（Claude Code）。', '对所有项目生效（Claude Code）。', '在项目文件夹里运行。', '任何 agent 都能照着 SKILL.md 做。把下面这段加进它的 AGENTS.md，并指向这些文件夹。'],
       copyCode: '复制',
       copiedCode: '已复制',
       afterInstall: '之后开启新会话，直接说出你想做的事。',
-      othersTitle: '其他 agent',
-      others: '任何 agent 都能照着 SKILL.md 做。让它指向这些文件夹即可。',
-      othersSnippet: 'AGENTS.md 示例',
       detailsTitle: '详情',
       details: [
         '不会上传任何东西。技能只是说明和几个本地的 Node 18+ 脚本。你的 agent 可能是云服务。',
@@ -286,7 +280,7 @@ export function skillsPage({ lang, skills }) {
   const skillIcons = ['deck', 'convert', 'font'];
   const list = SKILL_NAMES.map((n, i) => `<li class="kit-card kit-skill"><span class="kit-skill-icon">${icon(skillIcons[i % 3], 24)}</span><h3>${code(n)}</h3><p>${esc(T.skillLine[n])}</p>
     <div class="kit-chat"><span class="kit-chat-label">${esc(T.say)}</span><p class="kit-bubble">${esc(T.skillSay[n])}</p></div></li>`).join('');
-  const cmds = [`${INSTALL.unzipUnix}\n${INSTALL.unix.user}`, `${INSTALL.unzipWindows}\n${INSTALL.windows.user}`, INSTALL.unix.project];
+  const cmds = [`${INSTALL.unzipUnix}\n${INSTALL.unix.user}`, `${INSTALL.unzipWindows}\n${INSTALL.windows.user}`, INSTALL.unix.project, INSTALL.agentsLine];
   const tabInputs = T.tabs.map((_, i) => `<input class="kit-tab-input" type="radio" name="kit-install-tab" id="kit-tab-${i}"${i === 0 ? ' checked' : ''}>`).join('');
   const tabLabels = T.tabs.map((t, i) => `<label for="kit-tab-${i}">${esc(t)}</label>`).join('');
   const panels = cmds.map((cmd, i) => `<div class="kit-panel kit-panel-${i}"><p class="kit-panel-hint">${esc(T.tabHints[i])}</p><div class="kit-codebox"><pre id="kit-cmd-${i}"><code>${esc(cmd)}</code></pre><button type="button" class="kit-copy" data-copy-code="kit-cmd-${i}" data-done="${esc(T.copiedCode)}">${esc(T.copyCode)}</button></div></div>`).join('');
@@ -295,9 +289,8 @@ export function skillsPage({ lang, skills }) {
   <section class="kit-section" aria-labelledby="kit-list"><h2 id="kit-list">${esc(T.listTitle)}</h2><ul class="kit-cards kit-cards-3">${list}</ul></section>
   <section class="kit-section" aria-labelledby="kit-install"><h2 id="kit-install">${esc(T.installTitle)}</h2>
     <p class="kit-lede">${esc(T.installLede)}</p>
-    <div class="kit-install-grid"><div><div class="kit-tabs">${tabInputs}<div class="kit-tabbar">${tabLabels}</div><div class="kit-panels">${panels}</div></div>
+    <div class="kit-install-card"><div class="kit-tabs">${tabInputs}<div class="kit-tabbar">${tabLabels}</div><div class="kit-panels">${panels}</div></div>
     <p class="kit-after">${esc(T.afterInstall)}</p></div>
-    <aside class="kit-card kit-others"><h3>${esc(T.othersTitle)}</h3><p>${esc(T.others)}</p><details class="kit-snippet"><summary>${esc(T.othersSnippet)}</summary><pre><code>${esc(INSTALL.agentsLine)}</code></pre></details></aside></div>
   </section>
   <section class="kit-section kit-end">
     ${details(T.detailsTitle, T.details)}
