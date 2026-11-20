@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Credits page redesign: cards grouped by source, with its own `credits.css` / `credits.js`.
 - Skills page: a single install card with an "Other agents" tab.
+- With a site URL, the build hosts Latin font files under `fonts/latin/` (12 more Fontsource packages: Carlito, Arimo, Tinos, Cousine, Caladea, Gelasio, Open Sans, Nunito Sans, Libre Franklin, Anton, EB Garamond, Inconsolata; all OFL), and `embed-latin` fetches from the site first.
+- Self-hosting guide rewritten (English and Chinese) and the private-source example README updated.
 - `README.zh.md` (Chinese README) and `docs/dev/progress.md` (development log moved out of `CLAUDE.md`).
 
 ### Changed

@@ -221,3 +221,5 @@ zip（以 `<slug>/` 为根）：
 
 - 2026-11-20：致谢页（Credits）重做：按来源分组的卡片，新增 `src/credits.css`、`src/credits.js`，构建时复制，`src/styles.css` 里旧样式已移除。技能页改为单一安装卡片，带「其他 agent」标签页，转换页与技能页的步骤行、缩略图高度、主图行对齐已修。仓库整理：来源配置移到 `sources/`（`sources/sources.json`、`sources/meta/guizang/`），删除参考用 submodule `upstream/html-ppt-skill`（CREDITS 仍注明仅作参考），compose 示例移到 `docker/compose.example.yml`，删除 `.devcontainer`，README 重写为中英两份（`README.md`、`README.zh.md`），本文件从 CLAUDE.md 迁出，`.claude/agents/` 与 `.claude/settings.json` 不再入库（本地保留）。`npm test` 1092 通过、4 跳过（Docker 项需 `SC_DOCKER_TESTS=1`）。
   - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
+- 2026-11-20：拉丁字体自托管：设置站点网址时构建把拉丁字体托管到 `fonts/latin/`（新增 12 个 Fontsource 包，均为 OFL），`embed-latin` 先从本站下载再回退；自托管文档（中英）与私有来源示例 README 重写；`npm test` 1113 通过 4 跳过（Docker 为可选）。
+  - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
