@@ -5,7 +5,7 @@
 //   node scripts/build.mjs --sources tests/fixtures/x.json --out /tmp/site-x
 //
 // Options (env vars as an alternative, CLI wins):
-//   --sources <file>  SC_SOURCES  alternate sources file (default: <repo>/sources.json).
+//   --sources <file>  SC_SOURCES  alternate sources file (default: <repo>/sources/sources.json).
 //                                 `path` entries inside it still resolve from the repo root.
 //   --out <dir>       SC_OUT      output directory (default: <repo>/site). Deleted and recreated, but
 //                                 only if it is missing, empty, the default site/, or holds the
@@ -19,7 +19,7 @@
 //                                 Repeatable; SC_EXTRA_SOURCES and a single option value may hold
 //                                 several paths separated by the platform's path delimiter. Paths
 //                                 inside such a file resolve from that file's own directory.
-//                                 <repo>/sources.local.json is loaded automatically when it exists
+//                                 <repo>/sources.local.json or <repo>/sources/sources.local.json is loaded automatically when it exists
 //                                 (only together with the default sources.json; --no-local-sources
 //                                 or SC_NO_LOCAL_SOURCES=1 turns that off).
 //   --only-sources <id,...>       SC_ONLY_SOURCES   build / validate only these sources (default: all).
@@ -80,18 +80,19 @@ const hasFlag = (name) => process.argv.slice(2).includes(`--${name}`);
 const envOn = (v) => v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false';
 const optSources = cliOption('sources') ?? process.env.SC_SOURCES;
 const optOut = cliOption('out') ?? process.env.SC_OUT;
-const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources.json');
+const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources', 'sources.json');
 const SITE = optOut ? path.resolve(optOut) : path.join(ROOT, 'site');
 const optSiteUrl = cliOption('site-url') ?? process.env.SC_SITE_URL;
-const DEFAULT_SOURCES_FILE = path.join(ROOT, 'sources.json');
-const LOCAL_SOURCES_FILE = path.join(ROOT, 'sources.local.json');
+const DEFAULT_SOURCES_FILE = path.join(ROOT, 'sources', 'sources.json');
+// Local (git-ignored) extra sources: <repo>/sources.local.json and <repo>/sources/sources.local.json.
+const LOCAL_SOURCES_FILES = [path.join(ROOT, 'sources.local.json'), path.join(ROOT, 'sources', 'sources.local.json')];
 const usesDefaultSources = SOURCES_FILE === DEFAULT_SOURCES_FILE;
 const splitPaths = (v) => String(v).split(path.delimiter).map((x) => x.trim()).filter(Boolean);
-// Sources files added on top of sources.json: <repo>/sources.local.json (only next to the default
-// sources.json), then --extra-sources / SC_EXTRA_SOURCES. Later duplicates of a path are dropped.
+// Sources files added on top of sources.json: <repo>/sources.local.json or <repo>/sources/sources.local.json (only next to the default
+// sources/sources.json), then --extra-sources / SC_EXTRA_SOURCES. Later duplicates of a path are dropped.
 const EXTRA_SOURCE_FILES = (() => {
   const list = [];
-  if (usesDefaultSources && !hasFlag('no-local-sources') && !envOn(process.env.SC_NO_LOCAL_SOURCES) && fs.existsSync(LOCAL_SOURCES_FILE)) list.push(LOCAL_SOURCES_FILE);
+  if (usesDefaultSources && !hasFlag('no-local-sources') && !envOn(process.env.SC_NO_LOCAL_SOURCES)) list.push(...LOCAL_SOURCES_FILES.filter((x) => fs.existsSync(x)));
   for (const v of [...cliOptions('extra-sources'), ...(process.env.SC_EXTRA_SOURCES ? [process.env.SC_EXTRA_SOURCES] : [])]) {
     for (const p of splitPaths(v)) list.push(path.resolve(p));
   }
@@ -650,7 +651,24 @@ function pngSizeOf(buf) {
   return buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47 ? { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) } : null;
 }
 
+// Cover overrides: sources/meta/covers/<source-id>/<slug>.png is a 1920x1080 render of slide 1,
+// for templates whose upstream screenshots lack it (see scripts/cover-override.mjs).
+const coversDirOf = (srcId) => path.join(ROOT, 'sources', 'meta', 'covers', srcId);
+function coverOverrideFor(src, slug) {
+  const f = path.join(coversDirOf(src.id), `${slug}.png`);
+  return exists(f) ? f : null;
+}
+
 function screenshotsFor(src, slug) {
+  const list = upstreamScreenshotsFor(src, slug);
+  const cover = coverOverrideFor(src, slug);
+  if (!cover) return list;
+  const size = pngSize(cover);
+  // The override stands in for slide 1 (replacing a shipped -1 shot); the others follow it.
+  return [{ file: `${slug}-cover.png`, path: cover, n: 1, cover: true, ...size }, ...list.filter((s) => s.n !== 1)];
+}
+
+function upstreamScreenshotsFor(src, slug) {
   const dir = src.overlay ? screenshotsDirOf(ROOT, src) : path.join(src.dir, ...src.layout.screenshotsDir.split('/'));
   if (!exists(dir)) return [];
   const re = new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)\\.(png|jpe?g|webp)$`, 'i');
@@ -1020,9 +1038,39 @@ function externalHosts(text) {
   return [...hosts];
 }
 
+// Every file under sources/meta/covers/<source-id>/ must name an existing template of that source.
+function checkCoverOverrides(templates, problems) {
+  const root = path.join(ROOT, 'sources', 'meta', 'covers');
+  if (!exists(root)) return;
+  for (const d of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    const mine = templates.filter((t) => t.src.id === d.name);
+    if (!mine.length) continue; // source not loaded (--only-sources, fixtures): nothing to check against
+    // Known = every template the source has, before `include` narrows this build.
+    const src = mine[0].src;
+    const known = new Set(src.overlay
+      ? Object.keys(src.overlay.templates)
+      : fs.readdirSync(path.join(src.dir, ...src.layout.templatesDir.split('/')), { withFileTypes: true })
+        .filter((e) => e.isDirectory() && exists(path.join(src.dir, ...src.layout.templatesDir.split('/'), e.name, src.layout.metaFile)))
+        .map((e) => e.name));
+    const included = new Set(mine.map((t) => t.slug));
+    for (const f of fs.readdirSync(path.join(root, d.name))) {
+      const m = f.match(/^(.+)\.png$/i);
+      const at = `sources/meta/covers/${d.name}/${f}:`;
+      if (!m) problems.push(`${at} cover overrides must be <slug>.png`);
+      else if (!known.has(m[1])) problems.push(`${at} no template "${m[1]}" in source "${d.name}"`);
+      else if (included.has(m[1])) {
+        const size = pngSize(path.join(root, d.name, f));
+        if (!size || size.width !== 1920 || size.height !== 1080) problems.push(`${at} must be a 1920x1080 PNG`);
+      }
+    }
+  }
+}
+
 // Collect every problem with the loaded templates (does not stop at the first one).
 function checkTemplates(templates, problems, { strictScreenshots = true, bySlug = null } = {}) {
   const items = []; // { t, description } for the i18n check
+  checkCoverOverrides(templates, problems);
   for (const t of templates) {
     const at = `${t.slug}:`;
     if (typeof t.license !== 'string' || !t.license) problems.push(`${at} no license (set it in the source or the template)`);
@@ -1289,6 +1337,57 @@ function hostCjk(e, weights) {
   if (e.license) writeFile(path.join(SITE, 'fonts', 'cjk', e.id, fontLicenseName({ license: e.license })), fs.readFileSync(e.license));
 }
 
+// Latin font files the convert kit's fonts/embed-latin.mjs may fetch from this site (only when
+// siteUrl is set; otherwise jsDelivr is the only source). Layout mirrors the script's requests:
+// fonts/latin/static/<id>/<id>-<subset>-<weight>-<style>.woff2 (@fontsource) and
+// fonts/latin/variable/<id>/<id>-<subset>-wght-<style>.woff2 (@fontsource-variable), latin + latin-ext.
+// Wanted: the families (and weights) the gallery's templates request plus the kit's font-map substitutes.
+const latinWanted = new Map(); // family -> Set('style|weight' | 'style|var')
+function wantLatin(families) {
+  for (const fam of families) {
+    if (isCjkFamily(fam.name)) continue;
+    const set = latinWanted.get(fam.name) ?? new Set();
+    latinWanted.set(fam.name, set);
+    for (const v of fam.variants) {
+      const style = v.ital ? 'italic' : 'normal';
+      set.add(v.wght[0] === v.wght[1] ? `${style}|${v.wght[0]}` : `${style}|var`);
+    }
+  }
+}
+function hostLatin(fontMapPath) {
+  const map = JSON.parse(fs.readFileSync(fontMapPath, 'utf8'));
+  for (const f of map.fonts) {
+    if (!f.google) continue;
+    for (const r of parseRequests(`https://fonts.googleapis.com/css2?family=${f.google}`)) wantLatin(r.families);
+  }
+  let bytes = 0, files = 0;
+  const copy = (src, kind, id, name) => {
+    const dest = path.join(SITE, 'fonts', 'latin', kind, id, name);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+    bytes += fs.statSync(src).size; files++;
+  };
+  for (const [name, keys] of [...latinWanted].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const r = FONT_STORE.lookup(name);
+    // A variable package also serves any weight range the script may ask for (a handful of families).
+    if (r.variable) for (const k of [...keys]) keys.add(`${k.split('|')[0]}|var`);
+    for (const key of keys) {
+      const [style, w] = key.split('|');
+      for (const subset of ['latin', 'latin-ext']) {
+        const st = r.static && w !== 'var' ? path.join(r.static, 'files', `${r.id}-${subset}-${w}-${style}.woff2`) : null;
+        const va = r.variable ? path.join(r.variable, 'files', `${r.id}-${subset}-wght-${style}.woff2`) : null;
+        if (st && fs.existsSync(st)) copy(st, 'static', r.id, path.basename(st));
+        else if (va && fs.existsSync(va)) copy(va, 'variable', r.id, path.basename(va));
+      }
+    }
+    for (const [kind, dir] of [['static', r.static], ['variable', r.variable]]) {
+      const lic = dir && path.join(dir, 'LICENSE');
+      if (lic && fs.existsSync(path.join(SITE, 'fonts', 'latin', kind, r.id)) && fs.existsSync(lic)) writeFile(path.join(SITE, 'fonts', 'latin', kind, r.id, fontLicenseName({ license: lic })), fs.readFileSync(lic));
+    }
+  }
+  return { files, bytes };
+}
+
 function main() {
   const started = Date.now();
   const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
@@ -1319,9 +1418,13 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'site.js'), path.join(SITE, 'assets', 'site.js'));
   fs.copyFileSync(path.join(SRC, 'gallery.js'), path.join(SITE, 'assets', 'gallery.js'));
 
+  fs.copyFileSync(path.join(SRC, 'header-theme.js'), path.join(SITE, 'assets', 'header-theme.js'));
   fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
   fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
+  fs.copyFileSync(path.join(SRC, 'kits.js'), path.join(SITE, 'assets', 'kits.js'));
+  fs.copyFileSync(path.join(SRC, 'credits.css'), path.join(SITE, 'assets', 'credits.css'));
+  fs.copyFileSync(path.join(SRC, 'credits.js'), path.join(SITE, 'assets', 'credits.js'));
   // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
@@ -1346,7 +1449,7 @@ function main() {
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);
     for (const s of shots) {
-      s.slide = screenshotSlide(t.src, s.n);
+      s.slide = s.cover ? 1 : screenshotSlide(t.src, s.n);
       const dest = path.join(SITE, 'assets', 'screenshots', s.file);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(s.path, dest);
@@ -1484,6 +1587,7 @@ function main() {
     }, credits, SITE_NAME);
 
     if (siteUrl) for (const [, e] of info.cjk) hostCjk(e, info.cjkWeights.get(e.id));
+    if (siteUrl) for (const r of info.fontPlan.requests) wantLatin(r.families);
     const z = `${t.slug}/`;
     const entries = [
       { name: z },
@@ -1562,9 +1666,17 @@ function main() {
   const kits = usesDefaultSources && !NO_KITS && fs.existsSync(path.join(ROOT, 'kits', 'kits.json'))
     ? buildKits({ root: ROOT, site: SITE, siteUrl, makeZip, zipTime, writeFile, licenseName: fontLicenseName, cjkFamilyEntry, cjkRangesJson, fail })
     : null;
+  if (kits && siteUrl) {
+    const h = hostLatin(path.join(ROOT, 'kits', 'convert', 'spec', 'font-map.json'));
+    console.log(`hosted ${h.files} Latin font files (${(h.bytes / 1048576).toFixed(1)} MB) under fonts/latin/ for the convert kit`);
+  }
   if (kits) {
+    // Sample slides of the kit's own example template (kits/kits.json "example"), if it is in this build.
+    const exampleDir = readJson(path.join(ROOT, 'kits', 'kits.json')).example?.dir ?? '';
+    const exampleData = pageData.find((d) => d.slug === path.posix.basename(exampleDir.replace(/\\/g, '/')));
+    const example = { thumbs: (exampleData?.screenshots ?? []).filter((s) => s.small).slice(0, 3).map((s) => ({ file: s.small.file, width: s.small.width, height: s.small.height })) };
     for (const lang of LANGS) {
-      writeFile(path.join(SITE, ...pagePath(lang, 'convert/index.html').split('/')), convertPage({ lang, kit: kits.convert }));
+      writeFile(path.join(SITE, ...pagePath(lang, 'convert/index.html').split('/')), convertPage({ lang, kit: kits.convert, example }));
       writeFile(path.join(SITE, ...pagePath(lang, 'skills/index.html').split('/')), skillsPage({ lang, skills: kits.skills }));
     }
   }

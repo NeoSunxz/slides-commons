@@ -8,7 +8,7 @@
   let themes = [];
   let enabled = false;
   let frame = 0;
-  let current = -1;
+  const headerTheme = SCHeaderTheme(header);
   let wheelTarget = null;
   let wheelTotal = 0;
   let wheelTime = 0;
@@ -37,11 +37,7 @@
       chapter.style.setProperty('--chapter-shade', String(progress * .16));
       chapter.style.setProperty('--chapter-radius', `${entrance * 28}px`);
     });
-    if (active !== current) {
-      current = active;
-      header.dataset.chapter = String(active);
-      for (const [name, value] of Object.entries(themes[active])) header.style.setProperty(name, value);
-    }
+    headerTheme.apply(themes, active);
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(render); };
   const configure = () => {
@@ -56,11 +52,8 @@
       chapter.style.removeProperty('--chapter-radius');
     });
     starts = chapters.map((chapter) => chapter.previousElementSibling.offsetTop - 72);
-    themes = chapters.map((chapter) => {
-      const style = getComputedStyle(chapter);
-      return { '--bg': style.backgroundColor, '--ink': style.color, '--muted': style.color, '--accent': style.color, '--line': style.getPropertyValue('--line') };
-    });
-    current = -1;
+    themes = headerTheme.read(chapters);
+    headerTheme.reset();
     enabled = desktop.matches && !motion.matches && chapters.every((chapter) => chapter.offsetHeight <= innerHeight - 70);
     main.classList.toggle('chapter-stack', enabled);
     document.documentElement.classList.toggle('chapter-mode', enabled);

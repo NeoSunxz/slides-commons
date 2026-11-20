@@ -163,12 +163,13 @@ test.describe('--i18n-dir / SC_I18N_DIR', () => {
     fs.cpSync(path.join(ROOT, 'scripts'), path.join(root, 'scripts'), { recursive: true });
     fs.cpSync(path.join(ROOT, 'src'), path.join(root, 'src'), { recursive: true });
     fs.rmSync(path.join(root, 'src', 'i18n'), { recursive: true, force: true });
-    fs.copyFileSync(path.join(ROOT, 'sources.json'), path.join(root, 'sources.json'));
+    fs.mkdirSync(path.join(root, 'sources'), { recursive: true });
+    fs.copyFileSync(path.join(ROOT, 'sources', 'sources.json'), path.join(root, 'sources', 'sources.json'));
     fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}\n');
     try {
       fs.symlinkSync(path.join(ROOT, 'upstream'), path.join(root, 'upstream'), 'junction');
       fs.symlinkSync(path.join(ROOT, 'collections'), path.join(root, 'collections'), 'junction');
-      fs.symlinkSync(path.join(ROOT, 'sources-meta'), path.join(root, 'sources-meta'), 'junction'); // overlay metadata
+      fs.symlinkSync(path.join(ROOT, 'sources', 'meta'), path.join(root, 'sources', 'meta'), 'junction'); // overlay metadata
       fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(root, 'node_modules'), 'junction'); // Fontsource packages
     } catch (e) { test.skip(true, `cannot symlink upstream/ or node_modules/: ${e.code}`); }
     const out = path.join(root, 'out-site');
@@ -235,9 +236,9 @@ test.describe('--site-url / SC_SITE_URL', () => {
     withUrl = outDir('sc-url-');
     const r = run('build', ['--out', withUrl], { env: { SC_SITE_URL: URL_BASE } });
     expect(r.status, r.out).toBe(0);
-    // The only extra files in URL mode are the CJK font shards (and licenses) the site hosts for fonts/embed-cjk.mjs.
+    // The only extra files in URL mode are the CJK font shards and the Latin woff2 files (with licences) the site hosts for the kit's embed scripts.
     const extra = walk(withUrl).filter((f) => !walk(without).includes(f));
-    expect(extra.filter((f) => !/^fonts\/cjk\//.test(f)), 'files added by URL mode outside fonts/cjk/').toEqual([]);
+    expect(extra.filter((f) => !/^fonts\/(cjk|latin)\//.test(f)), 'files added by URL mode outside fonts/cjk/ and fonts/latin/').toEqual([]);
     expect(extra.length, 'URL mode hosts CJK shards').toBeGreaterThan(0);
     expect(walk(without).filter((f) => !walk(withUrl).includes(f)), 'files lost in URL mode').toEqual([]);
     expect(walk(without).some((f) => f.startsWith('fonts/cjk/')), 'default build must not host shards').toBe(false);

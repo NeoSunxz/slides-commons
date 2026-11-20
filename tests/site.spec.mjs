@@ -249,7 +249,8 @@ test.describe('every page', () => {
       await expect(footer).toContainText('Zara Zhang');
       await expect(footer).toContainText('MIT');
       expect(await footer.locator('a[href="https://github.com/zarazhangrui/beautiful-html-templates"]').count()).toBeGreaterThan(0);
-      expect(await footer.locator(`a[href="${SKILL_REPO}"]`).count()).toBeGreaterThan(0);
+      // The secondary repo links (frontend-slides) moved to the Credits page, not the footer.
+      expect(await footer.locator(`a[href="${SKILL_REPO}"]`).count(), 'frontend-slides link is not in the compact footer').toBe(0);
       await expect(footer).toContainText(/not affiliated/i);
 
       const text = await page.locator('body').innerText();

@@ -81,10 +81,10 @@ for (const lang of ['en', 'zh']) {
         if (r.byText.includes('Zara Zhang')) bad.push(`${slug}: original template byline names Zara Zhang`);
         if (r.byLinks.concat(r.attrLinks).includes(STYLE_PRESETS_MD)) bad.push(`${slug}: original template links STYLE_PRESETS.md`);
       }
-      // Footer: attribution of both sources, with the partial-derivation wording.
+      // Footer is compact: author linked to its repo + licence tag; the derivation wording lives on the Credits page.
       if (!r.footerText.includes('Zara Zhang')) bad.push(`${slug}: footer lacks Zara Zhang`);
-      if (!r.footerLinks.includes(STYLE_PRESETS_MD)) bad.push(`${slug}: footer lacks STYLE_PRESETS.md link`);
-      if (!(lang === 'en' ? /some based on/ : /部分基于/).test(r.footerText)) bad.push(`${slug}: footer should say only some templates are derived: ${r.footerText.slice(0, 200)}`);
+      if (!r.footerText.includes('NeoSun')) bad.push(`${slug}: footer lacks NeoSun`);
+      if (r.footerLinks.includes(STYLE_PRESETS_MD)) bad.push(`${slug}: footer should no longer carry the STYLE_PRESETS.md link`);
     }
     expect(bad).toEqual([]);
   });

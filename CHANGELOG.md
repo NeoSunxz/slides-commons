@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-20
+
+### Added
+
+- Credits page redesign: cards grouped by source, with its own `credits.css` / `credits.js`.
+- Skills page: a single install card with an "Other agents" tab.
+- With a site URL, the build hosts Latin font files under `fonts/latin/` (12 more Fontsource packages: Carlito, Arimo, Tinos, Cousine, Caladea, Gelasio, Open Sans, Nunito Sans, Libre Franklin, Anton, EB Garamond, Inconsolata; all OFL), and `embed-latin` fetches from the site first.
+- Self-hosting guide rewritten (English and Chinese) and the private-source example README updated.
+- `README.zh.md` (Chinese README) and `docs/dev/progress.md` (development log moved out of `CLAUDE.md`).
+
+### Changed
+
+- Source configuration moved to `sources/` (`sources/sources.json`, `sources/meta/guizang/`); the reference-only `upstream/html-ppt-skill` submodule is removed; `docker-compose.example.yml` is now `docker/compose.example.yml`; `.devcontainer` is removed.
+- README rewritten to be short, in English and Chinese; `CLAUDE.md` slimmed down; `.claude/agents/` and `.claude/settings.json` are no longer tracked.
+- Convert and Skills pages: steps row, thumbnail heights and hero rows aligned.
+- Convert and Skills pages redesigned: visual hero, step flow, comparison cards, file tree with thumbnails, install tabs with copy buttons, collapsed details, and about a third of the old copy.
+- The header follows the section colour on the kit pages (shared `header-theme.js`, also used by the home page); compact mobile header.
+- Compact site footer: brand, disclaimer, authors with repo links and licence tags, and a Credits link; secondary links moved to the Credits page.
+- Converted personal templates list the source's original font names first in the font stack, then the open replacement.
+
+### Fixed
+
+- Tests ignore the browser's aborted cross-document view transitions; the flaky file-mode test is stable.
+- soft-editorial card showed a content slide; it now uses a rendered cover (cover overrides in `sources/meta/covers/`).
+
 ## [0.4.0] - 2026-11-19
 
 ### Added
@@ -133,7 +158,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0

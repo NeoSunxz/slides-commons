@@ -14,13 +14,12 @@ on:
       - Dockerfile
       - .dockerignore
       - docker/**
-      - docker-compose.example.yml
       - examples/private-source/**
       - scripts/**
       - src/**
       - package.json
       - package-lock.json
-      - sources.json
+      - sources/**
       - .github/workflows/docker.yml
   push:
     tags: ['v*']

@@ -46,6 +46,9 @@ function cliOption(name) {
 }
 const die = (msg) => { console.error(`screenshots failed: ${msg}`); process.exit(1); };
 
+// --cover-override <source-id>/<slug>: render one cover override instead (scripts/cover-override.mjs).
+if (cliOption('cover-override') !== undefined) { await import('./cover-override.mjs'); process.exit(0); }
+
 // Paths of git submodules (".gitmodules"), POSIX style.
 function submodulePaths() {
   const f = path.join(ROOT, '.gitmodules');
@@ -64,7 +67,7 @@ function slideNumbers(spec, total) {
 }
 
 const sourceDirOpt = cliOption('source-dir');
-const sourcesFile = sourceDirOpt ? path.join(path.resolve(sourceDirOpt), 'sources.json') : cliOption('sources') ?? path.join(ROOT, 'sources.json');
+const sourcesFile = sourceDirOpt ? path.join(path.resolve(sourceDirOpt), 'sources.json') : cliOption('sources') ?? path.join(ROOT, 'sources', 'sources.json');
 if (!fs.existsSync(sourcesFile)) die(`${sourcesFile} not found`);
 const cfg = JSON.parse(fs.readFileSync(sourcesFile, 'utf8'));
 const baseDir = sourceDirOpt ? path.resolve(sourceDirOpt) : ROOT;

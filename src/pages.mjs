@@ -169,7 +169,7 @@ const STRINGS = {
     internalNotice: (n) => `This template belongs to ${esc(n)} and is for internal use only. Do not distribute the pack, or decks that reproduce its design, outside ${esc(n)}.`,
     attrInternal: (n) => `Internal template of ${esc(n)}. ${SITE_NAME} only previews and packages it; it is not an official site of the template's author.`,
     footerInternal: (s, name, lang, c) => `Internal templates: ${name} · by ${esc(srcAuthor(s, lang))} · ${esc(s.license)}${c ? ` · <code>viewport-base.css</code> from ${link(c.repo, repoName(c.repo))} by ${esc(c.author)} (${esc(c.license)})` : ''}`,
-    creditsInternal: (s, lang) => `Internal source (not published). Maintained by ${srcAuthorLink(s, lang)}. Terms: ${esc(s.license)}. Every pack carries its license file (<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>) or, without one, a <code>NOTICE.txt</code> marking it for internal use only.`,
+    creditsInternal: (s) => `Internal source (not published). Every pack carries its license file (<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>) or, without one, a <code>NOTICE.txt</code> marking it for internal use only.`,
     creditsIntroInternal: 'Templates marked Internal belong to the organisation that runs this site and are for its internal use only.',
     attrNotOfficial: `${SITE_NAME} only previews and repackages these openly licensed files; it is not the author's official site.`,
     showMore: 'Show more',
@@ -181,18 +181,26 @@ const STRINGS = {
     attrFacts: { author: 'Author', original: 'Original', license: 'License', source: 'Source' },
     attrTranslation: () => '',
     footerBy: (s, links, lang) => `Templates by ${srcAuthorLink(s, lang)} (${esc(s.license)}) · ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? 'some ' : ''}based on ${derivedLink(s.derivedFrom)} by ${derivedAuthor(s.derivedFrom)}` : ''}`,
-    footerIndependent: `${SITE_NAME} is an independent gallery, not affiliated with the original authors.`,
+    footerIndependent: 'Independent gallery, not affiliated with the template authors.',
+    footerTemplatesBy: 'Templates by',
     footerCredits: 'Credits &amp; licenses',
     creditsTitle: `Credits: ${SITE_NAME}`,
     creditsDescription: 'Template authors, sources and licenses.',
     creditsHeading: 'Credits',
-    creditsIntro: `${SITE_NAME} is an independent community gallery. Every template belongs to its author and is used under its open license. Nothing here is an official project of the original authors.`,
+    creditsIntro: 'Independent gallery. Every template belongs to its author and is used under its license. Not an official project of the authors.',
     creditsTranslation: '',
-    creditsSource: (s, lang) => `${link(s.repo, bare(s.repo))} by ${srcAuthorLink(s, lang)} (${esc(s.license)}). Its license ships in every pack as <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>.`,
-    creditsDerived: (d, s) => `${d.slugs ? 'Some of these templates are derivative works (the rest are original): their' : 'These templates are derivative works: their'} visual direction (fonts, colors, signature elements) is based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}). The layouts, demo content and design systems were written by ${esc(s.author)}. ${derivedAuthor(d)} did not make, review or endorse them.`,
-    creditsCompanion: (c) => `Companion: ${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)}). The packs use its ${c.designOverride ? 'fixed-stage <code>design.md</code> edition and ' : ''}<code>viewport-base.css</code>; its license ships as <code>LICENSE-skill</code>.`,
+    creditsFacts: { author: 'Author', repo: 'Repository', file: 'License file', companion: 'Companion', maintainer: 'Maintained by', terms: 'Terms' },
+    creditsCompanion: (c) => `${link(c.repo, c.name)} by ${esc(c.author)} (${esc(c.license)})<span class="credit-files"><code>viewport-base.css</code>${c.designOverride ? ', fixed-stage <code>design.md</code>' : ''}, <code>LICENSE-skill</code></span>`,
+    creditsDerived: (d) => `${d.slugs ? 'Some of these templates are derivative works (the rest are original)' : 'These templates are derivative works'}: based on ${derivedLink(d)} by ${derivedAuthor(d)} (${esc(d.license)}). ${derivedAuthor(d)} did not make or endorse them.`,
     creditsOriginal: 'original',
-    creditsBack: 'Back to the introduction',
+    creditsMore: 'More',
+    licenseNoticeShort: (n) => `<strong>${esc(n.license)}:</strong> decks made with it may be derivative works that must also be ${esc(n.license)}. See the ${link(n.licenseUrl, 'license')} and the ${link(n.repoUrl, 'repository')}. Not legal advice.`,
+    creditsAlso: 'Also credited',
+    creditsExtra: [
+      { title: 'Web fonts', text: `Unmodified from ${link('https://fontsource.org', 'Fontsource')}: mostly SIL OFL 1.1, Yellowtail under Apache 2.0. Each license ships beside its font. Fontshare fonts load from Fontshare and are not bundled.` },
+      { title: 'Convert kit and skills', text: `Local tools that upload nothing. Both carry <code>viewport-base.css</code> from ${link('https://github.com/zarazhangrui/frontend-slides', 'frontend-slides')} by Zara Zhang (MIT), license as <code>LICENSE-skill</code>.` },
+      { title: 'Reference only', text: `${link('https://github.com/lewislulu/html-ppt-skill', 'html-ppt-skill')} by ${link('https://github.com/lewislulu', 'lewis')} (MIT): kept as read-only reference. None of its files are shown or shipped.` },
+    ],
     creditsCatalog: 'Template credits',
     creditsCount: (count) => `${count} templates`,
   },
@@ -315,7 +323,7 @@ const STRINGS = {
     internalNotice: (n) => zhText`本模板属于${esc(n)}，仅限内部使用。请勿将素材包或复刻其设计的幻灯片在${esc(n)}之外传播。`,
     attrInternal: (n) => zhText`${esc(n)}的内部模板。${SITE_NAME} 仅负责预览与打包，不是模板作者的官方站点。`,
     footerInternal: (s, name, lang, c) => `内部模板：${name} · ${esc(srcAuthor(s, lang))} 出品 · ${esc(s.license)}${c ? ` · <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.repo, repoName(c.repo))}（${esc(c.license)}）` : ''}`,
-    creditsInternal: (s, lang) => `内部来源（未公开发布）。维护者：${srcAuthorLink(s, lang)}。使用条款：${esc(s.license)}。每个素材包附带其许可证文件（<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>）；没有时附 <code>NOTICE.txt</code>，注明仅限内部使用。`,
+    creditsInternal: (s) => `内部来源（未公开发布）。每个素材包附带其许可证文件（<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>）；没有时附 <code>NOTICE.txt</code>，注明仅限内部使用。`,
     creditsIntroInternal: '标有“内部”的模板属于运营本站的组织，仅限其内部使用。',
     attrNotOfficial: `${SITE_NAME} 仅预览并重新打包这些开源文件，不是原作者的官方站点。`,
     showMore: '展开',
@@ -329,18 +337,26 @@ const STRINGS = {
       ? `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自本站为该模板编写的${link(enUrl, '英文介绍')}；译文由本项目提供，以英文原文为准。`
       : `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 ${esc(t.license)} 许可）；译文由本项目提供，以英文原文为准。`,
     footerBy: (s, links, lang) => `模板来自 ${srcAuthorLink(s, lang)}（${esc(s.license)}） · ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? '部分' : ''}基于 ${derivedAuthor(s.derivedFrom)} 的 ${derivedLink(s.derivedFrom)}` : ''}`,
-    footerIndependent: `${SITE_NAME} 是独立画廊，与原作者无关联。`,
+    footerIndependent: '独立画廊，与原作者无关联。',
+    footerTemplatesBy: '模板作者',
     footerCredits: '致谢与许可证',
     creditsTitle: `致谢：${SITE_NAME}`,
     creditsDescription: '模板作者、来源与许可证。',
     creditsHeading: '致谢',
-    creditsIntro: `${SITE_NAME} 是独立的社区画廊。所有模板版权归原作者所有，按其开源许可证使用；本站内容均不是原作者的官方项目。`,
-    creditsTranslation: `本站中文页面上的模板介绍（简介、设计说明、适用场景、情绪与语气标签等）由 ${SITE_NAME} 翻译自上游的英文文本；上游文本按各自的许可证发布（见各模板页面），译文由本项目提供，以英文原文为准。模板名称、字体名称和色值保持原样。`,
-    creditsSource: (s, lang) => `${link(s.repo, bare(s.repo))}，作者 ${srcAuthorLink(s, lang)}（${esc(s.license)}）。每个素材包都附带其许可证文件 <code>${esc(s.packLicenseName ?? 'LICENSE-templates')}</code>。`,
-    creditsDerived: (d, s) => `${d.slugs ? '其中部分模板是衍生作品（其余为原创）：' : '这些模板是衍生作品：'}视觉方向（字体、配色、标志性元素）基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）；版式、演示内容和设计系统由 ${esc(s.author)} 编写。${derivedAuthor(d)} 并未制作、审阅或认可这些模板。`,
-    creditsCompanion: (c) => `配套项目：${esc(c.author)} 的 ${link(c.repo, c.name)}（${esc(c.license)}）。素材包使用其${c.designOverride ? '固定画布版 <code>design.md</code> 和 ' : ''}<code>viewport-base.css</code>，许可证文件为 <code>LICENSE-skill</code>。`,
+    creditsIntro: '独立画廊。每套模板归原作者所有，按其许可证使用，均非原作者官方项目。',
+    creditsTranslation: `中文页面上的模板介绍由 ${SITE_NAME} 翻译，以英文原文为准；模板名称、字体名称和色值保持原样。`,
+    creditsFacts: { author: '作者', repo: '仓库', file: '许可证文件', companion: '配套项目', maintainer: '维护者', terms: '条款' },
+    creditsCompanion: (c) => `${link(c.repo, c.name)}，${esc(c.author)}（${esc(c.license)}）<span class="credit-files"><code>viewport-base.css</code>${c.designOverride ? '、固定画布版 <code>design.md</code>' : ''}、<code>LICENSE-skill</code></span>`,
+    creditsDerived: (d) => `${d.slugs ? '其中部分模板是衍生作品（其余为原创）' : '这些模板是衍生作品'}：基于 ${derivedAuthor(d)} 的 ${derivedLink(d)}（${esc(d.license)}）。${derivedAuthor(d)} 并未制作或认可这些模板。`,
     creditsOriginal: '原始文件',
-    creditsBack: '返回首页介绍',
+    creditsMore: '更多',
+    licenseNoticeShort: (n) => `<strong>${esc(n.license)}：</strong>用它生成的幻灯片可能属于衍生作品，须同样以 ${esc(n.license)} 发布。请阅读${link(n.licenseUrl, '许可证')}和${link(n.repoUrl, '原始仓库')}。不构成法律意见。`,
+    creditsAlso: '其他致谢',
+    creditsExtra: [
+      { title: 'Web 字体', text: `来自 ${link('https://fontsource.org', 'Fontsource')}，未经修改：多数为 SIL OFL 1.1，Yellowtail 为 Apache 2.0。许可证文件随字体一起提供。Fontshare 字体从 Fontshare 加载，不随包提供。` },
+      { title: '转换工具包与技能', text: `在本地运行、不上传任何内容。两者都带有 Zara Zhang 的 ${link('https://github.com/zarazhangrui/frontend-slides', 'frontend-slides')}（MIT）的 <code>viewport-base.css</code>，许可证为 <code>LICENSE-skill</code>。` },
+      { title: '仅作参考', text: `${link('https://github.com/lewislulu', 'lewis')} 的 ${link('https://github.com/lewislulu/html-ppt-skill', 'html-ppt-skill')}（MIT）：仅作只读参考，其文件不在站内展示，也不随包提供。` },
+    ],
     creditsCatalog: '模板署名清单',
     creditsCount: (count) => `${count} 套模板`,
   },
@@ -424,22 +440,25 @@ ${['assets/site.js', ...scripts].map((s) => `<script src="${root}${s}"></script>
 `;
 }
 
-// One compact line per source: author, license, repositories (and what it is based on). Every
-// author stays listed; the full credits are on the credits page.
+// Compact footer: brand + disclaimer on the left; "Templates by" with one inline entry per source
+// (author linked to its repo, licence tag) on the right. Repo details live on the credits page.
+// Private sources keep their full internal line (incl. the viewport-base.css companion credit).
 function footer(lang, home) {
   const S = STRINGS[lang];
-  const lines = footerSources.map((s) => {
+  const items = footerSources.map((s) => {
     if (s.private) return `<li>${S.footerInternal(s, s.repo ? link(s.repo, srcName(s, lang)) : esc(srcName(s, lang)), lang, s.companion)}</li>`;
-    const parts = [link(s.repo, repoName(s.repo))];
-    if (s.companion) parts.push(link(s.companion.repo, repoName(s.companion.repo)));
-    return `<li>${S.footerBy(s, parts.join(' · '), lang)}</li>`;
-  }).join('\n      ');
+    const who = s.repo ? link(s.repo, srcAuthor(s, lang)) : esc(srcAuthor(s, lang));
+    return `<li>${who} <span class="footer-license">${esc(s.license)}</span></li>`;
+  }).join('\n        ');
   return `<footer class="site-footer">
-  <div class="wrap">
-    <ul class="footer-credits">
-      ${lines}
-    </ul>
-    <p class="footer-note">${S.footerIndependent} <a href="${home}credits.html">${S.footerCredits}</a></p>
+  <div class="wrap footer-row">
+    <div class="footer-brand"><strong>${SITE_NAME}</strong><p class="footer-note">${S.footerIndependent}</p></div>
+    <div class="footer-authors"><span class="footer-label">${S.footerTemplatesBy}</span>
+      <ul class="footer-credits">
+        ${items}
+      </ul>
+      <a class="footer-more" href="${home}credits.html">${S.footerCredits}</a>
+    </div>
   </div>
 </footer>`;
 }
@@ -500,7 +519,7 @@ ${boundary}<section class="home-chapter home-origin" id="origins" aria-labelledb
   <div class="home-origin-content"><div><h2 id="origin-title">${H.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-text-link" href="credits.html">${esc(H.originAction)} ${arrowIcon()}</a></div><div><p>${esc(H.originText)}</p><div class="home-source-list">${sourceList}</div></div></div>
 </section>
 ${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">${counter()}</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}">${arrowIcon()}</a></div></section>`;
-  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
+  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/header-theme.js', 'assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
 }
 
 export function galleryPage({ templates, lang, tags }) {
@@ -714,31 +733,45 @@ ${(() => {
   return layout({ lang, page, title: `${t.name} · ${SITE_NAME}`, description: tagline.v, body, scripts: ['assets/detail.js'], styles: t.specimen ? [t.specimen.css] : [] });
 }
 
+const shortRepo = (url) => { const m = /^https?:\/\/github\.com\/([^/]+\/[^/#?]+)/.exec(url); return m ? m[1] : bare(url); };
+
 export function creditsPage({ sources, templates, lang }) {
   const S = STRINGS[lang];
   const page = 'credits.html';
-  const blocks = sources.map((s, index) => {
+  const F = S.creditsFacts;
+  const row = (k, v) => `<dt>${esc(k)}</dt><dd>${v}</dd>`;
+  const blocks = sources.map((s) => {
     const sourceTemplates = templates.filter((t) => t.source === s.id).map((t) => ({ ...t, authors: localAuthors(t, lang) }));
     const list = sourceTemplates
       .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a><span>${t.sourceDirUrl ? `${link(t.sourceDirUrl, S.creditsOriginal)} · ` : ''}${authorList(t.authors)} · ${esc(t.license)}</span></li>`).join('\n');
     const notice = templates.find((t) => t.source === s.id && t.licenseNotice)?.licenseNotice;
-    const heading = s.private
-      ? (s.repo ? `<a href="${esc(s.repo)}"${lang === 'zh' && !s.nameZh ? ' lang="en"' : ''}>${esc(srcName(s, lang))}</a>` : `<span${lang === 'zh' && !s.nameZh ? ' lang="en"' : ''}>${esc(srcName(s, lang))}</span>`)
-      : `<a href="${esc(s.repo)}"${lang === 'zh' ? ' lang="en"' : ''}>${githubIcon(32)}${esc(s.name)}</a>`;
+    const nameLang = lang === 'zh' && !(s.private && s.nameZh) ? ' lang="en"' : '';
+    const heading = s.repo
+      ? `<a href="${esc(s.repo)}"${nameLang}>${githubIcon(24)}${esc(srcName(s, lang))}</a>`
+      : `<span${nameLang}>${esc(srcName(s, lang))}</span>`;
+    const facts = [
+      row(s.private ? F.maintainer : F.author, srcAuthorLink(s, lang)),
+      s.repo ? row(F.repo, link(s.repo, shortRepo(s.repo))) : '',
+      s.private ? row(F.terms, esc(s.license)) : '',
+      row(F.file, `<code>${esc(s.packLicenseName ?? (s.private ? 'LICENSE' : 'LICENSE-templates'))}</code>`),
+      s.companion ? row(F.companion, S.creditsCompanion(s.companion)) : '',
+    ].join('\n    ');
     return `<section class="credit" id="src-${esc(s.id)}">
-  <div class="credit-heading"><span class="eyebrow">0${index + 1} / ${esc(S.creditsCount(sourceTemplates.length))}</span><h2>${heading}</h2><span class="credit-license">${s.private ? `${esc(S.internalBadge)} · ` : ''}${esc(s.license)}</span></div>
-  <div class="credit-body">
-  <p>${s.private ? S.creditsInternal(s, lang) : S.creditsSource(s, lang)}</p>
-  ${notice ? `<p class="license-notice"><strong>${esc(S.licenseNoticeTitle(notice.license))}</strong> ${S.licenseNotice(notice)}</p>` : ''}
-  ${s.derivedFrom ? `<p>${S.creditsDerived(s.derivedFrom, s)}</p>` : ''}
-  ${s.companion ? `<p>${S.creditsCompanion(s.companion)}</p>` : ''}
+  <div class="credit-heading"><h2>${heading}</h2><span class="credit-license">${s.private ? `${esc(S.internalBadge)} · ` : ''}${esc(s.license)}</span><span class="eyebrow">${esc(S.creditsCount(sourceTemplates.length))}</span></div>
+  <dl class="credit-facts">
+    ${facts}
+  </dl>
+  ${s.private ? `<p class="credit-note">${S.creditsInternal(s)}</p>` : ''}${s.derivedFrom ? `<p class="credit-note">${S.creditsDerived(s.derivedFrom)}</p>` : ''}
+  ${notice ? `<div class="license-notice" role="note"><p>${S.licenseNoticeShort(notice)}</p><details><summary>${esc(S.creditsMore)}</summary><p>${S.licenseNotice(notice)}</p></details></div>` : ''}
   <details class="credit-catalog"><summary>${esc(S.creditsCatalog)} <span>${sourceTemplates.length}</span></summary><ul>
 ${list}
-  </ul></details></div>
+  </ul></details>
 </section>`;
   }).join('\n');
-  const body = `<section class="credits-hero"><div class="wrap"><div class="credits-top"><span class="eyebrow">04 / ${S.creditsHeading}</span><a href="index.html#origins">${S.creditsBack} ${arrowIcon()}</a></div><div class="credits-intro"><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1><p>${S.creditsIntro}${sources.some((s) => s.private) ? ` ${S.creditsIntroInternal}` : ''}</p></div></div></section>
-<div class="wrap credits-content">${blocks}
-${S.creditsTranslation ? `<aside class="credits-translation"><p>${S.creditsTranslation}</p></aside>` : ''}</div>`;
-  return layout({ lang, page, title: S.creditsTitle, description: S.creditsDescription, body, scripts: [] });
+  const extra = `<section class="credits-also" aria-labelledby="also-title"><h2 id="also-title">${esc(S.creditsAlso)}</h2><div class="credits-also-grid">${S.creditsExtra.map((e) => `<div class="credit-extra"><h3>${esc(e.title)}</h3><p>${e.text}</p></div>`).join('')}</div></section>`;
+  const body = `<section class="credits-hero" data-header-theme><div class="wrap"><div class="credits-intro"><div><p class="eyebrow">${esc(S.creditsHeading)}</p><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1></div><p class="credits-lead">${esc(S.creditsIntro)}${sources.some((s) => s.private) ? ` ${esc(S.creditsIntroInternal)}` : ''}</p></div></div></section>
+<div class="wrap credits-content"><div class="credits-grid">${blocks}</div>
+${extra}
+${S.creditsTranslation ? `<p class="credits-translation">${S.creditsTranslation}</p>` : ''}</div>`;
+  return layout({ lang, page, title: S.creditsTitle, description: S.creditsDescription, body, scripts: ['assets/header-theme.js', 'assets/credits.js'], styles: ['assets/credits.css'] });
 }
