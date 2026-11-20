@@ -651,7 +651,24 @@ function pngSizeOf(buf) {
   return buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47 ? { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) } : null;
 }
 
+// Cover overrides: sources/meta/covers/<source-id>/<slug>.png is a 1920x1080 render of slide 1,
+// for templates whose upstream screenshots lack it (see scripts/cover-override.mjs).
+const coversDirOf = (srcId) => path.join(ROOT, 'sources', 'meta', 'covers', srcId);
+function coverOverrideFor(src, slug) {
+  const f = path.join(coversDirOf(src.id), `${slug}.png`);
+  return exists(f) ? f : null;
+}
+
 function screenshotsFor(src, slug) {
+  const list = upstreamScreenshotsFor(src, slug);
+  const cover = coverOverrideFor(src, slug);
+  if (!cover) return list;
+  const size = pngSize(cover);
+  // The override stands in for slide 1 (replacing a shipped -1 shot); the others follow it.
+  return [{ file: `${slug}-cover.png`, path: cover, n: 1, cover: true, ...size }, ...list.filter((s) => s.n !== 1)];
+}
+
+function upstreamScreenshotsFor(src, slug) {
   const dir = src.overlay ? screenshotsDirOf(ROOT, src) : path.join(src.dir, ...src.layout.screenshotsDir.split('/'));
   if (!exists(dir)) return [];
   const re = new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)\\.(png|jpe?g|webp)$`, 'i');
@@ -1021,9 +1038,39 @@ function externalHosts(text) {
   return [...hosts];
 }
 
+// Every file under sources/meta/covers/<source-id>/ must name an existing template of that source.
+function checkCoverOverrides(templates, problems) {
+  const root = path.join(ROOT, 'sources', 'meta', 'covers');
+  if (!exists(root)) return;
+  for (const d of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    const mine = templates.filter((t) => t.src.id === d.name);
+    if (!mine.length) continue; // source not loaded (--only-sources, fixtures): nothing to check against
+    // Known = every template the source has, before `include` narrows this build.
+    const src = mine[0].src;
+    const known = new Set(src.overlay
+      ? Object.keys(src.overlay.templates)
+      : fs.readdirSync(path.join(src.dir, ...src.layout.templatesDir.split('/')), { withFileTypes: true })
+        .filter((e) => e.isDirectory() && exists(path.join(src.dir, ...src.layout.templatesDir.split('/'), e.name, src.layout.metaFile)))
+        .map((e) => e.name));
+    const included = new Set(mine.map((t) => t.slug));
+    for (const f of fs.readdirSync(path.join(root, d.name))) {
+      const m = f.match(/^(.+)\.png$/i);
+      const at = `sources/meta/covers/${d.name}/${f}:`;
+      if (!m) problems.push(`${at} cover overrides must be <slug>.png`);
+      else if (!known.has(m[1])) problems.push(`${at} no template "${m[1]}" in source "${d.name}"`);
+      else if (included.has(m[1])) {
+        const size = pngSize(path.join(root, d.name, f));
+        if (!size || size.width !== 1920 || size.height !== 1080) problems.push(`${at} must be a 1920x1080 PNG`);
+      }
+    }
+  }
+}
+
 // Collect every problem with the loaded templates (does not stop at the first one).
 function checkTemplates(templates, problems, { strictScreenshots = true, bySlug = null } = {}) {
   const items = []; // { t, description } for the i18n check
+  checkCoverOverrides(templates, problems);
   for (const t of templates) {
     const at = `${t.slug}:`;
     if (typeof t.license !== 'string' || !t.license) problems.push(`${at} no license (set it in the source or the template)`);
@@ -1402,7 +1449,7 @@ function main() {
     // Screenshots used by this template.
     const shots = screenshotsFor(t.src, t.slug);
     for (const s of shots) {
-      s.slide = screenshotSlide(t.src, s.n);
+      s.slide = s.cover ? 1 : screenshotSlide(t.src, s.n);
       const dest = path.join(SITE, 'assets', 'screenshots', s.file);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(s.path, dest);

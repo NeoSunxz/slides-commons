@@ -46,6 +46,9 @@ function cliOption(name) {
 }
 const die = (msg) => { console.error(`screenshots failed: ${msg}`); process.exit(1); };
 
+// --cover-override <source-id>/<slug>: render one cover override instead (scripts/cover-override.mjs).
+if (cliOption('cover-override') !== undefined) { await import('./cover-override.mjs'); process.exit(0); }
+
 // Paths of git submodules (".gitmodules"), POSIX style.
 function submodulePaths() {
   const f = path.join(ROOT, '.gitmodules');
