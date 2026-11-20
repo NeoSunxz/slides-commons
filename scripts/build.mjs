@@ -1325,6 +1325,8 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
   fs.copyFileSync(path.join(SRC, 'kits.js'), path.join(SITE, 'assets', 'kits.js'));
   // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
+  fs.copyFileSync(path.join(SRC, 'credits.css'), path.join(SITE, 'assets', 'credits.css'));
+  fs.copyFileSync(path.join(SRC, 'credits.js'), path.join(SITE, 'assets', 'credits.js'));
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
   // (A build restricted with --only-sources shows the curated slugs that exist, see below.)
