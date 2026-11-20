@@ -1323,8 +1323,8 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
   fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
-  // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   fs.copyFileSync(path.join(SRC, 'kits.js'), path.join(SITE, 'assets', 'kits.js'));
+  // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
   // (A build restricted with --only-sources shows the curated slugs that exist, see below.)
@@ -1565,11 +1565,11 @@ function main() {
     ? buildKits({ root: ROOT, site: SITE, siteUrl, makeZip, zipTime, writeFile, licenseName: fontLicenseName, cjkFamilyEntry, cjkRangesJson, fail })
     : null;
   if (kits) {
-    for (const lang of LANGS) {
     // Sample slides of the kit's own example template (kits/kits.json "example"), if it is in this build.
     const exampleDir = readJson(path.join(ROOT, 'kits', 'kits.json')).example?.dir ?? '';
     const exampleData = pageData.find((d) => d.slug === path.posix.basename(exampleDir.replace(/\\/g, '/')));
     const example = { thumbs: (exampleData?.screenshots ?? []).filter((s) => s.small).slice(0, 3).map((s) => ({ file: s.small.file, width: s.small.width, height: s.small.height })) };
+    for (const lang of LANGS) {
       writeFile(path.join(SITE, ...pagePath(lang, 'convert/index.html').split('/')), convertPage({ lang, kit: kits.convert, example }));
       writeFile(path.join(SITE, ...pagePath(lang, 'skills/index.html').split('/')), skillsPage({ lang, skills: kits.skills }));
     }
