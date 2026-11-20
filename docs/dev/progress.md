@@ -223,3 +223,5 @@ zip（以 `<slug>/` 为根）：
   - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
 - 2026-11-20：拉丁字体自托管：设置站点网址时构建把拉丁字体托管到 `fonts/latin/`（新增 12 个 Fontsource 包，均为 OFL），`embed-latin` 先从本站下载再回退；自托管文档（中英）与私有来源示例 README 重写；`npm test` 1113 通过 4 跳过（Docker 为可选）。
   - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
+- 2026-11-20：封面覆盖：没有第 1 页截图的模板（soft-editorial 的卡片曾显示内容页）可在 `sources/meta/covers/<source>/<slug>.png` 放渲染好的封面，`scripts/cover-override.mjs` 在构建与 `npm run screenshots` 中使用；新增 `tests/cover-override.spec.mjs`，相关规格 83/83 通过。
+  - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。

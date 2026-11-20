@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Tests ignore the browser's aborted cross-document view transitions; the flaky file-mode test is stable.
+- soft-editorial card showed a content slide; it now uses a rendered cover (cover overrides in `sources/meta/covers/`).
 
 ## [0.4.0] - 2026-11-19
 
