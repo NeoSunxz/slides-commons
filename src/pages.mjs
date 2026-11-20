@@ -500,7 +500,7 @@ ${boundary}<section class="home-chapter home-origin" id="origins" aria-labelledb
   <div class="home-origin-content"><div><h2 id="origin-title">${H.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-text-link" href="credits.html">${esc(H.originAction)} ${arrowIcon()}</a></div><div><p>${esc(H.originText)}</p><div class="home-source-list">${sourceList}</div></div></div>
 </section>
 ${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">${counter()}</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}">${arrowIcon()}</a></div></section>`;
-  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
+  return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/header-theme.js', 'assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
 }
 
 export function galleryPage({ templates, lang, tags }) {

@@ -1319,6 +1319,7 @@ function main() {
   fs.copyFileSync(path.join(SRC, 'site.js'), path.join(SITE, 'assets', 'site.js'));
   fs.copyFileSync(path.join(SRC, 'gallery.js'), path.join(SITE, 'assets', 'gallery.js'));
 
+  fs.copyFileSync(path.join(SRC, 'header-theme.js'), path.join(SITE, 'assets', 'header-theme.js'));
   fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
   fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
