@@ -33,3 +33,8 @@ tests/test-results/
 
 # Local private template sources (see docs/self-hosting.md)
 sources.local.json
+sources/sources.local.json
+
+# Claude Code local files (agent definitions and settings stay on disk, not tracked)
+.claude/agents/
+.claude/settings.json

@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1] - 2026-11-20
 
+### Added
+
+- Credits page redesign: cards grouped by source, with its own `credits.css` / `credits.js`.
+- Skills page: a single install card with an "Other agents" tab.
+- `README.zh.md` (Chinese README) and `docs/dev/progress.md` (development log moved out of `CLAUDE.md`).
+
 ### Changed
 
+- Source configuration moved to `sources/` (`sources/sources.json`, `sources/meta/guizang/`); the reference-only `upstream/html-ppt-skill` submodule is removed; `docker-compose.example.yml` is now `docker/compose.example.yml`; `.devcontainer` is removed.
+- README rewritten to be short, in English and Chinese; `CLAUDE.md` slimmed down; `.claude/agents/` and `.claude/settings.json` are no longer tracked.
+- Convert and Skills pages: steps row, thumbnail heights and hero rows aligned.
 - Convert and Skills pages redesigned: visual hero, step flow, comparison cards, file tree with thumbnails, install tabs with copy buttons, collapsed details, and about a third of the old copy.
 - The header follows the section colour on the kit pages (shared `header-theme.js`, also used by the home page); compact mobile header.
 - Compact site footer: brand, disclaimer, authors with repo links and licence tags, and a Credits link; secondary links moved to the Credits page.
