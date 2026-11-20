@@ -252,7 +252,7 @@ test.describe('--site-url / SC_SITE_URL', () => {
     }
     // Everything outside prompts / READMEs is byte-identical (previews, assets, gallery).
     const diffs = diffTrees(without, withUrl).filter((d) => !d.startsWith('file lists differ')).map((d) => d.replace('differs: ', '')); // list differences were checked above
-    const unexpected = diffs.filter((f) => !/^zip\/|^index\.html$|^zh\/index\.html$|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
+    const unexpected = diffs.filter((f) => !/^zip\/|^index\.html$|^zh\/index\.html$|^(zh\/)?(convert|skills)\/index\.html$|^t\/[^/]+\/index\.html$|^zh\/t\/[^/]+\/index\.html$/.test(f));
     expect(unexpected, 'unexpected differences').toEqual([]);
   });
 

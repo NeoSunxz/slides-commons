@@ -1,0 +1,25 @@
+# Example: slides-commons with your private templates. Copy to docker-compose.yml and adjust.
+#
+#   git submodule update --init      # once, before the first build
+#   docker compose up -d --build
+#
+# Templates changed? Restart the container: it rebuilds the site on every start.
+#   docker compose restart slides
+services:
+  slides:
+    build: .
+    # Or use the published image instead of building:
+    # image: ghcr.io/neosunxz/slides-commons:latest
+    ports:
+      - "8080:80"
+    environment:
+      # The address users and their coding agents open the site with (prompts download packs from it).
+      SC_SITE_URL: "http://localhost:8080/"
+      # Build only your own source (default: all, including the public templates):
+      # SC_ONLY_SOURCES: "acme"
+      # Skip the Convert and Skills pages:
+      # SC_NO_KITS: "1"
+    volumes:
+      # A directory with sources.json, templates/ and screenshots/ (see examples/private-source/).
+      - ./examples/private-source:/templates:ro
+    restart: unless-stopped

@@ -168,6 +168,8 @@ test('script: Chinese deck, exit 0, marker block before </head>, Google link kep
   expect(r.out).toMatch(/Coverage OK/);
   expect(hits.length, 'shards were fetched from the local server').toBeGreaterThan(0);
   expect(hits.every((u) => u.startsWith('/fonts/cjk/')), `site path first, no CDN needed: ${hits}`).toBe(true);
+  const localHost = new URL(base).host; // 127.0.0.1:<port>
+  expect(r.out, 'summary names the host the shards came from, with the count of shards fetched').toContain(`Shards downloaded from: ${localHost} ${hits.length}.`);
   const out = fs.readFileSync(deck, 'utf8');
   const b = out.indexOf('<!-- slides-commons:cjk-embed:begin');
   const e = out.indexOf('<!-- slides-commons:cjk-embed:end -->');
@@ -209,6 +211,8 @@ test('script: falls back to the CDN source when the site does not host the shard
     expect(r.status, r.out).toBe(0);
     expect(hits.some((u) => u.startsWith('/fonts/cjk/')), 'site tried first').toBe(true);
     expect(hits.some((u) => u.startsWith('/cdn/@fontsource/noto-serif-sc@')), 'then the CDN').toBe(true);
+    const got = hits.filter((u) => u.startsWith('/cdn/')).length;
+    expect(r.out, 'only the shards that were really downloaded are counted (404s from the site are not)').toContain(`Shards downloaded from: ${new URL(base).host} ${got}.`);
   } finally { siteShards = true; }
   expect(fs.readFileSync(deck, 'utf8')).toContain('cjk-embed:begin');
 });

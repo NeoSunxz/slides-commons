@@ -280,7 +280,7 @@ svg {
     color: var(--faint);
 }
 .pagenum { color: var(--navy); font-weight: 600; }
-.pagenum span { color: var(--faint); font-weight: 400; }
+.pagenum > span { color: var(--faint); font-weight: 400; }
 
 /* ===========================================
    TEXT
@@ -344,16 +344,18 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
     height: calc(var(--v) / var(--max) * 100%);
     background: var(--navy-30);
     transform-origin: bottom;
+    z-index: 1;   /* bars (and their labels) sit above .ref */
 }
 .colchart .bar.focus { background: var(--navy); }
 .colchart .bar.hi { background: var(--accent); }
 .colchart .bar > b {
     position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -8px);
     font-size: 24px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    background: var(--paper); padding: 0 4px;   /* masks a .ref line that passes behind the label */
 }
 .colchart .bar.hi > b { color: var(--accent); }
 .colchart .xlab { display: grid; grid-template-columns: repeat(var(--n), 1fr); margin-top: 12px; }
-.colchart .xlab span { text-align: center; font-size: 20px; color: var(--muted); line-height: 1.3; }
+.colchart .xlab > span { text-align: center; font-size: 20px; color: var(--muted); line-height: 1.3; }
 
 /* Stacked columns: a .bar is a flex column of .seg (height = share %) */
 .colchart .bar.stack { background: none; display: flex; flex-direction: column-reverse; }
@@ -369,14 +371,18 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
 .seg.c4 { background: var(--navy-30); }
 .seg.c5 { background: var(--navy-12); }
 
-/* Annotation: dashed reference + vertical delta marker inside .plot */
+/* Annotation: dashed reference + vertical delta marker inside .plot.
+   The delta lives in its own right-hand gutter (.has-delta) so its label can never touch a bar:
+   the bars share the columns left of the gutter, the bracket and label occupy the gutter. */
+.colchart.has-delta .plot, .colchart.has-delta .xlab { padding-right: var(--gutter, 200px); }   /* the x labels share the bars' columns */
 .ref {
     position: absolute; left: var(--x0); right: var(--x1, 0);
     bottom: calc(var(--y) / var(--max) * 100%);
     border-top: 2px dashed var(--navy-30);
+    z-index: 0;
 }
 .delta {
-    position: absolute; right: var(--r, 0);
+    position: absolute; right: var(--r, 10px);
     bottom: calc(var(--y0) / var(--max) * 100%);
     height: calc((var(--y1) - var(--y0)) / var(--max) * 100%);
     border-left: 2px solid var(--accent);
@@ -386,10 +392,10 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
 }
 .delta::before { top: 0; }
 .delta::after { bottom: 0; }
-.delta span {
-    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-    font-size: 24px; font-weight: 600; color: var(--accent); white-space: nowrap;
-    background: var(--paper); padding: 2px 6px;
+.delta > span {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    width: 150px; text-align: right;
+    font-size: 24px; font-weight: 600; line-height: 1.25; color: var(--accent);
 }
 
 /* ===========================================
@@ -410,7 +416,7 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
 }
 .hbars-wrap { position: relative; }
 .hbars-plot { position: absolute; top: 0; bottom: 0; left: 246px; right: 108px; pointer-events: none; }
-.hbars-plot .refline span {
+.hbars-plot .refline > span {
     position: absolute; top: 100%; left: 8px; transform: translateY(2px);
     font-size: 18px; font-weight: 600; color: var(--navy); white-space: nowrap;
 }
@@ -450,8 +456,8 @@ ul.dash li::before { content: ""; position: absolute; left: 2px; top: 0.7em; wid
 .wf .step.down .v { top: calc(100% - var(--lo) / var(--max) * 100% + 8px); }
 .wf .step.hi .v { color: var(--accent); }
 .wf .xlab { display: grid; grid-template-columns: repeat(var(--n), 1fr); margin-top: 12px; }
-.wf .xlab span { text-align: center; font-size: 19px; line-height: 1.3; color: var(--muted); padding: 0 6px; }
-.wf .xlab span.t { color: var(--ink); font-weight: 600; }
+.wf .xlab > span { text-align: center; font-size: 19px; line-height: 1.3; color: var(--muted); padding: 0 6px; }
+.wf .xlab > span.t { color: var(--ink); font-weight: 600; }
 
 /* ===========================================
    TABLE
@@ -515,9 +521,9 @@ tr.flag .util i::after { background: var(--accent); }
     position: absolute; left: 0; top: 0; bottom: 56px; width: 40px;
     display: flex; align-items: center; justify-content: center;
 }
-.mx-y span { transform: rotate(-90deg); white-space: nowrap; font-size: 19px; color: var(--muted); }
+.mx-y > span { transform: rotate(-90deg); white-space: nowrap; font-size: 19px; color: var(--muted); }
 .mx-ticks { position: absolute; left: 40px; top: 0; bottom: 56px; width: 16px; }
-.mx-ticks span { position: absolute; right: 0; bottom: calc(var(--y) / var(--ymax) * 100%); transform: translateY(50%); font-size: 18px; color: var(--muted); }
+.mx-ticks > span { position: absolute; right: 0; bottom: calc(var(--y) / var(--ymax) * 100%); transform: translateY(50%); font-size: 18px; color: var(--muted); }
 .mx-x { position: absolute; left: 64px; right: 0; bottom: 0; height: 44px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 19px; color: var(--muted); }
 .mx-x b { font-weight: 600; color: var(--ink); }
 
@@ -577,7 +583,7 @@ tr.flag .util i::after { background: var(--accent); }
 .scr-row .fig { text-align: right; }
 .scr-row .fig b { display: block; font-size: 54px; font-weight: 600; line-height: 1; color: var(--navy); letter-spacing: -0.01em; }
 .scr-row:last-child .fig b { color: var(--accent); }
-.scr-row .fig span { display: block; font-size: 19px; color: var(--muted); margin-top: 10px; line-height: 1.3; }
+.scr-row .fig > span { display: block; font-size: 19px; color: var(--muted); margin-top: 10px; line-height: 1.3; }
 
 /* ===========================================
    SLIDE 3 — CONTENTS
@@ -653,7 +659,7 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
 .reco-panel h3 { font-family: var(--font-title); font-size: 40px; font-weight: 600; line-height: 1.22; margin-top: 18px; }
 .reco-figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; border-top: 1px solid var(--navy-60); padding-top: 24px; }   /* on-navy-rule */
 .reco-figs b { display: block; font-size: 46px; font-weight: 600; line-height: 1; }
-.reco-figs span { display: block; font-size: 19px; color: var(--navy-30); margin-top: 10px; line-height: 1.3; }   /* on-navy-muted */
+.reco-figs > div > span { display: block; font-size: 19px; color: var(--navy-30); margin-top: 10px; line-height: 1.3; }   /* on-navy-muted */
 .decisions { display: flex; flex-direction: column; height: 100%; }
 .decisions ol { list-style: none; }
 .decisions li { display: grid; grid-template-columns: 56px 1fr; padding: 18px 0; border-bottom: 1px solid var(--rule); }
@@ -695,8 +701,8 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
 }
 .gantt > .ws.sum, .gantt > .lane.sum { border-bottom: none; border-top: 2px solid var(--ink); height: 70px; }
 .gantt > .lane.sum { display: grid; grid-template-columns: repeat(7, 1fr); background: none; align-items: center; }
-.lane.sum span { padding-left: 12px; font-size: 24px; font-weight: 600; color: var(--navy); }
-.lane.sum span:last-child { color: var(--accent); }
+.lane.sum > span { padding-left: 12px; font-size: 24px; font-weight: 600; color: var(--navy); }
+.lane.sum > span:last-child { color: var(--accent); }
 .gantt-legend { margin-top: 18px; }
 .gantt-legend .ms-key { display: inline-block; width: 16px; height: 16px; border: 3px solid var(--navy); transform: rotate(45deg); margin-right: 12px; vertical-align: -1px; }
 
@@ -704,14 +710,20 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
    CJK OVERRIDES: active when <html lang="zh-CN">
    Labels 20px / 500 / no uppercase; letter-spacing 0 for all Chinese text.
    =========================================== */
-:lang(zh) .action      { font-size: 44px; font-weight: 700; line-height: 1.3; }
+:lang(zh) .action      { font-size: 44px; line-height: 1.3; }
 :lang(zh) .s-cover h1  { font-size: 84px; line-height: 1.2; }
 :lang(zh) .lead        { line-height: 1.5; }
 :lang(zh) .slide       { line-height: 1.6; }
 :lang(zh) ul.dash li, :lang(zh) .findings p { line-height: 1.65; }
 :lang(zh) :is(.label, .tracker li, .tag, table.data th, .gantt > .h, .gantt > .ws small,
-              .pill, .gbar, .hbars-plot .refline span) { font-size: 20px; font-weight: 500; text-transform: none; }
-:lang(zh) .tracker li.on { font-weight: 700; }
+              .pill, .gbar, .hbars-plot .refline > span) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) .tracker li.on { font-weight: 600; }
+/* CJK weights apply to CJK runs only: wrap each Chinese run in <span class="cjk">. Latin text keeps the
+   weights that are actually loaded (Source Serif 4 600, IBM Plex Sans 400/500/600). */
+:lang(zh) :is(.action, .s-cover h1, .reco-panel h3, .tracker li.on, .lead, .ch-title) .cjk { font-weight: 700; }
+/* 18px/19px items are raised to 20px for Chinese (source line and footer stay 18px) */
+:lang(zh) :is(.legend, .seg, .scr-row .fig > span, .reco-figs > div > span, table.opts th p,
+              .mx-y > span, .mx-x, .wf .xlab > span) { font-size: 20px; }
 :lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 
 /* ===========================================
@@ -831,14 +843,14 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
             <div class="split c-6-6">
                 <div class="reveal" style="--i:1">
                     <div class="ch-head"><p class="ch-title">Meridian operating margin</p><p class="ch-unit">% of revenue, FY21–FY24</p></div>
-                    <div class="colchart" style="--n:4; --max:10; --ph:500px;">
+                    <div class="colchart has-delta" style="--n:4; --max:10; --ph:500px;">
                         <div class="plot">
                             <div class="bar focus grow" style="--v:8.9;--i:1"><b>8.9</b></div>
                             <div class="bar focus grow" style="--v:7.4;--i:2"><b>7.4</b></div>
                             <div class="bar focus grow" style="--v:5.1;--i:3"><b>5.1</b></div>
                             <div class="bar hi grow" style="--v:2.8;--i:4"><b>2.8</b></div>
-                            <div class="ref" style="--x0:20%; --x1:0; --y:8.9"></div>
-                            <div class="delta" style="--r:1.5%; --y0:2.8; --y1:8.9"><span>−6.1 pts</span></div>
+                            <div class="ref" style="--x0:8%; --x1:0; --y:8.9"></div>
+                            <div class="delta" style="--y0:2.8; --y1:8.9"><span>−6.1 pts</span></div>
                         </div>
                         <div class="xlab"><span>FY21</span><span>FY22</span><span>FY23</span><span>FY24</span></div>
                     </div>

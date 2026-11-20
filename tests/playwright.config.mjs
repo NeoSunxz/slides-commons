@@ -10,6 +10,10 @@ const ROOT = path.resolve(HERE, '..');
 const PORT = Number(process.env.TEST_PORT) || 4199;
 const node = JSON.stringify(process.execPath);
 
+// A developer's <repo>/sources.local.json must never change what the suite builds. Workers, the
+// web server and every spawned build inherit this; tests that exercise auto-loading override it.
+process.env.SC_NO_LOCAL_SOURCES = '1';
+
 export default defineConfig({
   testDir: HERE,
   testMatch: /.*\.spec\.mjs$/,

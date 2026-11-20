@@ -1,0 +1,12 @@
+{
+  "note": "Where the convert kit and the skills collection take their shared files from (paths relative to the repository root). scripts/kits.mjs reads this; nothing here is hardcoded in code.",
+  "viewportBase": "upstream/skill/viewport-base.css",
+  "viewportBaseLicense": "upstream/skill/LICENSE",
+  "projectLicense": "LICENSE",
+  "example": {
+    "dir": "collections/style-presets/templates/minimal-pitch",
+    "files": ["design.md", "template.json", "template.html"],
+    "license": "collections/style-presets/LICENSE"
+  },
+  "cjkFamilies": ["Noto Sans SC", "Noto Serif SC", "LXGW WenKai TC", "Noto Sans JP"]
+}

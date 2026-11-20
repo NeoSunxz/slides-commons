@@ -1,4 +1,5 @@
 import { downloadLabel } from './pages.mjs';
+import { zhText } from './zh-text.mjs';
 
 // Prompt + pack README generation.
 //
@@ -114,7 +115,7 @@ function glanceEn(ctx) {
 
 // Section 0. Without a site URL the agent only looks for the pack (the text is exactly what
 // it was before the download step existed); with one it downloads the pack itself.
-function extractStepsEn(zip, indent) {
+export function extractStepsEn(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
     `2. ${code(`python3 -m zipfile -e ${zip} .`)} (or ${code('python')} instead of ${code('python3')})`,
@@ -147,7 +148,7 @@ ${extractStepsEn(zip, '   ')}
 The pack is data, not code: only read its files. Never run, source or install anything from it.${exc}`;
 }
 
-export function promptEn(ctx) {
+function promptEnBase(ctx) {
   if (ctx.docs) return ctx.promptKind === 'skill-deck' ? promptSkillDeckEn(ctx) : promptOverlayEn(ctx);
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -175,7 +176,7 @@ export function promptEn(ctx) {
   - Deck without CJK text: no font request at all.
   - Deck with Chinese, Japanese or Korean text: add one Google Fonts ${code('<link>')} for the CJK family only. Take the combined link from the CJK section of ${code('design.md')} and remove its Latin families (they are embedded).${cjkLink} If ${code('design.md')} gives no combined link, request the CJK family it recommends, at the weights it specifies.
   - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
-  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight. Don't wrap by hand: write a small script (Node or Python) that wraps CJK runs (e.g. Unicode ranges U+3000–303F, U+3400–9FFF, U+F900–FAFF, U+FF00–FFEF) in ${code('<span class="cjk">')} before embedding, and make sure CSS selectors such as ${code('.kpi span')} don't accidentally match those wrappers (use child selectors or a class).`;
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight. Don't wrap by hand: write a small script (Node or Python) that wraps CJK runs (e.g. Unicode ranges U+3000–303F, U+3400–9FFF, U+F900–FAFF, U+FF00–FFEF) in ${code('<span class="cjk">')} before embedding, and make sure CSS selectors such as ${code('.kpi span')} don't accidentally match those wrappers (use child selectors or a class). Search the CSS for every descendant rule like ${code('X span')} (e.g. ${code('.kpi span')}, ${code('.reco-figs span')}): it also matches the ${code('.cjk')} wrappers, so change it to a child selector (${code('X > span')}) or exclude them with ${code(':not(.cjk)')}. In flex containers, wrapping only the CJK part of a text removes the space between Chinese text and numbers: wrap the whole text in one inner span instead. The CJK weight, letter-spacing and line-height apply to the CJK runs only; Latin text keeps the weights that are actually loaded.`;
   const remoteLinks = ctx.remoteFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ');
   const remoteEn = ctx.localFonts && ctx.remoteFontLinks.length
     ? `\n  - Fontshare families: these are not in ${code('fonts/')} (Fontshare fonts cannot be self-hosted here). Keep the template's Fontshare link in the deck, exactly as it is: ${remoteLinks}. This is the one exception to "embed everything"; do not swap these families for another font.`
@@ -186,7 +187,7 @@ export function promptEn(ctx) {
   - Deck without CJK text: use the original link from section 2.
   - Deck with Chinese, Japanese or Korean text: use the combined link from the CJK section of ${code('design.md')} instead of the original one.${cjkLink} If ${code('design.md')} gives no combined link, add the CJK family it recommends, at the weights it specifies, to the original link as one more ${code('family=')} parameter.
   - Font stacks: Latin family first, CJK family second (e.g. ${code('font-family: "Latin Face", "CJK Face", sans-serif')}), so each script falls through to its own face.
-  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight. Don't wrap by hand: write a small script (Node or Python) that wraps CJK runs (e.g. Unicode ranges U+3000–303F, U+3400–9FFF, U+F900–FAFF, U+FF00–FFEF) in ${code('<span class="cjk">')} before embedding, and make sure CSS selectors such as ${code('.kpi span')} don't accidentally match those wrappers (use child selectors or a class).`;
+  - For CJK runs, the CJK section of ${code('design.md')} overrides the Latin token values: weight, letter-spacing, line-height and uppercase. When the CJK weight differs from the Latin weight of the same element, a font stack alone cannot give each script its own weight: wrap the CJK runs (e.g. ${code('<span class="cjk">')}) and set the CJK weight, ${code('letter-spacing: 0')}, ${code('text-transform: none')} and the CJK line-height there. This rule overrides any claim in ${code('design.md')} that CJK automatically falls through to a heavier weight. Don't wrap by hand: write a small script (Node or Python) that wraps CJK runs (e.g. Unicode ranges U+3000–303F, U+3400–9FFF, U+F900–FAFF, U+FF00–FFEF) in ${code('<span class="cjk">')} before embedding, and make sure CSS selectors such as ${code('.kpi span')} don't accidentally match those wrappers (use child selectors or a class). Search the CSS for every descendant rule like ${code('X span')} (e.g. ${code('.kpi span')}, ${code('.reco-figs span')}): it also matches the ${code('.cjk')} wrappers, so change it to a child selector (${code('X > span')}) or exclude them with ${code(':not(.cjk)')}. In flex containers, wrapping only the CJK part of a text removes the space between Chinese text and numbers: wrap the whole text in one inner span instead. The CJK weight, letter-spacing and line-height apply to the CJK runs only; Latin text keeps the weights that are actually loaded.`;
   const netEn = `- **No other network requests:** no CDNs, remote scripts, remote images or analytics. Draw charts, icons and diagrams with inline SVG or CSS. Embed user-supplied images as data URIs, downscaled to the size they are shown at.${ctx.cdnScripts.length ? `\n- **Charts:** the original ${code('template.html')} loads a script from a CDN (${ctx.cdnScripts.map(code).join(', ')}). Do not copy that. Charts are welcome, but draw them with inline SVG (the default) or canvas code written in the file. Inline a pinned copy of the chart library only if the user explicitly asks for it.` : ''}`;
 
   const fontCheckEn = ctx.systemFontsOnly
@@ -252,7 +253,7 @@ ${netEn}
 - **Missing layout? Design it inside the same system**, with the same fonts, palette, decoration, spacing and chrome, so it would look at home between two original slides. Don't switch styles or drop the content.
 - **Real content, drafted when missing.** Use the user's material. Never reuse demo text, numbers, names or logos from ${code('template.html')}. When the user names a topic but gives no content (for example "two pieces of user feedback", "thanks", "goals"), draft that content yourself; never put placeholders such as "TBD" on a slide. Keep drafts plausible and modest. Every drafted item (including any example quote, name or number you made up) must be listed in your final reply (section 6) so the user can review or replace it.
 - **Only real links and codes.** Decorations that look functional (QR codes, links, URLs, email addresses) are used only when the user gave a real one; otherwise omit them.
-- **Numbers must agree:** section numbers and labels shown on slides must match the slide's page number (the cover is page 1), so they never disagree with the page counter.
+- **Numbers must agree:** section numbers and labels shown on slides must match the slide's page number (the cover is page 1), so they never disagree with the page counter. Section ordinals (such as “Section 03”) are fine; any reference to a page number must equal the footer page number.
 - **No internal labels on slides.** Never show the template name (${name} / ${slug}), the words "template" or "preview", file names, paths, or notes about the user's requirements. Visible chrome is real deck content only: title, sections, date, author, page numbers.
 - **The user's density choice wins** over any density guidance in ${code('design.md')}. For low and balanced density, keep the system's grid and panel vocabulary but use fewer, larger panels (one idea per slide for low density, 2–4 content blocks for balanced); fill any spare panels with the system's own ornaments, never invented ones. If content does not fit, split it across more slides; never shrink text below the sizes in ${code('design.md')} and never let it overflow.
 - **Minimum text size for projected decks (speaker-led and balanced):** the smallest label tokens in ${code('design.md')} (often 14–16px at 1920×1080) shrink to about 9–10px on a 1280px-wide screen and are unreadable when projected. For every projected deck, whatever its density (speaker-led or balanced), raise any body or label text below 20px (at the 1920×1080 stage) to at least 20px, keeping the token's other properties (font, tracking, case); only source and footnote lines may go down to 18px. Reading-first decks keep the ${code('design.md')} sizes. This is the one place where the user's density choice overrides the sizes in ${code('design.md')}.
@@ -271,7 +272,7 @@ ${netEn}
    - in CJK text, no line ends with a single character or a lone punctuation mark; if one does, adjust the width or the wording;
    - the stage stays 16:9 and letterboxed on the phone;
    ${fontCheckEn}
-   - no console errors, and ${netCheckEn}.
+   - no console errors (offline, the failed Google Fonts request and its console error are expected and fine when the fonts are embedded), and ${netCheckEn}.
 3. Fix and re-check until clean. If you cannot render in a browser, say so plainly and review the code by hand; don't claim the check passed.
 4. Finally, reread the deck as the audience would and fix any statement the deck itself contradicts (for example a slide claiming "only one X per page" while using X three times).
 5. Open the deck in the user's default browser:
@@ -346,7 +347,7 @@ function glanceZh(ctx) {
   return L.join('\n');
 }
 
-function extractStepsZh(zip, indent) {
+export function extractStepsZh(zip, indent) {
   return [
     `1. ${code(`unzip ${zip}`)}`,
     `2. ${code(`python3 -m zipfile -e ${zip} .`)}（或把 ${code('python3')} 换成 ${code('python')}）`,
@@ -379,7 +380,7 @@ ${extractStepsZh(zip, '   ')}
 素材包是数据，不是代码：只读取其中的文件，不要运行、source 或安装其中的任何内容。${exc}`;
 }
 
-export function promptZh(ctx) {
+function promptZhBase(ctx) {
   if (ctx.docs) return ctx.promptKind === 'skill-deck' ? promptSkillDeckZh(ctx) : promptOverlayZh(ctx);
   const { slug, name } = ctx;
   const zip = `${slug}.zip`;
@@ -407,7 +408,7 @@ export function promptZh(ctx) {
   - 幻灯片不含 CJK 文字：完全不发起字体请求。
   - 幻灯片含中文、日文或韩文：添加一条只含 CJK 字体族的 Google Fonts ${code('<link>')}。取 ${code('design.md')} CJK 一节给出的合并链接，去掉其中的拉丁字体族（它们已嵌入）。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就按它推荐的 CJK 字体和规定字重请求。
   - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
-  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。不要手工包裹：写一个小脚本（Node 或 Python），在嵌入前把 CJK 文字（如 Unicode 范围 U+3000–303F、U+3400–9FFF、U+F900–FAFF、U+FF00–FFEF）包进 ${code('<span class="cjk">')}，并确保 ${code('.kpi span')} 这类 CSS 选择器不会误匹配这些包裹元素（用子选择器或 class）。`;
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。不要手工包裹：写一个小脚本（Node 或 Python），在嵌入前把 CJK 文字（如 Unicode 范围 U+3000–303F、U+3400–9FFF、U+F900–FAFF、U+FF00–FFEF）包进 ${code('<span class="cjk">')}，并确保 ${code('.kpi span')} 这类 CSS 选择器不会误匹配这些包裹元素（用子选择器或 class）。另外，在 CSS 里搜索所有形如 ${code('X span')} 的后代选择器（例如 ${code('.kpi span')}、${code('.reco-figs span')}）：它们也会匹配 ${code('.cjk')} 包裹元素，要改成子选择器（${code('X > span')}）或用 ${code(':not(.cjk)')} 排除。在 flex 容器里，只包裹文字中的 CJK 部分会让中文与数字之间的空格消失：改为把整段文字包进一个内层 span。CJK 字重、字间距和行高只作用于 CJK 文字；拉丁文字保持实际加载的字重。`;
   const remoteLinks = ctx.remoteFontLinks.map((u) => code(`<link rel="stylesheet" href="${u}">`)).join(' / ');
   const remoteZh = ctx.localFonts && ctx.remoteFontLinks.length
     ? `\n  - Fontshare 字体：这些字体不在 ${code('fonts/')} 里（Fontshare 的字体无法在此自托管）。在幻灯片中原样保留模板里的 Fontshare 链接：${remoteLinks}。这是“全部嵌入”规则的唯一例外；不要把这些字体换成别的字体。`
@@ -418,7 +419,7 @@ export function promptZh(ctx) {
   - 幻灯片不含 CJK 文字：使用第 2 节中原模板的链接。
   - 幻灯片含中文、日文或韩文：改用 ${code('design.md')} CJK 一节给出的合并链接，代替原模板的链接。${cjkLink}如果 ${code('design.md')} 没有给出合并链接，就把它推荐的 CJK 字体按规定字重作为一个新的 ${code('family=')} 参数加到原链接上。
   - 字体栈：拉丁字体在前，CJK 字体在后（如 ${code('font-family: "Latin Face", "CJK Face", sans-serif')}），让每种文字落到各自的字体上。
-  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。不要手工包裹：写一个小脚本（Node 或 Python），在嵌入前把 CJK 文字（如 Unicode 范围 U+3000–303F、U+3400–9FFF、U+F900–FAFF、U+FF00–FFEF）包进 ${code('<span class="cjk">')}，并确保 ${code('.kpi span')} 这类 CSS 选择器不会误匹配这些包裹元素（用子选择器或 class）。`;
+  - 对 CJK 文字，${code('design.md')} CJK 一节的设定覆盖拉丁 token 的取值：字重、字间距、行高和大写转换。当同一元素里 CJK 字重与拉丁字重不同时，单靠字体栈无法让两种文字各用各的字重：把 CJK 文字包起来（如 ${code('<span class="cjk">')}），在其中设置 CJK 字重、${code('letter-spacing: 0')}、${code('text-transform: none')} 和 CJK 行高。本规则优先于 ${code('design.md')} 中任何“CJK 会自动回退到更重字重”的说法。不要手工包裹：写一个小脚本（Node 或 Python），在嵌入前把 CJK 文字（如 Unicode 范围 U+3000–303F、U+3400–9FFF、U+F900–FAFF、U+FF00–FFEF）包进 ${code('<span class="cjk">')}，并确保 ${code('.kpi span')} 这类 CSS 选择器不会误匹配这些包裹元素（用子选择器或 class）。另外，在 CSS 里搜索所有形如 ${code('X span')} 的后代选择器（例如 ${code('.kpi span')}、${code('.reco-figs span')}）：它们也会匹配 ${code('.cjk')} 包裹元素，要改成子选择器（${code('X > span')}）或用 ${code(':not(.cjk)')} 排除。在 flex 容器里，只包裹文字中的 CJK 部分会让中文与数字之间的空格消失：改为把整段文字包进一个内层 span。CJK 字重、字间距和行高只作用于 CJK 文字；拉丁文字保持实际加载的字重。`;
   const netZh = `- **不发起其他网络请求**：不用 CDN、远程脚本、远程图片或统计代码。图表、图标和示意图用内联 SVG 或 CSS 绘制。用户提供的图片缩小到实际显示尺寸后以 data URI 嵌入。${ctx.cdnScripts.length ? `\n- **图表**：原版 ${code('template.html')} 从 CDN 加载了脚本（${ctx.cdnScripts.map(code).join('、')}）。不要照搬。图表可以做，但要用内联 SVG（默认）或写在文件里的 canvas 代码绘制。只有用户明确要求时，才内联一份固定版本的图表库。` : ''}`;
 
   const fontCheckZh = ctx.systemFontsOnly
@@ -503,7 +504,7 @@ ${netZh}
    - CJK 文字中没有以单个字或孤立标点结尾的行；如果有，调整宽度或措辞；
    - 手机上画布保持 16:9 并加黑边；
    ${fontCheckZh}
-   - 控制台无报错，${netCheckZh}。
+   - 控制台无报错（离线时 Google Fonts 请求失败及其报错属预期，字体已嵌入就没问题），${netCheckZh}。
 3. 修正后重新检查，直到全部通过。如果无法在浏览器中渲染，要明确说明，并人工审查代码；不要声称检查已通过。
 4. 最后，以观众的视角通读整份幻灯片，修正幻灯片自身互相矛盾的表述（例如某页声称“每页只有一个 X”，实际却用了三次 X）。
 5. 在用户的默认浏览器中打开幻灯片：
@@ -645,7 +646,7 @@ ${L.join('\n')}
 - **Missing layout? Build it from the template's own classes and components**, in the same system. Don't switch styles or drop the content.
 - **Real content, drafted when missing.** Use the user's material. Never reuse the example texts, numbers, names or logos from the author's documents. When the user names a topic but gives no content, draft it yourself; never put placeholders such as "TBD" or a bracketed template placeholder on a slide. Keep drafts plausible and modest. Every drafted item (including any example quote, name or number you made up) must be listed in your final reply (section 6).
 - **Only real links and codes.** QR codes, links, URLs and email addresses only when the user gave a real one; otherwise omit them.
-- **Numbers must agree:** section numbers and labels on slides must match the slide's page number, so they never disagree with the page counter.
+- **Numbers must agree:** section numbers and labels on slides must match the slide's page number, so they never disagree with the page counter. Section ordinals (such as “Section 03”) are fine; any reference to a page number must equal the footer page number.
 - **No internal labels on slides.** Never show the template name (${name} / ${slug}), the author's or sponsors' names, the words "template" or "preview", file names, paths or notes about the user's requirements. Visible chrome is real deck content only.
 - **The user's density choice wins** over the author's density guidance: fewer, larger blocks for low density. If content does not fit, split it across more slides; never shrink text below the author's size floors and never let it overflow.
 - **Keep emphasis legible:** accent colors need contrast with the surface they sit on; never put accent on accent. Use the author's accent text variables.
@@ -661,7 +662,7 @@ ${L.join('\n')}
    - for the Swiss template: every section has a registered ${code('data-layout')}, one accent color only, no gradients, shadows or rounded corners;
    - in CJK text, no line ends with a single character or a lone punctuation mark;
    - the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare rendered text widths against a fallback font. If a font request fails with a network error, retry or reload before concluding anything;
-   - no leftover bracketed placeholders (see step 5 of the workflow) or sample text (search the file), no console errors, and no network requests at all (or, for CJK text, only the one Google Fonts request).
+   - no leftover bracketed placeholders (see step 5 of the workflow) or sample text (search the file), no console errors (offline, the failed Google Fonts request and its console error are expected and fine when the fonts are embedded), and no network requests at all (or, for CJK text, only the one Google Fonts request).
 3. Fix and re-check until clean. If you cannot render in a browser, say so plainly and review the code by hand; don't claim the check passed.
 4. Reread the deck as the audience would and fix any statement the deck itself contradicts.
 5. Open the deck in the user's default browser:
@@ -778,7 +779,7 @@ ${L.join('\n')}
    - 瑞士风模板：每个 section 都有已登记的 ${code('data-layout')}，只有一种强调色，没有渐变、阴影或圆角；
    - CJK 文字中没有以单个字或孤立标点结尾的行；
    - 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；
-   - 没有残留的 ${code('[必填]')} / ${code('[选填]')} 占位符或示例文字（在文件中搜索），控制台无报错，完全没有网络请求（含 CJK 文字时只允许那条 Google Fonts 请求）。
+   - 没有残留的 ${code('[必填]')} / ${code('[选填]')} 占位符或示例文字（在文件中搜索），控制台无报错（离线时 Google Fonts 请求失败及其报错属预期，字体已嵌入就没问题），完全没有网络请求（含 CJK 文字时只允许那条 Google Fonts 请求）。
 3. 修正后重新检查，直到全部通过。如果无法在浏览器中渲染，要明确说明，并人工审查代码；不要声称检查已通过。
 4. 以观众的视角通读整份幻灯片，修正幻灯片自身互相矛盾的表述。
 5. 在用户的默认浏览器中打开幻灯片：
@@ -939,7 +940,7 @@ ${L.join('\n')}
 - **Missing slide type? Build it from the deck's own classes and components**, in the same system. Don't switch styles or drop the content.
 - **Real content, drafted when missing.** Use the user's material. Never reuse the example texts, numbers, names or logos. When the user names a topic but gives no content, draft it yourself; never put placeholders such as "TBD" or "Lorem ipsum" on a slide. Keep drafts plausible and modest. Every drafted item (including any example quote, name or number you made up) must be listed in your final reply (section 6).
 - **Only real links and codes.** QR codes, links, URLs and e-mail addresses only when the user gave a real one; otherwise omit them.
-- **Numbers must agree:** section numbers, step numbers and labels on slides must match the slide's page number and the page counter.
+- **Numbers must agree:** section numbers, step numbers and labels on slides must match the slide's page number and the page counter. Section ordinals (such as “Section 03”) are fine; any reference to a page number must equal the footer page number.
 - **No internal labels on slides.** Never show the deck or template name (${name} / ${slug}), the author's name or handle, the words "template", "preview" or "html-ppt", file names, paths or notes about the user's requirements. Visible chrome is real deck content only.
 - **The user's density choice wins**: fewer, larger blocks for low density. If content does not fit, split it across more slides; never shrink text below the sizes the example deck uses for the same role and never let it overflow or clip.
 - **Keep emphasis legible:** text on an accent fill uses the accent-ink variable; accent colors need contrast with the surface they sit on; never put accent on accent.
@@ -954,7 +955,7 @@ ${L.join('\n')}
    - emphasis is legible (accent-ink on accent fills, no accent on accent);
    - in CJK text, no line ends with a single character or a lone punctuation mark;
    - the intended fonts loaded, Latin and CJK (no fallback). ${code('document.fonts.check()')} is not proof: wait for ${code('document.fonts.ready')} and confirm each expected face appears in ${code('document.fonts')} with status ${code('"loaded"')}, or compare rendered text widths against a fallback font. If a font request fails with a network error, retry or reload before concluding anything;
-   - no leftover example content or placeholders (search the file for the example's texts, names, handles and URLs), no console errors, and no network requests at all (or, for CJK text, only the Google Fonts request).
+   - no leftover example content or placeholders (search the file for the example's texts, names, handles and URLs), no console errors (offline, the failed Google Fonts request and its console error are expected and fine when the fonts are embedded), and no network requests at all (or, for CJK text, only the Google Fonts request).
 3. Also check: the slide count equals the number of ${code('.slide')} elements; the page counter and every ${code('.slide-number')} agree with it; ${code('O')} opens an overview that shows all slides; ← and → reach the first and last slide.
 4. Fix and re-check until clean. If you cannot render in a browser, say so plainly and review the code by hand; don't claim the check passed.
 5. Reread the deck as the audience would and fix any statement the deck itself contradicts.
@@ -1074,7 +1075,7 @@ ${L.join('\n')}
    - 强调清晰可读（强调色填充上用 accent-ink，没有强调色叠强调色）；
    - CJK 文字中没有以单个字或孤立标点结尾的行；
    - 目标字体已加载，包括拉丁字体和 CJK 字体（不是回退字体）。${code('document.fonts.check()')} 不能作为证据：应等待 ${code('document.fonts.ready')}，再确认每个预期字体都出现在 ${code('document.fonts')} 中且状态为 ${code('"loaded"')}，或者把渲染出的文字宽度与回退字体对比。如果字体请求因网络错误失败，先重试或重新加载再下结论；
-   - 没有残留的示例内容或占位符（在文件中搜索示例里的文字、人名、账号和网址），控制台无报错，完全没有网络请求（含 CJK 文字时只允许 Google Fonts 请求）。
+   - 没有残留的示例内容或占位符（在文件中搜索示例里的文字、人名、账号和网址），控制台无报错（离线时 Google Fonts 请求失败及其报错属预期，字体已嵌入就没问题），完全没有网络请求（含 CJK 文字时只允许 Google Fonts 请求）。
 3. 另外检查：页数等于 ${code('.slide')} 元素的数量；页码计数和每个 ${code('.slide-number')} 都与之一致；${code('O')} 能打开显示全部页面的总览；← 和 → 能到达第一页和最后一页。
 4. 修正后重新检查，直到全部通过。如果无法在浏览器中渲染，要明确说明，并人工审查代码；不要声称检查已通过。
 5. 以观众的视角通读整份幻灯片，修正幻灯片自身互相矛盾的表述。
@@ -1095,13 +1096,17 @@ ${L.join('\n')}
 // credits: [{what, author, project, license, licenseFile, url}]
 export function packReadme(ctx, credits, siteName) {
   const lines = credits.map((c) =>
-    `- ${c.what}: by ${c.author}, from [${c.project}](${c.url}) (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
+    `- ${c.what}: by ${c.author}, from ${c.url ? `[${c.project}](${c.url})` : c.project} (${c.license}${c.licenseFile ? `; see ${c.licenseFile.split(', ').map(code).join(', ')}` : ''}).`);
   const notice = licenseNoticeEn(ctx);
   const noticeZh = licenseNoticeZh(ctx);
+  // Private (internal) templates: no open license is claimed anywhere.
+  const internal = ctx.internal
+    ? `\n> **Internal use only.** This template belongs to ${ctx.internal.name}; do not distribute this pack outside it.\n>\n> **仅限内部使用。** ${zhText`本模板属于${ctx.internal.nameZh}，请勿将素材包外传。`}\n`
+    : '';
   return `# ${ctx.name}: slide template pack
 
 ${ctx.tagline}
-${notice ? `\n${notice}\n\n${noticeZh}\n` : ''}
+${internal}${notice ? `\n${notice}\n\n${noticeZh}\n` : ''}
 ## How to use
 
 1. Unzip this archive. It creates a folder named ${code(ctx.slug + '/')}.
@@ -1117,4 +1122,19 @@ ${lines.join('\n')}
 
 ${ctx.packClosing ?? `The template and design files are unmodified copies of the originals. ${siteName} is an independent community gallery that repackages openly licensed templates; it is not affiliated with or endorsed by the original authors.`}
 `;
+}
+
+// Private (internal) templates: one line under the prompt's title, so the agent does not publish or
+// redistribute the result outside the organisation. (Page prompt and PROMPT.md are the same text.)
+function withInternalLine(text, line) {
+  const i = text.indexOf('\n');
+  return i < 0 ? text : `${text.slice(0, i)}\n\n${line}${text.slice(i)}`;
+}
+export function promptEn(ctx) {
+  const t = promptEnBase(ctx);
+  return ctx.internal ? withInternalLine(t, `> **Internal use only.** This template belongs to ${ctx.internal.name}; its terms are in ${code(licenseFileOf(ctx))}. Do not publish or redistribute the deck, the pack or its design outside ${ctx.internal.name}.`) : t;
+}
+export function promptZh(ctx) {
+  const t = promptZhBase(ctx);
+  return ctx.internal ? withInternalLine(t, zhText`> **仅限内部使用。** 本模板属于${ctx.internal.nameZh}，使用条款见 ${code(licenseFileOf(ctx))}。请勿把幻灯片、素材包或其设计发布或传播到${ctx.internal.nameZh}之外。`) : t;
 }

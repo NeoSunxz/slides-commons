@@ -14,6 +14,18 @@
 //                                 slash is added). When set, both prompts tell the agent to
 //                                 download <url>zip/<slug>.zip itself if the pack is not there.
 //                                 Default: none, and the prompts are unchanged.
+//   --extra-sources <file>        SC_EXTRA_SOURCES  more sources files (same format as sources.json),
+//                                 e.g. a company's private templates kept outside this repository.
+//                                 Repeatable; SC_EXTRA_SOURCES and a single option value may hold
+//                                 several paths separated by the platform's path delimiter. Paths
+//                                 inside such a file resolve from that file's own directory.
+//                                 <repo>/sources.local.json is loaded automatically when it exists
+//                                 (only together with the default sources.json; --no-local-sources
+//                                 or SC_NO_LOCAL_SOURCES=1 turns that off).
+//   --only-sources <id,...>       SC_ONLY_SOURCES   build / validate only these sources (default: all).
+//                                 Slug uniqueness is still checked against every source.
+//   --no-kits                     SC_NO_KITS=1      skip the convert kit and skills pages/zips.
+//   --validate                    run scripts/validate.mjs instead of building (same options).
 //   --i18n-dir <dir>  SC_I18N_DIR directory with zh.json and zh.sources.json (default: src/i18n;
 //                                 relative paths resolve from the repo root). See scripts/i18n.mjs.
 //   SOURCE_DATE_EPOCH             timestamp for zip entries (default: 1980-01-01 00:00 UTC).
@@ -33,12 +45,15 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { thumbnail } from './png-thumb.mjs';
-import { parseRequests, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
+import { parseRequests, cjkFamilyEntry, cjkFamiliesIn, cjkRangesJson, createFontStore, planTemplateFonts, fontFaceCss, rewriteGoogleFonts, cjkOnlyLinks, isCjkFamily, dataUrl, relativeUrl } from './fonts.mjs';
 import { checkCollectionTemplate } from './collection-checks.mjs';
 import { overlayPreviewHtml, metaFileOf, screenshotsDirOf, inlineLocalAssets as inlineLocal } from './overlay.mjs';
 import { loadZh, checkZh, resolveZh, zhTerm } from './i18n.mjs';
+import { zhText } from '../src/zh-text.mjs';
 import { promptEn, promptZh, packReadme } from '../src/prompt.mjs';
 import { indexPage, galleryPage, detailPage, creditsPage, setSources, setAutoDownload, pagePath, LANGS, SITE_NAME } from '../src/pages.mjs';
+import { convertPage, skillsPage } from '../src/kit-pages.mjs';
+import { buildKits } from './kits.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -52,11 +67,44 @@ function cliOption(name) {
   }
   return undefined;
 }
+function cliOptions(name) {
+  const argv = process.argv.slice(2);
+  const out = [];
+  for (let k = 0; k < argv.length; k++) {
+    if (argv[k] === `--${name}`) { if (argv[k + 1] !== undefined) out.push(argv[++k]); }
+    else if (argv[k].startsWith(`--${name}=`)) out.push(argv[k].slice(name.length + 3));
+  }
+  return out;
+}
+const hasFlag = (name) => process.argv.slice(2).includes(`--${name}`);
+const envOn = (v) => v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false';
 const optSources = cliOption('sources') ?? process.env.SC_SOURCES;
 const optOut = cliOption('out') ?? process.env.SC_OUT;
 const SOURCES_FILE = optSources ? path.resolve(optSources) : path.join(ROOT, 'sources.json');
 const SITE = optOut ? path.resolve(optOut) : path.join(ROOT, 'site');
 const optSiteUrl = cliOption('site-url') ?? process.env.SC_SITE_URL;
+const DEFAULT_SOURCES_FILE = path.join(ROOT, 'sources.json');
+const LOCAL_SOURCES_FILE = path.join(ROOT, 'sources.local.json');
+const usesDefaultSources = SOURCES_FILE === DEFAULT_SOURCES_FILE;
+const splitPaths = (v) => String(v).split(path.delimiter).map((x) => x.trim()).filter(Boolean);
+// Sources files added on top of sources.json: <repo>/sources.local.json (only next to the default
+// sources.json), then --extra-sources / SC_EXTRA_SOURCES. Later duplicates of a path are dropped.
+const EXTRA_SOURCE_FILES = (() => {
+  const list = [];
+  if (usesDefaultSources && !hasFlag('no-local-sources') && !envOn(process.env.SC_NO_LOCAL_SOURCES) && fs.existsSync(LOCAL_SOURCES_FILE)) list.push(LOCAL_SOURCES_FILE);
+  for (const v of [...cliOptions('extra-sources'), ...(process.env.SC_EXTRA_SOURCES ? [process.env.SC_EXTRA_SOURCES] : [])]) {
+    for (const p of splitPaths(v)) list.push(path.resolve(p));
+  }
+  return [...new Set(list)];
+})();
+// Translations of an extra source: <dir of its sources file>/i18n/{zh.json,zh.sources.json}.
+const extraI18nDir = (file) => path.join(path.dirname(file), 'i18n');
+const ONLY_SOURCES = (() => {
+  const v = cliOptions('only-sources').join(',') || process.env.SC_ONLY_SOURCES || '';
+  const ids = v.split(',').map((x) => x.trim()).filter(Boolean);
+  return ids.length ? new Set(ids) : null;
+})();
+const NO_KITS = hasFlag('no-kits') || envOn(process.env.SC_NO_KITS);
 
 // Public site URL for the prompts' download step: null when not configured, else an
 // absolute http(s) URL ending in '/'. Throws a message string when it is invalid.
@@ -81,16 +129,23 @@ const warn = (msg) => { warnings.push(msg); console.warn(`warning: ${msg}`); };
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 const exists = (p) => fs.existsSync(p);
-const rel = (p) => path.relative(ROOT, p) || '.';
+// Path relative to the repo when inside it, else absolute (external sources live elsewhere).
+const rel = (p) => {
+  const r = path.relative(ROOT, p);
+  return !r ? '.' : r.startsWith('..') || path.isAbsolute(r) ? p : r;
+};
 // Join a POSIX-style config path ("a/{slug}/b.md") onto a base dir, cross-platform.
 const joinCfg = (base, cfgPath, slug) => path.join(base, ...cfgPath.replace(/\{slug\}/g, slug).split('/'));
 const urlJoin = (...parts) => parts.map((p, i) => (i === 0 ? p.replace(/\/+$/, '') : p.replace(/^\/+|\/+$/g, ''))).filter(Boolean).join('/');
-const repoName = (url) => url.replace(/\/+$/, '').split('/').pop();
+const repoName = (url) => String(url ?? '').replace(/\/+$/, '').split('/').pop();
 const toPosix = (p) => p.split(path.sep).join('/');
 // Back-link to a template's directory in the source's repository. `repoPath` is where the
 // source directory lives inside the repo (empty for a repo of its own, e.g. a submodule).
 // Overlay sources link to the mapped file (or directory) of the upstream repo instead.
+// Null when the source has no repository (private sources): pages then name the source instead.
 const templateDirUrl = (src, slug) => {
+  if (src.templateUrl) return src.templateUrl.replace(/\{slug\}/g, encodeURIComponent(slug));
+  if (!src.repo) return null;
   const o = src.overlay?.templates?.[slug];
   if (o) {
     const target = o.link ?? o.html;
@@ -420,57 +475,111 @@ const LAYOUT_DEFAULTS = {
   licenseFile: 'LICENSE',
 };
 
-function loadSources() {
-  const cfgPath = SOURCES_FILE;
-  const cfg = readJson(cfgPath);
-  const sourceSchema = readJson(path.join(SRC, 'schema', 'sources.schema.json'));
-  if (!Array.isArray(cfg.sources) || !cfg.sources.length) fail('sources.json: "sources" must be a non-empty array');
-  const ids = new Set();
+// Read one sources file. `base` is the directory its relative paths resolve from: the repo root for
+// sources.json (and --sources), the file's own directory for extra files. Extra sources may be
+// private (no repository, any license text) and inherit the repo's frontend-slides companion
+// (viewport-base.css) unless they name their own.
+function readSourcesFile(file, { base, extra, sourceSchema, defaultCompanion }) {
+  const cfg = readJson(file);
+  const name = extra ? rel(file) : 'sources.json';
+  if (extra) {
+    const terrs = validate(cfg, sourceSchema, sourceSchema, '$');
+    if (terrs.length) fail(`${name} is invalid:\n  - ${terrs.join('\n  - ')}`);
+  }
+  if (!Array.isArray(cfg.sources) || !cfg.sources.length) fail(`${name}: "sources" must be a non-empty array`);
   return cfg.sources.map((s, k) => {
-    const where = `sources.json sources[${k}]`;
-    for (const f of ['id', 'name', 'author', 'license', 'repo', 'branch', 'path']) {
-      if (typeof s[f] !== 'string' || !s[f]) fail(`${where}: missing "${f}"`);
+    const where = `${name} sources[${k}]`;
+    const need = ['id', 'name', 'author', 'license', 'path', ...(s.private ? [] : ['repo', 'branch'])];
+    for (const f of need) {
+      if (typeof s[f] !== 'string' || !s[f]) fail(`${where}: missing "${f}"${s.private ? '' : ' (only private sources may omit repo and branch)'}`);
     }
     const serrs = validate(s, sourceSchema.$defs.source, sourceSchema, '$');
     if (serrs.length) fail(`${where} (${s.id}) is invalid:\n  - ${serrs.join('\n  - ')}`);
-    if (ids.has(s.id)) fail(`${where}: duplicate source id "${s.id}"`);
-    ids.add(s.id);
-    const dir = path.join(ROOT, ...s.path.split('/'));
-    if (!exists(dir)) fail(`${where}: path ${s.path} not found (run: git submodule update --init)`);
+    if (extra && s.overlay) fail(`${where} (${s.id}): "overlay" is only supported in the repository's own sources.json`);
+    if (s.include != null && !Array.isArray(s.include)) fail(`${where}: "include" must be an array of slugs`);
+    const dir = path.resolve(base, s.path);
     const layout = { ...LAYOUT_DEFAULTS, ...(s.layout ?? {}) };
-    let companion = null;
+    const companion = s.companion ? { ...s.companion } : (extra && defaultCompanion ? { ...defaultCompanion } : null);
+    return { ...s, dir, layout, companion, file, base, extra, private: Boolean(s.private), where };
+  });
+}
+
+// All sources: sources.json first, then the extra files. Existence of directories is checked only for
+// the selected sources (--only-sources), so a build of one source does not need the others checked out.
+function loadSources() {
+  const sourceSchema = readJson(path.join(SRC, 'schema', 'sources.schema.json'));
+  const own = readSourcesFile(SOURCES_FILE, { base: ROOT, extra: false, sourceSchema });
+  // The companion extra sources inherit: the first repo source that has one, reduced to what a pack needs.
+  const comp = own.find((s) => s.companion?.viewportBase)?.companion;
+  let defaultCompanion = null;
+  if (comp) {
+    const { designOverride, previewCard, ...rest } = comp;
+    defaultCompanion = { ...rest, __repoRelative: true };
+  }
+  const extras = EXTRA_SOURCE_FILES.flatMap((f) => {
+    if (!exists(f)) fail(`extra sources file not found: ${f}`);
+    return readSourcesFile(f, { base: path.dirname(f), extra: true, sourceSchema, defaultCompanion });
+  });
+  const all = [...own, ...extras];
+  const byId = new Map();
+  for (const s of all) {
+    if (byId.has(s.id)) fail(`${s.where}: duplicate source id "${s.id}" (also in ${rel(byId.get(s.id).file)})`);
+    byId.set(s.id, s);
+  }
+  if (ONLY_SOURCES) {
+    const unknown = [...ONLY_SOURCES].filter((id) => !byId.has(id));
+    if (unknown.length) fail(`--only-sources / SC_ONLY_SOURCES: unknown source id(s) ${unknown.join(', ')} (known: ${[...byId.keys()].join(', ')})`);
+  }
+  return all.map((s) => {
+    const selected = !ONLY_SOURCES || ONLY_SOURCES.has(s.id);
+    const out = { ...s, selected };
+    if (!exists(s.dir)) {
+      if (!selected) return { ...out, missing: true };
+      fail(`${s.where}: path ${s.path} not found${s.extra ? ` (resolved from ${rel(path.dirname(s.file))})` : ' (run: git submodule update --init)'}`);
+    }
     if (s.companion) {
       const c = s.companion;
-      for (const f of ['id', 'name', 'author', 'license', 'repo', 'branch', 'path']) {
-        if (typeof c[f] !== 'string' || !c[f]) fail(`${where}.companion: missing "${f}"`);
+      for (const f of ['id', 'name', 'author', 'license', 'path']) {
+        if (typeof c[f] !== 'string' || !c[f]) fail(`${s.where}.companion: missing "${f}"`);
       }
-      const cdir = path.join(ROOT, ...c.path.split('/'));
-      if (!exists(cdir)) fail(`${where}.companion: path ${c.path} not found (run: git submodule update --init)`);
-      companion = { ...c, dir: cdir };
+      if (!c.__repoRelative && !c.repo) fail(`${s.where}.companion: missing "repo"`);
+      // An inherited companion is a path in this repo; an explicit one resolves like "path".
+      const cdir = path.resolve(c.__repoRelative ? ROOT : s.base, c.path);
+      if (!exists(cdir)) {
+        if (c.__repoRelative) return { ...out, companion: null }; // upstream/skill not checked out: no viewport-base.css
+        if (selected) fail(`${s.where}.companion: path ${c.path} not found (run: git submodule update --init)`);
+      }
+      const { __repoRelative, ...cc } = c;
+      out.companion = { ...cc, dir: cdir };
     }
-    if (s.include != null && !Array.isArray(s.include)) fail(`${where}: "include" must be an array of slugs`);
     if (s.overlay) {
-      const mdir = path.join(ROOT, ...s.overlay.metaDir.split('/'));
-      if (!exists(mdir)) fail(`${where}: overlay.metaDir ${s.overlay.metaDir} not found`);
-      for (const [slug, o] of Object.entries(s.overlay.templates)) {
-        for (const f of [o.html, ...(o.assets ?? []), ...o.docs.map((d) => d.path)]) {
-          if (!exists(path.join(dir, ...f.split('/')))) fail(`${where}: overlay template "${slug}": ${s.path}/${f} not found (run: git submodule update --init)`);
+      const mdir = path.resolve(s.base, s.overlay.metaDir);
+      if (selected) {
+        if (!exists(mdir)) fail(`${s.where}: overlay.metaDir ${s.overlay.metaDir} not found`);
+        for (const [slug, o] of Object.entries(s.overlay.templates)) {
+          for (const f of [o.html, ...(o.assets ?? []), ...o.docs.map((d) => d.path)]) {
+            if (!exists(path.join(s.dir, ...f.split('/')))) fail(`${s.where}: overlay template "${slug}": ${s.path}/${f} not found (run: git submodule update --init)`);
+          }
         }
       }
     }
-    return { ...s, dir, layout, companion };
+    return out;
   });
 }
 
 // `problems` (optional array): per-template problems are collected there instead of
 // stopping at the first one, so the validate script can report everything at once.
+// Every source is read (so slugs are unique across all of them), but only the selected ones
+// (--only-sources) are returned in `templates` and reported on; `bySlug` holds all, each with `selected`.
 function loadTemplates(sources, schema, problems = null) {
   const all = [];
   const bySlug = new Map();
   const report = (msg) => { if (problems) problems.push(msg); else fail(msg); };
   for (const src of sources) {
+    if (src.missing) continue; // not selected and not checked out
+    const sel = src.selected;
     const tdir = path.join(src.dir, ...src.layout.templatesDir.split('/'));
-    if (!src.overlay && !exists(tdir)) fail(`source ${src.id}: templates dir ${rel(tdir)} not found`);
+    if (!src.overlay && !exists(tdir)) { if (sel) fail(`source ${src.id}: templates dir ${rel(tdir)} not found`); else continue; }
     let slugs = src.overlay
       ? Object.keys(src.overlay.templates).sort()
       : fs.readdirSync(tdir, { withFileTypes: true })
@@ -478,10 +587,10 @@ function loadTemplates(sources, schema, problems = null) {
         .map((d) => d.name).sort();
     if (src.include) {
       const missing = src.include.filter((s) => !slugs.includes(s));
-      if (missing.length) fail(`source ${src.id}: include lists unknown template(s): ${missing.join(', ')}`);
+      if (missing.length && sel) fail(`source ${src.id}: include lists unknown template(s): ${missing.join(', ')}`);
       slugs = slugs.filter((s) => src.include.includes(s));
     }
-    if (src.derivedFrom?.slugs) {
+    if (src.derivedFrom?.slugs && sel) {
       const unknown = src.derivedFrom.slugs.filter((x) => !slugs.includes(x));
       if (unknown.length) fail(`source ${src.id}: derivedFrom.slugs lists unknown template(s): ${unknown.join(', ')}`);
     }
@@ -490,7 +599,7 @@ function loadTemplates(sources, schema, problems = null) {
       const metaPath = src.overlay ? metaFileOf(ROOT, src, dirName) : path.join(dir, src.layout.metaFile);
       let meta;
       try { meta = readJson(metaPath); } catch (e) {
-        if (e instanceof BuildError && problems) { problems.push(e.message); continue; }
+        if (e instanceof BuildError && (problems || !sel)) { if (sel) problems.push(e.message); continue; }
         throw e;
       }
       const record = {
@@ -500,16 +609,16 @@ function loadTemplates(sources, schema, problems = null) {
         authors: meta.authors ?? [{ name: src.author, ...(src.authorUrl ? { url: src.authorUrl } : {}) }],
       };
       const errors = validate(record, schema, schema);
-      if (errors.length) { report(`${rel(metaPath)} failed schema validation:\n  - ${errors.join('\n  - ')}`); continue; }
-      if (record.slug !== dirName) { report(`${rel(metaPath)}: slug "${record.slug}" does not match its directory "${dirName}"`); continue; }
+      if (errors.length) { if (sel) report(`${rel(metaPath)} failed schema validation:\n  - ${errors.join('\n  - ')}`); continue; }
+      if (record.slug !== dirName) { if (sel) report(`${rel(metaPath)}: slug "${record.slug}" does not match its directory "${dirName}"`); continue; }
       if (bySlug.has(record.slug)) {
         const other = bySlug.get(record.slug);
-        report(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)})`);
+        if (sel || other.selected) report(`duplicate slug "${record.slug}": source "${other.source}" (${rel(other.dir)}) and source "${src.id}" (${rel(dir)}). Slugs must be unique across all sources; rename the template directory and its "slug".`);
         continue;
       }
-      const t = { ...record, dir, src, overlay: src.overlay?.templates[dirName] ?? null, metaExplicit: { authors: meta.authors != null, license: meta.license != null }, metaPath };
+      const t = { ...record, dir, src, selected: sel, overlay: src.overlay?.templates[dirName] ?? null, metaExplicit: { authors: meta.authors != null, license: meta.license != null }, metaPath };
       bySlug.set(t.slug, t);
-      all.push(t);
+      if (sel) all.push(t);
     }
   }
   return { templates: all, bySlug };
@@ -681,6 +790,28 @@ function licenseNoticeInfo(t) {
   };
 }
 
+// NOTICE.txt of a private template pack without a LICENSE file (English, then Chinese).
+function internalNoticeText(t, { skill, fonts }) {
+  const who = t.src.name;
+  const whoZh = t.src.nameZh ?? who;
+  const authors = t.authors.map((a) => a.name).join(', ');
+  const third = [skill ? 'viewport-base.css (frontend-slides by Zara Zhang, MIT; see LICENSE-skill)' : null, fonts ? 'the web fonts in fonts/ (their own licenses are next to the files)' : null].filter(Boolean);
+  return `INTERNAL USE ONLY
+
+Internal use only — do not distribute outside ${who}.
+
+Template: ${t.name} (${t.slug})
+Author: ${authors}
+Terms: ${t.license}
+${third.length ? `\nThird-party files in this pack keep their own licenses: ${third.join('; ')}.\n` : ''}
+------------------------------------------------------------
+
+仅限内部使用
+
+${zhText`仅限内部使用，请勿外传（不得在${whoZh}之外传播）。`}
+${third.length ? `\n本素材包中的第三方文件遵循各自的许可证（viewport-base.css 见 LICENSE-skill；fonts/ 下的字体许可证在字体文件旁）。\n` : ''}`;
+}
+
 function buildContext(t) {
   const { src } = t;
   const L = src.layout;
@@ -733,16 +864,26 @@ function buildContext(t) {
   const typography = Object.entries(t.typography).filter(([k]) => k !== 'style').map(([role, family]) => ({ role, family }));
 
   // Sibling assets shipped with template.html (never the meta / design files).
-  const skip = new Set([L.metaFile, L.htmlFile, L.designFile, ...(src.perTemplateLicense ? [L.licenseFile] : [])].map((f) => path.normalize(f)));
+  const skip = new Set([L.metaFile, L.htmlFile, L.designFile, ...(src.perTemplateLicense || src.private ? [L.licenseFile] : [])].map((f) => path.normalize(f)));
   const assets = ov ? (ov.assets ?? []) : walk(t.dir).filter((f) => !skip.has(path.normalize(f)) && !/(^|[\\/])\.[^\\/]+$/.test(f)).map(toPosix);
 
   // perTemplateLicense: every template directory carries its own LICENSE (community contributions).
-  const srcLicense = src.perTemplateLicense ? path.join(t.dir, L.licenseFile) : path.join(src.dir, L.licenseFile);
-  if (!exists(srcLicense)) {
-    if (src.perTemplateLicense) fail(`${t.slug}: ${rel(srcLicense)} is missing. Fix: add the full text of the ${t.license ?? 'chosen'} license as ${path.basename(srcLicense)} in the template directory.`);
-    fail(`source ${src.id}: license file ${rel(srcLicense)} not found`);
+  // Private sources: the template's or the source's LICENSE if there is one, else a NOTICE.txt
+  // ("internal use only"), written below once we know what else the pack contains.
+  let licenses;
+  let internalNotice = false;
+  if (src.private) {
+    const own = [[path.join(t.dir, L.licenseFile), 'LICENSE'], [path.join(src.dir, L.licenseFile), src.packLicenseName ?? 'LICENSE']].find(([p]) => exists(p));
+    if (own) licenses = [{ file: own[1], path: own[0] }];
+    else { licenses = [{ file: 'NOTICE.txt', path: null, data: null }]; internalNotice = true; }
+  } else {
+    const srcLicense = src.perTemplateLicense ? path.join(t.dir, L.licenseFile) : path.join(src.dir, L.licenseFile);
+    if (!exists(srcLicense)) {
+      if (src.perTemplateLicense) fail(`${t.slug}: ${rel(srcLicense)} is missing. Fix: add the full text of the ${t.license ?? 'chosen'} license as ${path.basename(srcLicense)} in the template directory.`);
+      fail(`source ${src.id}: license file ${rel(srcLicense)} not found`);
+    }
+    licenses = [{ file: src.packLicenseName ?? (src.perTemplateLicense ? 'LICENSE' : 'LICENSE-templates'), path: srcLicense }];
   }
-  const licenses = [{ file: src.packLicenseName ?? (src.perTemplateLicense ? 'LICENSE' : 'LICENSE-templates'), path: srcLicense }];
   if (comp) {
     const p = path.join(comp.dir, comp.licenseFile ?? 'LICENSE');
     if (!exists(p)) fail(`companion ${comp.id}: license file ${rel(p)} not found`);
@@ -768,6 +909,8 @@ function buildContext(t) {
   } else {
     fontPlan = planTemplateFonts(html, FONT_STORE);
   }
+
+  if (internalNotice) licenses[0].data = Buffer.from(internalNoticeText(t, { skill: Boolean(comp), fonts: fontPlan.faces.length > 0 }), 'utf8');
 
   const cjk = cjkFamiliesIn(ROOT, [fontText, designMd]);
   // Weights of those families the template's links ask for (ranges expand to the published weights).
@@ -816,12 +959,13 @@ function buildContext(t) {
     // Overlay templates: the author's own docs replace design.md in the prompt (paths as in the pack).
     docs: ov ? ov.docs : null,
     promptKind: ov?.prompt ?? null,
-    credit: { author: t.authors.map((a) => a.name).join(', '), license: t.license, repoUrl: src.repo },
+    credit: { author: t.authors.map((a) => a.name).join(', '), license: t.license, repoUrl: src.repo ?? '' },
     // Overlay `keepPaths`: the HTML ships at its upstream path; deckDir is its folder in the pack.
     htmlName: ov?.keepPaths ? ov.html : L.htmlFile,
     deckDir: ov?.keepPaths ? path.posix.dirname(ov.html) : null,
     slideCount: t.slide_count,
-    licenseNotice: strongLicense(t.license) ? licenseNoticeInfo(t) : null,
+    licenseNotice: !src.private && strongLicense(t.license) ? licenseNoticeInfo(t) : null,
+    internal: src.private ? { name: src.name, nameZh: src.nameZh ?? src.name } : null,
   };
 
   const sourceDirUrl = templateDirUrl(src, t.slug);
@@ -877,7 +1021,7 @@ function externalHosts(text) {
 }
 
 // Collect every problem with the loaded templates (does not stop at the first one).
-function checkTemplates(templates, problems, { strictScreenshots = true } = {}) {
+function checkTemplates(templates, problems, { strictScreenshots = true, bySlug = null } = {}) {
   const items = []; // { t, description } for the i18n check
   for (const t of templates) {
     const at = `${t.slug}:`;
@@ -887,9 +1031,9 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
     // Attribution and back-link target.
     const L = t.src.layout;
     const expected = templateDirUrl(t.src, t.slug);
-    if (!/^https:\/\/.+\/(?:tree|blob)\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
+    if (!t.src.private && !/^https:\/\/.+\/(?:tree|blob)\/.+\/.+/.test(expected)) problems.push(`${at} cannot build a back-link to the original (got "${expected}")`);
 
-    if (!t.src.collection && !screenshotsFor(t.src, t.slug).length) { // collections get the stricter check below
+    if (!t.src.collection && !t.src.private && !screenshotsFor(t.src, t.slug).length) { // collections get the stricter check below
       const msg = `${at} no screenshot in ${rel(t.src.overlay ? screenshotsDirOf(ROOT, t.src) : path.join(t.src.dir, ...L.screenshotsDir.split('/')))} named ${t.slug}-<n>.png${t.src.overlay ? ' (run: npm run screenshots)' : ''}`;
       if (strictScreenshots) problems.push(msg); else warn(msg);
     }
@@ -900,22 +1044,24 @@ function checkTemplates(templates, problems, { strictScreenshots = true } = {}) 
       throw e;
     }
     const mg = moodGroupsOf(t);
-    if (mg.missing.length) problems.push(`${at} mood tag(s) not in any group of src/tags.json: ${mg.missing.map((m) => `"${m}"`).join(', ')}. Fix: add each tag to the matching group (bold, warm, editorial, calm, elegant, playful, professional, modern, retro, tech, crafted, artistic).`);
+    if (mg.missing.length && t.src.private) warn(`${at} mood tag(s) not in any group of src/tags.json: ${mg.missing.map((m) => `"${m}"`).join(', ')} (no mood filter for them; the tags still work in search)`);
+    else if (mg.missing.length) problems.push(`${at} mood tag(s) not in any group of src/tags.json: ${mg.missing.map((m) => `"${m}"`).join(', ')}. Fix: add each tag to the matching group (bold, warm, editorial, calm, elegant, playful, professional, modern, retro, tech, crafted, artistic).`);
     for (const e of info.fontPlan.errors) problems.push(`${at} local font: ${e} (run npm ci; or add the package to devDependencies)`);
     items.push({ t, description: info.ctx.description });
     if (!info.ctx.description) problems.push(info.designPath ? `${at} ${rel(info.designPath)} has no front matter "description"` : `${at} ${rel(t.metaPath)} needs a "description"`);
 
     // derivedFrom must point at a template of this gallery.
     if (t.derivedFrom) {
-      const o = templates.find((x) => x.slug === t.derivedFrom.slug);
-      if (!o) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.slug "${t.derivedFrom.slug}" is not a template in this gallery. Fix: use the slug of an existing template.`);
-      else if (o.source !== t.derivedFrom.source) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.source "${t.derivedFrom.source}" does not match the source of "${o.slug}" ("${o.source}").`);
+      const o = (bySlug ?? new Map(templates.map((x) => [x.slug, x]))).get(t.derivedFrom.slug);
+      if (!o && t.src.private) warn(`${at} derivedFrom.slug "${t.derivedFrom.slug}" is not a template of this gallery; the original is not credited on the page`);
+      else if (!o) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.slug "${t.derivedFrom.slug}" is not a template in this gallery. Fix: use the slug of an existing template.`);
+      else if (o.source !== t.derivedFrom.source && !t.src.private) problems.push(`${at} ${rel(t.metaPath)}: derivedFrom.source "${t.derivedFrom.source}" does not match the source of "${o.slug}" ("${o.source}").`);
     }
 
     // Stricter rules for templates that live in this repository.
-    if (t.src.collection) {
+    if (t.src.collection || t.src.private) {
       problems.push(...checkCollectionTemplate({
-        t, rel,
+        t, rel, private: Boolean(t.src.private),
         metaPath: t.metaPath, metaExplicit: t.metaExplicit,
         html: info.html, htmlPath: info.htmlPath,
         designMd: info.designPath ? read(info.designPath) : '', designPath: info.designPath,
@@ -986,12 +1132,16 @@ function loadAndCheck({ strictScreenshots = true } = {}) {
   let siteUrl = null;
   try { siteUrl = parseSiteUrl(optSiteUrl); } catch (e) { problems.push(String(e)); }
   const { templates, bySlug } = loadTemplates(sources, schema, problems);
-  const items = checkTemplates(templates, problems, { strictScreenshots });
+  const items = checkTemplates(templates, problems, { strictScreenshots, bySlug });
   if (!templates.length && !problems.length) problems.push('no templates found');
   // Chinese translations: structural problems are errors, missing / stale ones warnings.
-  const { zh, sources: zhSources } = loadZh(problems);
-  const strictSlugs = SOURCES_FILE === path.join(ROOT, 'sources.json') && !sources.some((s) => s.include);
-  checkZh({ zh, sources: zhSources }, items, problems, warn, { strictSlugs });
+  const { zh, sources: zhSources } = loadZh(problems, EXTRA_SOURCE_FILES.map(extraI18nDir));
+  // zh.json covers the repository's own templates only; private templates are shown in English on
+  // the zh pages (one warning for all of them instead of one per field).
+  const strictSlugs = usesDefaultSources && !ONLY_SOURCES && !sources.some((s) => s.include);
+  const privateItems = items.filter((i) => i.t.src.private && !zh?.templates?.[i.t.slug]);
+  if (privateItems.length) warn(`no Chinese translations for ${privateItems.length} private template(s) (${privateItems.map((i) => i.t.slug).join(', ')}); English is shown on the zh pages`);
+  checkZh({ zh, sources: zhSources }, items.filter((i) => !privateItems.includes(i)), problems, warn, { strictSlugs });
   return { sources, templates, bySlug, problems, zh, siteUrl };
 }
 
@@ -1171,14 +1321,17 @@ function main() {
 
   fs.copyFileSync(path.join(SRC, 'home.js'), path.join(SITE, 'assets', 'home.js'));
   fs.copyFileSync(path.join(SRC, 'home.css'), path.join(SITE, 'assets', 'home.css'));
+  fs.copyFileSync(path.join(SRC, 'kits.css'), path.join(SITE, 'assets', 'kits.css'));
   // Home page carousel / hero wall: a curated list of templates whose first screenshot is complete.
   const homeSlugs = readJson(path.join(SRC, 'home.json')).carousel;
   // Only the repository's own sources.json must list real templates (--sources fixture builds contain few).
-  if (path.resolve(SOURCES_FILE) === path.join(ROOT, 'sources.json')) {
+  // (A build restricted with --only-sources shows the curated slugs that exist, see below.)
+  if (usesDefaultSources && !ONLY_SOURCES) {
     for (const slug of homeSlugs) if (!templates.some((t) => t.slug === slug)) fail(`src/home.json: carousel template "${slug}" does not exist`);
   }
 
-  setSources(sources.filter((s) => templates.some((t) => t.source === s.id)));
+  const shownSources = sources.filter((s) => templates.some((t) => t.source === s.id));
+  setSources(shownSources);
   setAutoDownload(Boolean(siteUrl));
 
   const pageData = [];
@@ -1245,11 +1398,12 @@ function main() {
     const credits = [{
       what: `Template "${t.name}" (${[t.overlay?.keepPaths ? t.overlay.html : 'template.html', ...info.assets, ...(t.overlay ? t.overlay.docs.map((d) => d.path) : [])].map((f) => '`' + f + '`').join(', ')}${info.designFrom === 'template' ? ', `design.md`' : ''})`,
       author: t.authors.map((a) => a.name).join(', '),
-      project: repoName(t.src.repo),
+      project: t.src.repo ? repoName(t.src.repo) : t.src.name,
       license: t.license,
       licenseFile: info.licenses[0].file,
       url: info.sourceDirUrl,
     }];
+    // A private source has no public original: the pack README names the source instead of a link.
     if (t.src.companion) {
       const files = [info.designFrom === 'companion' ? '`design.md` (fixed-stage edition)' : null, info.viewportBasePath ? '`viewport-base.css`' : null].filter(Boolean);
       if (files.length) {
@@ -1318,7 +1472,9 @@ function main() {
     }
     const readme = packReadme({
       ...ctx,
-      packClosing: t.src.collection
+      packClosing: t.src.private
+        ? `This template is internal to ${t.src.name}: for internal use only, see \`${info.licenses[0].file}\`. ${SITE_NAME} is an independent open-source tool that only packages it; it is not affiliated with the authors of the third-party files credited above.`
+        : t.src.collection
         ? (srcDerived
           ? `${SITE_NAME} is an independent community gallery. This template is a derivative work of the project credited above (visual direction), written for ${SITE_NAME}; the original author did not make or endorse it. Files are licensed as listed above.`
           : t.derivedFrom
@@ -1338,7 +1494,7 @@ function main() {
       ...(info.viewportBasePath ? [{ name: z + 'viewport-base.css', data: fs.readFileSync(info.viewportBasePath) }] : []),
       ...packFontEntries(z, faces),
       ...packCjkEntries(z, info.cjk, siteUrl),
-      ...[...info.licenses, ...extraLicenses].map((l) => ({ name: z + l.file, data: fs.readFileSync(l.path) })),
+      ...[...info.licenses, ...extraLicenses].map((l) => ({ name: z + l.file, data: l.data ?? fs.readFileSync(l.path) })),
       { name: z + 'PROMPT.md', data: Buffer.from(en, 'utf8') },
       { name: z + 'PROMPT.zh.md', data: Buffer.from(zh, 'utf8') },
       { name: z + 'README.md', data: Buffer.from(readme, 'utf8') },
@@ -1380,8 +1536,11 @@ function main() {
       paletteColors: info.paletteColors,
       screenshots: shots,
       thumb: shots[0] ?? null,
-      sourceRepoUrl: t.src.repo,
-      sourceRepoName: repoName(t.src.repo),
+      sourceRepoUrl: t.src.repo ?? null,
+      sourceRepoName: t.src.repo ? repoName(t.src.repo) : t.src.name,
+      internal: t.src.private,
+      sourceName: t.src.name,
+      sourceNameZh: t.src.nameZh ?? null,
       sourceDirUrl: info.sourceDirUrl,
       sourceDerived: srcDerived,
       companionInfo: info.companionInfo,
@@ -1397,17 +1556,37 @@ function main() {
     pageData.push(data);
   }
 
+  // Convert kit + skills collection: two more zips and their pages.
+  // Whenever the repository's own sources.json is used (extra sources and --only-sources do not matter;
+  // --sources fixture builds stay minimal), kits/ exists and --no-kits is not given.
+  const kits = usesDefaultSources && !NO_KITS && fs.existsSync(path.join(ROOT, 'kits', 'kits.json'))
+    ? buildKits({ root: ROOT, site: SITE, siteUrl, makeZip, zipTime, writeFile, licenseName: fontLicenseName, cjkFamilyEntry, cjkRangesJson, fail })
+    : null;
+  if (kits) {
+    for (const lang of LANGS) {
+      writeFile(path.join(SITE, ...pagePath(lang, 'convert/index.html').split('/')), convertPage({ lang, kit: kits.convert }));
+      writeFile(path.join(SITE, ...pagePath(lang, 'skills/index.html').split('/')), skillsPage({ lang, skills: kits.skills }));
+    }
+  }
+
+  // Home carousel: the curated slugs that exist (and have a screenshot); none of them (a restricted
+  // build): the first templates that have one.
+  const withShot = pageData.filter((d) => d.thumb?.small);
+  let featuredSlugs = homeSlugs.filter((slug) => withShot.some((d) => d.slug === slug));
+  if (!featuredSlugs.length) featuredSlugs = withShot.slice(0, 16).map((d) => d.slug);
+
   for (const lang of LANGS) {
-    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, featured: homeSlugs }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'index.html').split('/')), indexPage({ templates: pageData, lang, featured: featuredSlugs }));
     writeFile(path.join(SITE, ...pagePath(lang, 'gallery/index.html').split('/')), galleryPage({ templates: pageData, lang, tags: tagGroups().groups }));
-    writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources: sources.filter((s) => templates.some((t) => t.source === s.id)), templates: pageData, lang }));
+    writeFile(path.join(SITE, ...pagePath(lang, 'credits.html').split('/')), creditsPage({ sources: shownSources, templates: pageData, lang }));
   }
 
   // Machine-readable list of what was built (the Pages workflow checks the zip count against it).
   writeFile(path.join(SITE, 'manifest.json'), JSON.stringify({
-    sources: sources.filter((s) => templates.some((t) => t.source === s.id)).map((s) => s.id),
-    templates: templates.map((t) => ({ slug: t.slug, source: t.source })),
+    sources: shownSources.map((s) => s.id),
+    templates: templates.map((t) => ({ slug: t.slug, source: t.source, ...(t.src.private ? { private: true } : {}) })),
     zips: templates.map((t) => `zip/${t.slug}.zip`),
+    kits: kits ? kits.zips : [],
   }, null, 2) + '\n');
 
   const ms = Date.now() - started;
@@ -1415,12 +1594,15 @@ function main() {
     (warnings.length ? ` (${warnings.length} warning(s))` : ''));
 }
 
-export { loadAndCheck, buildContext, BuildError, rel, SOURCES_FILE };
+export { loadAndCheck, buildContext, BuildError, rel, SOURCES_FILE, EXTRA_SOURCE_FILES, extraI18nDir };
 
 // Run only when executed directly (scripts/validate.mjs imports this file).
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    main();
+    // --validate: same as `node scripts/validate.mjs` (dynamic import without await: validate.mjs
+    // imports this file, which must finish evaluating first).
+    if (hasFlag('validate')) import('./validate.mjs');
+    else main();
   } catch (e) {
     if (e instanceof BuildError) {
       console.error(`build failed: ${e.message}`);

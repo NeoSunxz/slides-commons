@@ -145,7 +145,10 @@ html:lang(zh) .home-closing h2 { font-weight: 600; max-width: 8em; }
   .home-chapter:nth-of-type(5) { z-index: 5; }
 }
 @media (max-width: 1023px), (max-height: 599px) {
-  .home-chapter { padding-block: 56px; gap: 40px; }
+  /* Like desktop: every colour chapter is at least one screen tall (eyebrow row on top, content
+     centred, action row at the bottom); the process chapter grows if its content is taller. */
+  .home-chapter { padding-block: 56px; gap: 40px; min-height: 100vh; min-height: 100svh; }
+  .home-hero-content, .home-showcase-content, .home-process-grid, .home-origin-content, .home-closing-content { flex: 1 1 auto; align-content: center; }
   .home-hero-content { --hero-title-size: 15vw; --hero-zh-size: 10.5vw; grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .hero-wall { height: 300px; }
   .home-hero h1 { padding-block: 24px; }
@@ -189,3 +192,6 @@ html:lang(zh) .home-closing h2 { font-weight: 600; max-width: 8em; }
   html.home-document { scroll-behavior: auto; scroll-snap-type: none; }
   .home-main *, .home-main *::before, .home-main *::after { transition: none; animation: none; }
 }
+.home-extras { list-style: none; margin: 24px 0 0; padding: 0; max-width: 440px; font-size: .82rem; }
+.home-extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding-block: 10px; border-top: 1px solid var(--line); }
+.home-extras li > span { color: var(--muted); }

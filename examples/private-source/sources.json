@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "acme",
+      "name": "Acme Templates",
+      "nameZh": "Acme 模板",
+      "author": "Acme Design Team",
+      "license": "Internal use only",
+      "private": true,
+      "path": "."
+    }
+  ]
+}

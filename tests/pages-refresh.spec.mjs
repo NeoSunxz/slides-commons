@@ -17,8 +17,8 @@ const licenseOf = (slug) => {
 const groupsOf = (slug) => [...new Set(upstreamMeta(slug).mood.map((x) => GROUP_OF.get(x.toLowerCase())))];
 
 const LANG = {
-  en: { prefix: '', note: /not affiliated with the original authors/, official: /not the author's official site/, nav: ['Home', 'Gallery', 'Credits'], gallery: 'gallery/', clear: 'Clear filters' },
-  zh: { prefix: 'zh/', note: /与原作者无关联/, official: /不是原作者的官方站点/, nav: ['首页', '画廊', '致谢'], gallery: 'zh/gallery/', clear: '清除筛选' },
+  en: { prefix: '', note: /not affiliated with the original authors/, official: /not the author's official site/, nav: ['Home', 'Gallery', 'Convert', 'Skills', 'Credits'], gallery: 'gallery/', clear: 'Clear filters' },
+  zh: { prefix: 'zh/', note: /与原作者无关联/, official: /不是原作者的官方站点/, nav: ['首页', '画廊', '转换', '技能', '致谢'], gallery: 'zh/gallery/', clear: '清除筛选' },
 };
 const PAGES = (lang) => {
   const p = LANG[lang].prefix;
@@ -30,11 +30,11 @@ const PAGES = (lang) => {
 // ---------------------------------------------------------------------------
 for (const lang of ['en', 'zh']) {
   const L = LANG[lang];
-  test(`[${lang}] header: three nav links, current page marked, GitHub icon link to the repo, language switch`, async ({ page }) => {
+  test(`[${lang}] header: five nav links, current page marked, GitHub icon link to the repo, language switch`, async ({ page }) => {
     for (const [name, url] of PAGES(lang)) {
       await page.goto(url);
       const links = page.locator('header.site-header nav.site-nav > a:not(.gh-link)');
-      await expect(links, `${name}: nav links`).toHaveCount(3);
+      await expect(links, `${name}: nav links`).toHaveCount(5);
       expect((await links.allTextContents()).map((t) => t.trim()), `${name}: nav labels`).toEqual(L.nav);
       const gh = page.locator('header.site-header a.gh-link');
       await expect(gh, `${name}: GitHub link`).toHaveCount(1);
@@ -46,7 +46,7 @@ for (const lang of ['en', 'zh']) {
       const current = await page.locator('header.site-header [aria-current="page"]').allTextContents();
       if (name === 'home') expect(current.map((t) => t.trim())).toEqual([L.nav[0]]);
       if (name === 'gallery') expect(current.map((t) => t.trim())).toEqual([L.nav[1]]);
-      if (name === 'credits') expect(current.map((t) => t.trim())).toEqual([L.nav[2]]);
+      if (name === 'credits') expect(current.map((t) => t.trim())).toEqual([L.nav[4]]);
     }
   });
 

@@ -1,0 +1,38 @@
+{
+  "slug": "acme-quarterly",
+  "name": "Acme Quarterly",
+  "tagline": "A calm navy business-review deck with one sky-blue accent and three big numbers per slide.",
+  "mood": [
+    "calm",
+    "professional",
+    "clear"
+  ],
+  "occasion": [
+    "quarterly review",
+    "team update",
+    "internal report"
+  ],
+  "tone": [
+    "steady",
+    "precise",
+    "modern"
+  ],
+  "formality": "medium-high",
+  "density": "low",
+  "palette": {
+    "bg-primary": "#0f172a",
+    "text-primary": "#f8fafc",
+    "accent": "#38bdf8",
+    "description": "deep navy canvas, near-white text and one sky-blue accent"
+  },
+  "typography": {
+    "display": "Inter",
+    "body": "Inter",
+    "style": "one sans family: bold display headlines, regular body, small wide-tracked uppercase labels"
+  },
+  "scheme": "dark",
+  "best_for": "Internal quarterly reviews and team updates with a few key figures per slide.",
+  "avoid_for": "Dense tables, long text slides and public marketing keynotes.",
+  "slide_count": 3,
+  "navigation": "inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)"
+}

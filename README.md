@@ -25,6 +25,10 @@ The result is one HTML file on a fixed 1920×1080 stage that scales to any scree
 | `fonts/` | Latin web fonts (woff2) with their OFL licenses |
 | `LICENSE-templates`, `LICENSE-skill` | Licenses of the upstream sources |
 
+## Self-hosting
+
+Run slides-commons on your own server, with private company templates: see [docs/self-hosting.md](docs/self-hosting.md) (中文: [docs/self-hosting.zh.md](docs/self-hosting.zh.md)).
+
 ## Credits
 
 The templates and design documentation are the work of [Zara Zhang](https://github.com/zarazhangrui), from [beautiful-html-templates](https://github.com/zarazhangrui/beautiful-html-templates) and [frontend-slides](https://github.com/zarazhangrui/frontend-slides) (both MIT). slides-commons is an independent community project, **not** an official project of the original author. Fonts are from [Fontsource](https://fontsource.org) under the SIL Open Font License. See [CREDITS.md](CREDITS.md).

@@ -63,12 +63,12 @@ jobs:
       - name: Sanity-check site/
         run: |
           set -eu
-          for f in site/index.html site/zh/index.html site/.nojekyll; do
+          for f in site/index.html site/zh/index.html site/convert/index.html site/zh/convert/index.html site/skills/index.html site/zh/skills/index.html site/.nojekyll; do
             [ -e "$f" ] || { echo "missing: $f"; exit 1; }
           done
-          # site/manifest.json is written by the build: one zip per template, whatever the sources hold.
+          # site/manifest.json is written by the build: one zip per template plus the toolkit zips (kits).
           [ -e site/manifest.json ] || { echo "missing: site/manifest.json"; exit 1; }
-          expected=$(node -e "console.log(JSON.parse(require('fs').readFileSync('site/manifest.json','utf8')).templates.length)")
+          expected=$(node -e "const m=JSON.parse(require('fs').readFileSync('site/manifest.json','utf8'));console.log(m.templates.length+(m.kits||[]).length)")
           zips=$(find site/zip -maxdepth 1 -name '*.zip' | wc -l)
           [ "$expected" -gt 0 ] && [ "$zips" -eq "$expected" ] || { echo "expected $expected zips in site/zip (from manifest.json), found $zips"; exit 1; }
           big=$(find site -type f -size +25M)

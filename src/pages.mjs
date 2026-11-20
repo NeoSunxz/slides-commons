@@ -11,6 +11,8 @@
 // src/i18n/zh.json has a translation (t.zh, resolved by the build). A missing one falls
 // back to the English text, marked lang="en". Names, font names and hex codes stay as is.
 
+import { zhText } from './zh-text.mjs';
+
 export const SITE_NAME = 'slides-commons';
 export const LANGS = ['en', 'zh'];
 const LANG_DIR = { en: '', zh: 'zh/' };
@@ -37,11 +39,13 @@ const bare = (url) => url.replace(/^https?:\/\//, '');
 // Author shown for a source: the Chinese name on zh pages when the source has one.
 // zh pages show the source's Chinese author name (authorZh) where the template's author is the source's author.
 const localAuthors = (t, lang) => (lang === 'zh' && t.src?.authorZh ? t.authors.map((a) => (a.name === t.src.author ? { ...a, name: t.src.authorZh } : a)) : t.authors);
+// Source name: the Chinese name on zh pages when the source has one (nameZh).
+const srcName = (s, lang) => (lang === 'zh' && s.nameZh ? s.nameZh : s.name);
 const srcAuthor = (s, lang) => (lang === 'zh' && s.authorZh ? s.authorZh : s.author);
 const srcAuthorLink = (s, lang) => (s.authorUrl ? link(s.authorUrl, srcAuthor(s, lang)) : esc(srcAuthor(s, lang)));
 const githubIcon = (size = 24) => `<svg class="github-icon" viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 // The original a derivative source is based on: { name, author, authorUrl?, url, license }.
-const derivedLink = (d) => link(d.url, d.name);
+const derivedLink = (d) => (d.url ? link(d.url, d.name) : esc(d.name));
 const derivedAuthor = (d) => (d.authorUrl ? link(d.authorUrl, d.author) : esc(d.author));
 
 // ---------------------------------------------------------------------------
@@ -53,6 +57,8 @@ const STRINGS = {
     navHome: 'Home',
     navTemplates: 'Gallery',
     navCredits: 'Credits',
+    navConvert: 'Convert',
+    navSkills: 'Skills',
     skipContent: 'Skip to content',
     langLabel: 'Language',
     galleryEyebrow: 'THE COLLECTION',
@@ -80,6 +86,10 @@ const STRINGS = {
       processIntro: 'You bring the ideas. The pack brings the visual language. Your coding agent puts them together.',
       packLabel: 'Inside every pack',
       packNote: 'Design notes, reference slides, fonts and licenses. All in one download.',
+      extras: [
+        ['Already have a deck you like?', 'Turn it into a template', 'convert/'],
+        ['Working with Claude Code or another agent?', 'Install the skills', 'skills/'],
+      ],
       processTitles: ['Find a direction', 'Give your agent the prompt', 'Make it your own'],
       processDescriptions: [
         'Browse the gallery and flip through the slides. Choose the typography, colors and rhythm that suit your talk.',
@@ -153,6 +163,14 @@ const STRINGS = {
     licenseNoticeTitle: (l) => `License notice: ${l}`,
     licenseNotice: (n) => `This template is licensed under the ${link(n.licenseUrl, n.license)} by ${n.authorUrl ? link(n.authorUrl, n.author) : esc(n.author)}. Decks generated from it may count as derivative works and may have to be released under the ${esc(n.license)} as well${n.network ? ' (including offering their source code to anyone who uses them over a network)' : ''}. Evaluate this before any commercial or closed-source use. Read the ${link(n.licenseUrl, 'license')} and the ${link(n.repoUrl, 'original repository')}. This is general information, not legal advice.`,
     previewModified: (t) => `This live preview is a modified copy of ${link(t.sourceDirUrl, 'the original template')} by ${authorList(t.authors)}: a paging bridge and self-hosted fonts were added${t.demoSlides ? ', and demo slides were written for this site (the original does not ship a complete demo deck)' : ''}. The modifications are published in the ${link(SITE_REPO, `${SITE_NAME} repository`)}.`,
+    internalBadge: 'Internal',
+    internalBadgeTitle: (n) => `Internal template of ${n}: for internal use only`,
+    internalNoticeTitle: 'Internal template',
+    internalNotice: (n) => `This template belongs to ${esc(n)} and is for internal use only. Do not distribute the pack, or decks that reproduce its design, outside ${esc(n)}.`,
+    attrInternal: (n) => `Internal template of ${esc(n)}. ${SITE_NAME} only previews and packages it; it is not an official site of the template's author.`,
+    footerInternal: (s, name, lang, c) => `Internal templates: ${name} · by ${esc(srcAuthor(s, lang))} · ${esc(s.license)}${c ? ` · <code>viewport-base.css</code> from ${link(c.repo, repoName(c.repo))} by ${esc(c.author)} (${esc(c.license)})` : ''}`,
+    creditsInternal: (s, lang) => `Internal source (not published). Maintained by ${srcAuthorLink(s, lang)}. Terms: ${esc(s.license)}. Every pack carries its license file (<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>) or, without one, a <code>NOTICE.txt</code> marking it for internal use only.`,
+    creditsIntroInternal: 'Templates marked Internal belong to the organisation that runs this site and are for its internal use only.',
     attrNotOfficial: `${SITE_NAME} only previews and repackages these openly licensed files; it is not the author's official site.`,
     showMore: 'Show more',
     showLess: 'Show less',
@@ -160,7 +178,7 @@ const STRINGS = {
     specimenSample: 'Aa Bb Cc 0123456789',
     shotJump: 'Jump the preview to this slide',
     shotsHint: 'Click a screenshot to jump the live preview to that slide.',
-    attrFacts: { author: 'Author', original: 'Original', license: 'License' },
+    attrFacts: { author: 'Author', original: 'Original', license: 'License', source: 'Source' },
     attrTranslation: () => '',
     footerBy: (s, links, lang) => `Templates by ${srcAuthorLink(s, lang)} (${esc(s.license)}) · ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? 'some ' : ''}based on ${derivedLink(s.derivedFrom)} by ${derivedAuthor(s.derivedFrom)}` : ''}`,
     footerIndependent: `${SITE_NAME} is an independent gallery, not affiliated with the original authors.`,
@@ -182,6 +200,8 @@ const STRINGS = {
     navHome: '首页',
     navTemplates: '画廊',
     navCredits: '致谢',
+    navConvert: '转换',
+    navSkills: '技能',
     skipContent: '跳转到正文',
     langLabel: '语言',
     galleryEyebrow: '设计合集',
@@ -209,6 +229,10 @@ const STRINGS = {
       processIntro: '不必从空白页开始。模板给出设计语言，你负责内容，coding agent 负责把它们变成作品。',
       packLabel: '一个素材包，完整的设计语言',
       packNote: '设计说明、参考幻灯片、字体与许可证，一次下载。',
+      extras: [
+        ['已经有一份喜欢的幻灯片？', '把它变成模板', 'convert/'],
+        ['在用 Claude Code 或其他 agent？', '安装技能', 'skills/'],
+      ],
       processTitles: ['选一个方向', '把提示词交给 agent', '讲你自己的故事'],
       processDescriptions: [
         '在画廊里逐页预览，找到适合你的字体、配色与版式，而不是只看一张封面。',
@@ -262,7 +286,7 @@ const STRINGS = {
     copyHelp: '提示词会先询问用途、页数、内容和信息密度，再开始制作。素材包中的 <code>PROMPT.zh.md</code> 是同一份内容。',
     showPrompt: '查看提示词',
     design: '设计',
-    sourceNote: (t, enUrl) => `以下介绍由本站翻译，以${link(t.src?.overlay ? enUrl : t.sourceDirUrl, '英文原文')}为准。`,
+    sourceNote: (t, enUrl) => `以下介绍由本站翻译，以${link(t.src?.overlay || !t.sourceDirUrl ? enUrl : t.sourceDirUrl, '英文原文')}为准。`,
     meta: { mood: '情绪', tone: '语气', scheme: '配色方案', formality: '正式程度', density: '信息密度', slides: '演示页数', bestFor: '适用场景', avoidFor: '不适用场景' },
     slidesTitle: '根据实时预览统计',
     values: {
@@ -285,6 +309,14 @@ const STRINGS = {
     licenseNoticeTitle: (l) => `许可证提示：${l}`,
     licenseNotice: (n) => `本模板由${n.authorUrl ? link(n.authorUrl, n.authorZh ?? n.author) : esc(n.authorZh ?? n.author)}以 ${link(n.licenseUrl, n.license)} 许可发布。用它生成的幻灯片可能被视为衍生作品，并可能需要同样以 ${esc(n.license)} 发布${n.network ? '（包括向通过网络使用它的人提供源代码）' : ''}。用于商业或闭源用途之前请先评估。请阅读${link(n.licenseUrl, '许可证全文')}和${link(n.repoUrl, '原始仓库')}。以上为一般性提示，不构成法律意见。`,
     previewModified: (t) => `此实时预览是${authorList(t.authors)}的${link(t.sourceDirUrl, '原始模板')}的修改副本：增加了翻页脚本和自托管字体${t.demoSlides ? '，并为本站编写了演示页面（原作者未提供完整的演示幻灯片）' : ''}。这些修改发布在 ${link(SITE_REPO, `${SITE_NAME} 仓库`)}中。`,
+    internalBadge: '内部',
+    internalBadgeTitle: (n) => zhText`${n}的内部模板：仅限内部使用`,
+    internalNoticeTitle: '内部模板',
+    internalNotice: (n) => zhText`本模板属于${esc(n)}，仅限内部使用。请勿将素材包或复刻其设计的幻灯片在${esc(n)}之外传播。`,
+    attrInternal: (n) => zhText`${esc(n)}的内部模板。${SITE_NAME} 仅负责预览与打包，不是模板作者的官方站点。`,
+    footerInternal: (s, name, lang, c) => `内部模板：${name} · ${esc(srcAuthor(s, lang))} 出品 · ${esc(s.license)}${c ? ` · <code>viewport-base.css</code> 来自 ${esc(c.author)} 的 ${link(c.repo, repoName(c.repo))}（${esc(c.license)}）` : ''}`,
+    creditsInternal: (s, lang) => `内部来源（未公开发布）。维护者：${srcAuthorLink(s, lang)}。使用条款：${esc(s.license)}。每个素材包附带其许可证文件（<code>${esc(s.packLicenseName ?? 'LICENSE')}</code>）；没有时附 <code>NOTICE.txt</code>，注明仅限内部使用。`,
+    creditsIntroInternal: '标有“内部”的模板属于运营本站的组织，仅限其内部使用。',
     attrNotOfficial: `${SITE_NAME} 仅预览并重新打包这些开源文件，不是原作者的官方站点。`,
     showMore: '展开',
     showLess: '收起',
@@ -292,7 +324,7 @@ const STRINGS = {
     specimenSample: 'Aa Bb Cc 0123456789',
     shotJump: '把预览跳到这一页',
     shotsHint: '点击截图，实时预览会跳到对应的页面。',
-    attrFacts: { author: '作者', original: '原始文件', license: '许可证' },
+    attrFacts: { author: '作者', original: '原始文件', license: '许可证', source: '来源' },
     attrTranslation: (t, enUrl) => t.src?.overlay
       ? `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自本站为该模板编写的${link(enUrl, '英文介绍')}；译文由本项目提供，以英文原文为准。`
       : `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 ${esc(t.license)} 许可）；译文由本项目提供，以英文原文为准。`,
@@ -330,6 +362,7 @@ export function setSources(sources) { footerSources = sources; }
 // usage steps start with copying the prompt and the zip becomes the offline fallback.
 let autoDownload = false;
 export function setAutoDownload(v) { autoDownload = Boolean(v); }
+export const isAutoDownload = () => autoDownload;
 
 /** Site-relative output path of a page, e.g. "zh/t/neo-grid-bold/index.html". */
 export function pagePath(lang, page) {
@@ -337,9 +370,9 @@ export function pagePath(lang, page) {
 }
 
 // Relative prefix from a page to the site root ("", "../", "../../" …).
-const rootFor = (sitePath) => '../'.repeat(sitePath.split('/').length - 1);
+export const rootFor = (sitePath) => '../'.repeat(sitePath.split('/').length - 1);
 
-function layout({ lang, page, title, description, body, scripts = [], redirectToPreferred = false, styles = [], extraHead = '' }) {
+export function layout({ lang, page, title, description, body, scripts = [], redirectToPreferred = false, styles = [], extraHead = '' }) {
   const S = STRINGS[lang];
   const root = rootFor(pagePath(lang, page));
   const home = root + LANG_DIR[lang]; // this language's root
@@ -353,7 +386,7 @@ function layout({ lang, page, title, description, body, scripts = [], redirectTo
     ? `<script>try{if(localStorage.getItem(${JSON.stringify(LANG_STORAGE_KEY)})==="zh"){location.replace(${JSON.stringify(pagePath('zh', page))}+location.search+location.hash)}}catch(e){}</script>\n`
     : '';
   const isHome = page === 'index.html';
-  const kind = isHome ? 'home' : page === 'credits.html' ? 'credits' : page === 'gallery/index.html' ? 'gallery' : 'detail';
+  const kind = isHome ? 'home' : page === 'credits.html' ? 'credits' : page === 'gallery/index.html' ? 'gallery' : page === 'convert/index.html' ? 'convert' : page === 'skills/index.html' ? 'skills' : 'detail';
   const cur = (k) => (kind === k ? ' aria-current="page"' : '');
   return `<!doctype html>
 <html lang="${HTML_LANG[lang]}"${isHome ? ' class="home-document"' : ''}>
@@ -372,7 +405,7 @@ ${styles.map((c) => `<link rel="stylesheet" href="${root}${c}">`).join('\n')}
   <div class="wrap">
     <a class="brand" href="${home}index.html">${SITE_NAME}</a>
     <nav class="site-nav">
-      <a href="${home}index.html"${cur('home')}>${S.navHome}</a><a href="${home}gallery/"${kind === 'gallery' ? ' aria-current="page"' : ''}>${S.navTemplates}</a><a href="${home}credits.html"${cur('credits')}>${S.navCredits}</a>
+      <a href="${home}index.html"${cur('home')}>${S.navHome}</a><a href="${home}gallery/"${kind === 'gallery' ? ' aria-current="page"' : ''}>${S.navTemplates}</a><a href="${home}convert/"${cur('convert')}>${S.navConvert}</a><a href="${home}skills/"${cur('skills')}>${S.navSkills}</a><a href="${home}credits.html"${cur('credits')}>${S.navCredits}</a>
       <span class="lang-switch" role="group" aria-label="${S.langLabel}">
         <span class="lang-current" lang="${HTML_LANG[lang]}" aria-current="true">${LANG_NAME[lang]}</span>
         <a href="${esc(altHref(other))}" hreflang="${HTML_LANG[other]}" lang="${HTML_LANG[other]}" data-lang-switch="${other}">${LANG_NAME[other]}</a>
@@ -396,6 +429,7 @@ ${['assets/site.js', ...scripts].map((s) => `<script src="${root}${s}"></script>
 function footer(lang, home) {
   const S = STRINGS[lang];
   const lines = footerSources.map((s) => {
+    if (s.private) return `<li>${S.footerInternal(s, s.repo ? link(s.repo, srcName(s, lang)) : esc(srcName(s, lang)), lang, s.companion)}</li>`;
     const parts = [link(s.repo, repoName(s.repo))];
     if (s.companion) parts.push(link(s.companion.repo, repoName(s.companion.repo)));
     return `<li>${S.footerBy(s, parts.join(' · '), lang)}</li>`;
@@ -435,29 +469,37 @@ export function indexPage({ templates, lang, featured: featuredSlugs = [] }) {
       <span class="home-work-caption"><span class="work-name"${en}>${esc(t.name)}</span><span class="work-index">${String(index + 1).padStart(2, '0')}</span></span>
     </a>`;
   }).join('\n');
-  const sourceList = footerSources.map((s) => `<a href="${esc(s.repo)}"><span class="source-name">${githubIcon(24)}<span><span${en}>${esc(s.name)}</span><small>${esc(srcAuthor(s, lang))} · ${esc(s.license)}</small></span></span>${arrow}</a>`).join('');
+  const sourceList = footerSources.map((s) => (s.private
+    ? `<a href="${s.repo ? esc(s.repo) : `credits.html#src-${esc(s.id)}`}"><span class="source-name"><span><span${s.nameZh && lang === 'zh' ? '' : en}>${esc(srcName(s, lang))}</span><small>${esc(S.internalBadge)} · ${esc(srcAuthor(s, lang))} · ${esc(s.license)}</small></span></span>${arrow}</a>`
+    : `<a href="${esc(s.repo)}"><span class="source-name">${githubIcon(24)}<span><span${en}>${esc(s.name)}</span><small>${esc(srcAuthor(s, lang))} · ${esc(s.license)}</small></span></span>${arrow}</a>`)).join('');
   const steps = autoDownload ? H.processDescriptions : H.processDescriptionsManual;
+  // Chapter numbers follow what is shown (the showcase needs at least one screenshot).
+  const total = featured.length ? 5 : 4;
+  let chapter = 0;
+  const num = () => String(++chapter).padStart(2, '0');
+  const counter = () => `${String(chapter).padStart(2, '0')} — ${String(total).padStart(2, '0')}`;
   const body = `${boundary}<section class="home-chapter home-hero" aria-labelledby="home-title">
-  <div class="home-section-top"><span class="eyebrow">01 / ${esc(H.label)}</span><span class="hero-edition">${esc(H.formatLabel)}</span></div>
+  <div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.label)}</span><span class="hero-edition">${esc(H.formatLabel)}</span></div>
   <div class="home-hero-content"><h1 id="home-title"><span class="hero-line">${esc(H.headline[0])}</span><span class="hero-line">${esc(H.headline[1])}</span></h1>${featured.length ? `<div class="hero-wall" aria-hidden="true">${wall}</div>` : ''}</div>
   <div class="home-hero-bottom"><span class="hero-count"><strong>${String(templates.length).padStart(2, '0')}</strong><span>${esc(H.totalLabel)}</span></span><p>${esc(H.subline)}</p><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div>
 </section>
-${boundary}<section class="home-chapter home-showcase" aria-labelledby="showcase-title">
-  <div class="home-section-top"><span class="eyebrow">02 / ${esc(H.showcaseLabel)}</span><a class="home-text-link" href="gallery/">${esc(H.showcaseAction)} ${arrowIcon()}</a></div>
+${featured.length ? `${boundary}<section class="home-chapter home-showcase" aria-labelledby="showcase-title">
+  <div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.showcaseLabel)}</span><a class="home-text-link" href="gallery/">${esc(H.showcaseAction)} ${arrowIcon()}</a></div>
   <div class="home-showcase-content"><h2 id="showcase-title">${esc(H.showcaseTitle)}</h2><div class="home-carousel" role="region" aria-roledescription="${esc(H.carouselRole)}" aria-labelledby="showcase-title" tabindex="0"><div class="home-carousel-viewport"><div class="home-work-grid" id="home-carousel-track">${showcase}</div></div><div class="home-carousel-controls" hidden><span class="carousel-position" aria-live="off" aria-atomic="true"></span><span class="carousel-hint">${esc(H.carouselHint)}</span><div><button type="button" class="carousel-play" data-pause-label="${esc(H.carouselPause)}" data-play-label="${esc(H.carouselPlay)}" aria-label="${esc(H.carouselPause)}"><span class="carousel-play-icon" aria-hidden="true"></span></button><button type="button" data-carousel-direction="-1" aria-controls="home-carousel-track" aria-label="${esc(H.carouselPrevious)}">←</button><button type="button" data-carousel-direction="1" aria-controls="home-carousel-track" aria-label="${esc(H.carouselNext)}">→</button></div></div></div></div>
-</section>
+</section>` : ''}
 ${boundary}<section class="home-chapter home-process" id="how-it-works" aria-labelledby="process-title">
-  <div class="home-section-top"><span class="eyebrow">03 / ${esc(H.processLabel)}</span><span class="chapter-counter" aria-hidden="true">03 — 05</span></div>
+  <div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.processLabel)}</span><span class="chapter-counter" aria-hidden="true">${counter()}</span></div>
   <div class="home-process-grid"><div class="home-process-heading"><h2 id="process-title">${H.processTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><p>${esc(H.processIntro)}</p>
     <div class="pack-note"><span>${esc(H.packLabel)}</span><div class="pack-files"><code>design.md</code><code>template.html</code><code>PROMPT.md</code></div><p>${esc(H.packNote)}</p></div>
+    <ul class="home-extras">${H.extras.map(([lead, label, href]) => `<li><span>${esc(lead)}</span> <a class="home-text-link" href="${href}">${esc(label)} ${arrowIcon()}</a></li>`).join('')}</ul>
   </div>
   <ol class="home-process-steps">${H.processTitles.map((title, index) => `<li><span class="home-step-number">0${index + 1}</span><div><h3>${esc(title)}</h3><p>${esc(steps[index])}</p></div></li>`).join('')}</ol></div>
 </section>
 ${boundary}<section class="home-chapter home-origin" id="origins" aria-labelledby="origin-title">
-  <div class="home-section-top"><span class="eyebrow">04 / ${esc(H.originLabel)}</span><span class="chapter-counter" aria-hidden="true">04 — 05</span></div>
+  <div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.originLabel)}</span><span class="chapter-counter" aria-hidden="true">${counter()}</span></div>
   <div class="home-origin-content"><div><h2 id="origin-title">${H.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-text-link" href="credits.html">${esc(H.originAction)} ${arrowIcon()}</a></div><div><p>${esc(H.originText)}</p><div class="home-source-list">${sourceList}</div></div></div>
 </section>
-${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">05 / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">05 — 05</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}">${arrowIcon()}</a></div></section>`;
+${boundary}<section class="home-chapter home-closing" aria-labelledby="closing-title"><div class="home-section-top"><span class="eyebrow">${num()} / ${esc(H.closingLabel)}</span><span class="chapter-counter" aria-hidden="true">${counter()}</span></div><div class="home-closing-content"><div><h2 id="closing-title">${H.closingTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h2><a class="home-pill" href="gallery/">${esc(H.browse)} ${arrow}</a></div><a class="closing-orbit" href="gallery/" aria-label="${esc(H.browse)}">${arrowIcon()}</a></div></section>`;
   return layout({ lang, page, title: S.indexTitle, description: S.tagline, body, scripts: ['assets/home.js'], styles: ['assets/home.css'], redirectToPreferred: lang === 'en' });
 }
 
@@ -478,16 +520,17 @@ export function galleryPage({ templates, lang, tags }) {
     const labels = t.moodGroups.map((id) => groupLabel(tags.find((g) => g.id === id)));
     // Search matches the original mood and tone tags too (the filter itself shows only the groups).
     // On the zh page it matches the Chinese and the English text; the en page stays English.
-    const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug, ...labels, t.authors.map((a) => a.name).join(' '), t.licenseNotice ? t.license : '',
+    const search = [t.name, t.tagline, ...t.mood, ...t.tone, t.best_for, t.slug, ...labels, t.authors.map((a) => a.name).join(' '), t.licenseNotice ? t.license : '', t.internal ? 'internal 内部' : '',
       ...(z ? [z.tagline, z.best_for, ...z.mood, ...z.tone] : [])].filter(Boolean).join(' ').toLowerCase();
     const taglineZh = z?.tagline;
     const lic = t.licenseNotice ? `<span class="chip license-chip" title="${esc(S.licenseBadgeTitle(t.license))}">${esc(t.license)}</span>` : '';
+    const internal = t.internal ? `<span class="chip internal-chip" title="${esc(S.internalBadgeTitle(lang === 'zh' && t.sourceNameZh ? t.sourceNameZh : t.sourceName))}">${esc(S.internalBadge)}</span>` : '';
     return `<li data-source="${esc(t.source)}" data-author="${esc(t.authors.map((a) => a.name).join('|'))}" data-license="${esc(t.license)}" data-scheme="${esc(t.scheme)}" data-mood="${esc(t.moodGroups.join('|'))}" data-search="${esc(search)}"><a class="card" href="${home}t/${esc(t.slug)}/">
     ${img}
     <div class="card-body">
       <h2${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</h2>
       <p class="tag-line" title="${esc(taglineZh || t.tagline)}"${taglineZh ? '' : (lang === 'en' ? '' : ' lang="en"')}>${esc(taglineZh || t.tagline)}</p>
-      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span>${lic}<span class="credit-line">${esc(S.byCard(localAuthors(t, lang).map((a) => a.name).join(', ')))}</span></p>
+      <p class="by"><span class="chip scheme-chip scheme-${esc(t.scheme)}">${esc(S.schemeNames[t.scheme] ?? t.scheme)}</span>${internal}${lic}<span class="credit-line">${esc(S.byCard(localAuthors(t, lang).map((a) => a.name).join(', ')))}</span></p>
     </div>
   </a></li>`;
   }).join('\n');
@@ -533,7 +576,7 @@ ${cards}
 
 export function detailPage(t, lang) {
   const S = STRINGS[lang];
-  t = { ...t, authors: localAuthors(t, lang) };
+  t = { ...t, authors: localAuthors(t, lang), sourceName: lang === 'zh' && t.sourceNameZh ? t.sourceNameZh : t.sourceName };
   const enUrl = `${rootFor(pagePath(lang, `t/${t.slug}/index.html`))}t/${t.slug}/`;
   const page = `t/${t.slug}/index.html`;
   const root = rootFor(pagePath(lang, page));
@@ -542,6 +585,7 @@ export function detailPage(t, lang) {
   const val = (v) => esc(S.values[v] ?? v);
   // Chinese text when the zh page has a translation, else the English text marked lang="en".
   const z = lang === 'zh' ? t.zh : null;
+  const hasZh = Boolean(z && Object.values(z).some((v) => (Array.isArray(v) ? v.some(Boolean) : v)));
   const tr = (field, english) => (z?.[field] ? { v: z[field], a: '' } : { v: english, a: en });
   const tagline = tr('tagline', t.tagline);
   const description = tr('description', t.description || t.tagline);
@@ -569,7 +613,7 @@ export function detailPage(t, lang) {
 <section class="hero">
   <h1${en}>${esc(t.name)}</h1>
   <p class="tagline"${tagline.a}>${esc(tagline.v)}</p>
-  <p class="by">${t.licenseNotice ? `<span class="chip license-chip" title="${esc(S.licenseBadgeTitle(t.license))}">${esc(t.license)}</span> ` : ''}${t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, authors), t.sourceDerived) : t.src?.collection ? S.byOriginal(link(t.sourceDirUrl, authors)) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
+  <p class="by">${t.internal ? `<span class="chip internal-chip" title="${esc(S.internalBadgeTitle(t.sourceName))}">${esc(S.internalBadge)}</span> ` : ''}${t.licenseNotice ? `<span class="chip license-chip" title="${esc(S.licenseBadgeTitle(t.license))}">${esc(t.license)}</span> ` : ''}${t.internal ? S.byFrom(authorList(t.authors), t.sourceDirUrl ? link(t.sourceDirUrl, t.sourceName) : esc(t.sourceName)) : t.sourceDerived ? S.byDerived(link(t.sourceDirUrl, authors), t.sourceDerived) : t.src?.collection ? S.byOriginal(link(t.sourceDirUrl, authors)) : S.byFrom(authorList(t.authors), link(t.sourceDirUrl, t.sourceRepoName))}</p>
 </section>
 
 <div class="detail">
@@ -591,7 +635,10 @@ ${t.licenseNotice ? `    <p class="modified-note">${S.previewModified(t)}</p>\n`
 
   <aside class="actions">
     <h2>${S.useHeading}</h2>
-${t.licenseNotice ? `    <div class="license-notice" role="note" id="license-notice">
+${t.internal ? `    <div class="license-notice internal-notice" role="note" id="internal-notice">
+      <p class="license-notice-title">${esc(S.internalNoticeTitle)}</p>
+      <p>${S.internalNotice(t.sourceName)}</p>
+    </div>\n` : ''}${t.licenseNotice ? `    <div class="license-notice" role="note" id="license-notice">
       <p class="license-notice-title">${esc(S.licenseNoticeTitle(t.license))}</p>
       <p>${S.licenseNotice(t.licenseNotice)}</p>
     </div>\n` : ''}    <ol class="steps small">
@@ -616,7 +663,7 @@ ${(() => {
   <div class="details">
 <section class="about">
   <h2>${S.design}</h2>
-  ${S.sourceNote(t, enUrl) ? `<p class="source-note">${S.sourceNote(t, enUrl)}</p>` : ''}
+  ${S.sourceNote(t, enUrl) && (lang !== 'zh' || hasZh) ? `<p class="source-note">${S.sourceNote(t, enUrl)}</p>` : ''}
   <div class="desc" data-more="${esc(S.showMore)}" data-less="${esc(S.showLess)}"><p id="desc"${description.a}>${esc(description.v)}</p></div>
   <div class="fit">
     <section class="fit-card good" aria-labelledby="fit-good"><h3 id="fit-good">${S.meta.bestFor}</h3><p${bestFor.a}>${esc(bestFor.v)}</p></section>
@@ -650,16 +697,16 @@ ${(() => {
   <h2 id="attr-title">${S.attribution}</h2>
   <dl class="attr-facts">
     <dt>${S.attrFacts.author}</dt><dd>${authorList(t.authors)}</dd>
-    <dt>${S.attrFacts.original}</dt><dd><a href="${esc(t.sourceDirUrl)}">${esc(bare(t.sourceDirUrl))}</a></dd>
+    ${t.sourceDirUrl ? `<dt>${S.attrFacts.original}</dt><dd><a href="${esc(t.sourceDirUrl)}">${esc(bare(t.sourceDirUrl))}</a></dd>` : `<dt>${S.attrFacts.source}</dt><dd>${esc(t.sourceName)}</dd>`}
     <dt>${S.attrFacts.license}</dt><dd>${esc(t.license)}</dd>
   </dl>
   <ul class="attr-notes">
     ${t.derived ? `<li>${S.attrDerived(t.derived)}</li>` : ''}
     ${t.sourceDerived ? `<li>${S.attrDerivedSource(t.sourceDerived, t)}</li>` : ''}
     ${t.companionInfo ? `<li>${S.attrCompanion(t.companionInfo)}</li>` : ''}
-    ${S.attrTranslation(t, enUrl) ? `<li>${S.attrTranslation(t, enUrl)}</li>` : ''}
+    ${S.attrTranslation(t, enUrl) && (lang !== 'zh' || hasZh) ? `<li>${S.attrTranslation(t, enUrl)}</li>` : ''}
   </ul>
-  <p class="attr-official">${S.attrNotOfficial}</p>
+  <p class="attr-official">${t.internal ? S.attrInternal(t.sourceName) : S.attrNotOfficial}</p>
 </section>
   </div>
 </div>`;
@@ -673,12 +720,15 @@ export function creditsPage({ sources, templates, lang }) {
   const blocks = sources.map((s, index) => {
     const sourceTemplates = templates.filter((t) => t.source === s.id).map((t) => ({ ...t, authors: localAuthors(t, lang) }));
     const list = sourceTemplates
-      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a><span>${link(t.sourceDirUrl, S.creditsOriginal)} · ${authorList(t.authors)} · ${esc(t.license)}</span></li>`).join('\n');
+      .map((t) => `<li><a href="t/${esc(t.slug)}/"${lang === 'en' ? '' : ' lang="en"'}>${esc(t.name)}</a><span>${t.sourceDirUrl ? `${link(t.sourceDirUrl, S.creditsOriginal)} · ` : ''}${authorList(t.authors)} · ${esc(t.license)}</span></li>`).join('\n');
     const notice = templates.find((t) => t.source === s.id && t.licenseNotice)?.licenseNotice;
-    return `<section class="credit">
-  <div class="credit-heading"><span class="eyebrow">0${index + 1} / ${esc(S.creditsCount(sourceTemplates.length))}</span><h2><a href="${esc(s.repo)}"${lang === 'zh' ? ' lang="en"' : ''}>${githubIcon(32)}${esc(s.name)}</a></h2><span class="credit-license">${esc(s.license)}</span></div>
+    const heading = s.private
+      ? (s.repo ? `<a href="${esc(s.repo)}"${lang === 'zh' && !s.nameZh ? ' lang="en"' : ''}>${esc(srcName(s, lang))}</a>` : `<span${lang === 'zh' && !s.nameZh ? ' lang="en"' : ''}>${esc(srcName(s, lang))}</span>`)
+      : `<a href="${esc(s.repo)}"${lang === 'zh' ? ' lang="en"' : ''}>${githubIcon(32)}${esc(s.name)}</a>`;
+    return `<section class="credit" id="src-${esc(s.id)}">
+  <div class="credit-heading"><span class="eyebrow">0${index + 1} / ${esc(S.creditsCount(sourceTemplates.length))}</span><h2>${heading}</h2><span class="credit-license">${s.private ? `${esc(S.internalBadge)} · ` : ''}${esc(s.license)}</span></div>
   <div class="credit-body">
-  <p>${S.creditsSource(s, lang)}</p>
+  <p>${s.private ? S.creditsInternal(s, lang) : S.creditsSource(s, lang)}</p>
   ${notice ? `<p class="license-notice"><strong>${esc(S.licenseNoticeTitle(notice.license))}</strong> ${S.licenseNotice(notice)}</p>` : ''}
   ${s.derivedFrom ? `<p>${S.creditsDerived(s.derivedFrom, s)}</p>` : ''}
   ${s.companion ? `<p>${S.creditsCompanion(s.companion)}</p>` : ''}
@@ -687,7 +737,7 @@ ${list}
   </ul></details></div>
 </section>`;
   }).join('\n');
-  const body = `<section class="credits-hero"><div class="wrap"><div class="credits-top"><span class="eyebrow">04 / ${S.creditsHeading}</span><a href="index.html#origins">${S.creditsBack} ${arrowIcon()}</a></div><div class="credits-intro"><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1><p>${S.creditsIntro}</p></div></div></section>
+  const body = `<section class="credits-hero"><div class="wrap"><div class="credits-top"><span class="eyebrow">04 / ${S.creditsHeading}</span><a href="index.html#origins">${S.creditsBack} ${arrowIcon()}</a></div><div class="credits-intro"><h1>${S.home.originTitle.map((line) => `<span>${esc(line)}</span>`).join('')}</h1><p>${S.creditsIntro}${sources.some((s) => s.private) ? ` ${S.creditsIntroInternal}` : ''}</p></div></div></section>
 <div class="wrap credits-content">${blocks}
 ${S.creditsTranslation ? `<aside class="credits-translation"><p>${S.creditsTranslation}</p></aside>` : ''}</div>`;
   return layout({ lang, page, title: S.creditsTitle, description: S.creditsDescription, body, scripts: [] });

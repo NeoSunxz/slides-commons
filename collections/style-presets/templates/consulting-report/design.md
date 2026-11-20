@@ -279,7 +279,7 @@ Set `font-variant-numeric: tabular-nums lining-nums` on `.slide` so every figure
 | `{typography.label-zh}` | 20, 500, 0, no transform | Noto Sans SC | The same roles when the text is Chinese |
 | `{typography.source}` | 18 / 1.4 | Plex Sans 400 | Source and note line, footer |
 
-**Size floor (the one rule; every other size in this document respects it):** nothing on a slide is smaller than 18px. 18px is allowed only for uppercase Latin labels (`{typography.label}`), axis tick numbers, the source line and the footer. Chinese text is never smaller than 20px except in the source line and the footer, which stay 18px in every language. Table cells and chart labels stay ≥ 19px (Chinese ≥ 20px).
+**Size floor (the one rule; every other size in this document respects it):** nothing on a slide is smaller than 18px. 18px is allowed only for uppercase Latin labels (`{typography.label}`), axis tick numbers, the source line and the footer. Chinese text is never smaller than 20px except in the source line and the footer, which stay 18px in every language. Table cells and chart labels stay ≥ 19px in Latin and are 20px in Chinese: every 18px label and every 19px legend, segment share, figure caption or axis title below is set to 20px when the slide is Chinese (see CJK block).
 
 ### Writing action titles
 
@@ -298,7 +298,7 @@ Set `font-variant-numeric: tabular-nums lining-nums` on `.slide` so every figure
 | Negatives | True minus sign U+2212 (`−`), not a hyphen; no parentheses in this system | `−6.1 pts`, `−0.6` |
 | Changes | Explicit sign on deltas | `+1.6`, `−3.1` |
 | Units | In the chart/table unit line (`€m`, `% of revenue`), not repeated in every cell; keep the unit on hero figures | header `Revenue, €m`, cells `58.0`; figure `€412m` |
-| Percent vs points | Changes in a percentage are `pts` (percentage points) | margin `8.9%` → `2.8%` = `−6.1 pts` |
+| Percent vs points | Changes in a percentage are percentage points: `pts` in English and in Chinese tables / charts / figures, 「个百分点」 in Chinese titles and prose | margin `8.9%` → `2.8%` = `−6.1 pts` (中文标题：下降 6.1 个百分点) |
 | Currency | Symbol before number, scale suffix lowercase, no space | `€23.6m`, `$4.5bn`, `€61` |
 | Thousands | Comma separator in English, 4+ digits | `1,900`, `1,180` |
 | Ranges | En dash, no spaces | `FY21–FY24`, `26–28%` |
@@ -379,7 +379,8 @@ The frame is fixed, but its contents come from the user. Do not invent facts to 
 - `--max` = a round number ≥ 1.1 × the largest value (leaves room for the label).
 - Value label `<b>` sits 8px above the bar (24px, 600). No y-axis, no gridlines.
 - Colours: neutral `navy-30`; series in focus `navy`; the one message bar `.hi` = accent (its label teal too).
-- Annotations inside `.plot`: `.ref` — dashed horizontal line at `--y` from `--x0`; `.delta` — vertical bracket from `--y0` to `--y1` with a teal label (e.g. "−6.1 pts").
+- Annotations inside `.plot`: `.ref` — dashed horizontal line at `--y` from `--x0` (drawn behind the bars; value labels have a paper background, so the line passes behind a label instead of striking through it); `.delta` — vertical bracket from `--y0` to `--y1` with a teal label (e.g. "−6.1 pts").
+- **Delta rule (never overlaps):** the label sits in the bracket's own right-hand gutter, never over the plot. Add `.has-delta` to `.colchart` (reserves a 200px right gutter after the last column, in both `.plot` and `.xlab` so the labels stay under their bars, so the bars share only the columns to its left), put the `.delta` in the `.plot`, and let `.ref` run from the first bar's edge to the plot's right edge so it reaches the bracket. The label is 150px wide, right-aligned and may wrap to two lines, which also fits Chinese 「−6.1 个百分点」. This holds for both a decline (last bar lowest) and growth (last bar tallest): the delta is always to the right of the last bar, and the `.ref` line is at the first bar's value, so it only crosses bars that are taller (they cover it) or labels (which mask it). Never place the label left of the bracket inside the plot.
 
 ### Horizontal bar chart
 
@@ -453,13 +454,34 @@ Criteria column 400px + one column per option. The header cell holds a label ("O
 - **Recommendation panel** (`.reco-panel`): navy block; label in on-navy-muted (navy-30), paper serif statement, three paper figures (46px) above captions in navy-30, behind a 1px navy-60 rule.
 - **Decisions list**: 36px outlined accent number squares, 24px navy heading, 20px muted detail. The decisions are the recommendation slide's teal fact, so nothing else on that slide is teal.
 
+## Line chart pattern
+
+Use it only for a long series where columns would crowd. Pure inline SVG in the 654px body band, same rules as the other charts: no gridlines, no y-axis, direct labels, one teal fact.
+
+```html
+<svg class="line" viewBox="0 0 800 420" role="img" aria-label="Monthly margin, 24 months">
+  <line x1="0" y1="400" x2="800" y2="400" stroke="#1B2433" stroke-width="2"/>            <!-- baseline: ink 2px -->
+  <polyline fill="none" stroke="#A3B3C9" stroke-width="3" points="0,120 40,128 … 720,300"/> <!-- comparison series: navy-30 -->
+  <polyline fill="none" stroke="#0B2545" stroke-width="4" stroke-linejoin="round" points="0,100 40,112 … 760,330"/> <!-- focus series: navy -->
+  <circle cx="760" cy="330" r="7" fill="#087F79"/>                                       <!-- the one so-what point: accent -->
+  <text x="752" y="366" text-anchor="end" font-size="24" font-weight="600" fill="#087F79">2.8%</text>
+  <text x="0" y="86" font-size="24" font-weight="600" fill="#0B2545">8.9%</text>          <!-- first and last values labelled directly -->
+</svg>
+```
+
+- Compute point coordinates from the data (x spaced evenly, y = baseline − value / max × plot height); never eyeball.
+- Focus series navy 4px, other series navy-30 3px with a direct end label in the series colour (no legend box); at most three series. Mark only the first, last and the so-what point with dots/labels; labels are 24px 600 (Chinese 20px minimum as everywhere), placed above or below the line so they never sit on it.
+- X-axis labels below the baseline in 20px muted, every 3rd or 6th period only (`FY21`, `Q3`…); the optional `.ref` equivalent is a `stroke-dasharray="8 6"` line in navy-30.
+- Same delta rule as the column chart: put a bracket and label in a right-hand gutter (reserve ~200px in the viewBox), not over the line.
+- Source line, footer and action title are unchanged. Size the SVG to fill the band like any other chart.
+
 ## Slide Archetypes
 
 The demo deck (11 slides) implements each of these.
 
-1. **Cover** — brand mark + firm name top-left, status tag top-right; label (meeting · date) in teal, `cover-title` (≤ 3 lines; use `&#8209;` non-breaking hyphens in compound words), sub-title 32px muted; three meta columns (prepared for / engagement / status) with hairlines; an abstract rising-bar motif bottom-right (navy tints → navy → one teal bar).
+1. **Cover** — brand mark + firm name top-left and status tag top-right **only when the user gave them**: with no firm name, omit the whole brand line including the mark (do not invent a name or leave the mark alone); with no status, omit the tag. With neither, the cover starts with the label (meeting · date, or just the document type if no date) in teal and the rest of the layout is unchanged. Label (meeting · date) in teal, `cover-title` (≤ 3 lines; use `&#8209;` non-breaking hyphens in compound words), sub-title 32px muted; three meta columns (prepared for / engagement / status) with hairlines; an abstract rising-bar motif bottom-right (navy tints → navy → one teal bar).
 2. **Executive summary** — three rows *Situation / Complication / Resolution*: label column 240px, lead sentence + 2 dash bullets, a big figure right. The resolution row is accent-tinted with a 4px teal left bar.
-3. **Contents** — numbered sections (serif numerals, title, one-line description, page number), the current section in teal with a teal top rule; right column: the questions this document answers, closed by a bottom-aligned panel. A contents slide works as a divider: the "current" section is the one that starts on the next page, and the tracker marks that same section (the demo's contents is page 3, Diagnosis starts on page 4, so both the row and the tracker show Diagnosis). If the contents slide comes before the first section, highlight section 1. Section numbers are ordinals (1, 2, 3 …) matching the order of the tracker, never page numbers; the right-hand column gives the page on which each section starts, which must equal that slide's footer page number. Recount after adding or removing slides.
+3. **Contents** — numbered sections (serif numerals, title, one-line description, page number), the current section in teal with a teal top rule; right column: the questions this document answers, closed by a bottom-aligned panel. A contents slide works as a divider: the "current" section is the one that starts on the next page, and the tracker marks that same section (the demo's contents is page 3, Diagnosis starts on page 4, so both the row and the tracker show Diagnosis). If the contents slide comes before the first section, highlight section 1. Section numbers are ordinals (1, 2, 3 …) in tracker order and are fine as long as they are not mistaken for pages: anywhere a slide mentions a page (the right-hand column of the contents, cross-references such as "see page 8"), the number must equal that slide's footer page number, and the contents lists the page on which each section starts. A section number shown beside a page reference never stands in for it. Recount page references after adding or removing slides.
 4. **Two charts** — column chart with reference line and delta bracket + peer horizontal bars with median line + callout.
 5. **Stacked composition** — 100% stacked columns with totals and aligned legend + three numbered findings.
 6. **Bridge** — waterfall across 8 steps + callout with the key figure + dash bullets.
@@ -507,7 +529,7 @@ Chinese strategy and steering-committee decks are a primary use case for this sy
 
 | Role | Latin face | Chinese face | Weight |
 |---|---|---|---|
-| Action title, cover title, recommendation statement | Source Serif 4 600 | **Noto Serif SC** (思源宋体) | 600–700 |
+| Action title, cover title, recommendation statement | Source Serif 4 600 | **Noto Serif SC** (思源宋体) | 700 |
 | Lead sentences, chart titles, emphasis | IBM Plex Sans 600 | **Noto Sans SC** (思源黑体) | 500–700 |
 | Body, tables, chart labels, sources | IBM Plex Sans 400 | Noto Sans SC | 400 |
 | Labels, tracker, table headers | IBM Plex Sans 600 | Noto Sans SC | 500 |
@@ -530,39 +552,45 @@ Latin letters and digits render in Source Serif 4 / IBM Plex Sans; Chinese chara
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
 ```
 
-Load only the weights you use; Noto Serif SC is large.
+Load only the weights you use; Noto Serif SC is large. Latin 600 stays Source Serif 4 / IBM Plex Sans 600 and Chinese titles use Noto Serif SC 700 only, so the link requests exactly `Noto Serif SC 700`; Noto Sans SC 400/500/700 are all used (body, labels, lead sentences).
 
 ### Universal CJK Adjustments
 
 Add `lang="zh-CN"` to `<html>` and these overrides:
 
 ```css
-:lang(zh) .action      { font-size: 44px; font-weight: 700; line-height: 1.3; }
+:lang(zh) .action      { font-size: 44px; line-height: 1.3; }
 :lang(zh) .s-cover h1  { font-size: 84px; line-height: 1.2; }
 :lang(zh) .lead        { line-height: 1.5; }
 :lang(zh) .slide       { line-height: 1.6; }
 :lang(zh) ul.dash li, :lang(zh) .findings p { line-height: 1.65; }
 /* labels: 20px, weight 500, no uppercase ({typography.label-zh}) */
 :lang(zh) :is(.label, .tracker li, .tag, table.data th, .gantt > .h, .gantt > .ws small,
-              .pill, .gbar, .hbars-plot .refline span) { font-size: 20px; font-weight: 500; text-transform: none; }
-:lang(zh) .tracker li.on { font-weight: 700; }
+              .pill, .gbar, .hbars-plot .refline > span) { font-size: 20px; font-weight: 500; text-transform: none; }
+:lang(zh) .tracker li.on { font-weight: 600; }
+/* CJK weights apply to CJK runs only: wrap each Chinese run in <span class="cjk">. Latin text keeps the
+   weights that are actually loaded (Source Serif 4 600, IBM Plex Sans 400/500/600). */
+:lang(zh) :is(.action, .s-cover h1, .reco-panel h3, .tracker li.on, .lead, .ch-title) .cjk { font-weight: 700; }
+/* 18px/19px items are raised to 20px for Chinese (source line and footer stay 18px) */
+:lang(zh) :is(.legend, .seg, .scr-row .fig > span, .reco-figs > div > span, table.opts th p,
+              .mx-y > span, .mx-x, .wf .xlab > span) { font-size: 20px; }
 /* CJK letter-spacing is 0 everywhere: titles, labels, figures */
 :lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
 ```
 
-`template.html` already contains this block (inactive while `<html lang="en">`); copy it as is.
+`template.html` already contains this block (inactive while `<html lang="en">`); copy it as is. All selectors in it are child selectors (`>`) or classes, so wrapping CJK in `<span class="cjk">` does not break any style rule; keep it that way when adding components (never style a bare descendant `span`).
 
-- **Weights:** Noto Serif SC 700 for action titles (600 looks thin next to Latin 600); Noto Sans SC 400 for body and tables, 500 for labels, 700 for lead sentences and chart titles. Never below 400.
-- **Sizes:** follow the size floor in Typography: Chinese text ≥ 20px everywhere (labels, tracker, tag, table headers, pills, Gantt labels, chart labels, table cells, body); only the source line and footer stay 18px.
+- **Weights:** weights are set per run. Wrap every Chinese run in titles, lead sentences, chart titles, the recommendation statement and the active tracker item in `<span class="cjk">` (e.g. `<h2 class="action"><span class="cjk">营业利润率三年下降</span> 6.1 <span class="cjk">个百分点</span></h2>`): the `.cjk` rule gives it Noto Serif SC / Noto Sans SC 700 (600 looks thin next to Latin 600), while Latin letters and digits in the same line keep the loaded Latin weight (600), so no weight is ever requested that was not loaded. Body and tables stay Noto Sans SC 400 (no wrapper needed), labels 500 (the label rule sets 500 for the whole label, Latin included; Plex 500 is loaded). Never below 400.
+- **Sizes:** follow the size floor in Typography: Chinese text ≥ 20px everywhere (labels, tracker, tag, table headers, pills, Gantt labels, chart labels, legends, in-segment shares, figure captions, table cells, body); only the source line and footer stay 18px. The 18px and 19px sizes in the Latin layout are therefore 20px on Chinese slides; the CJK block above does it, and any component you add that is 18/19px in Latin gets the same 20px override.
 - **Letter-spacing:** 0 for all Chinese text, including titles, labels and the tracker. The positive tracking of Latin uppercase labels and the negative tracking of Latin titles do not apply.
 - **Action-title length:** the 1640px title box holds **37 Chinese characters per line at 44px** (a Latin letter or digit counts as about half). Write 20–60 characters. Up to about 34 characters fit on one line; 35–60 characters take two lines: insert a manual `<br>` at a phrase boundary (usually after the comma that separates finding and implication) so the two lines are of similar length, each ≤ 34 characters. More than 60 characters, or a title that needs a third line, means the slide has two messages: split it. Do not narrow the title box to force a break. Chinese titles state the conclusion the same way: 「若整合四个低效仓库并引入能源价格联动，<br>经营利润率可在 FY26 回升至 8.5%」.
 - **Line breaking:** `text-wrap: balance` can split a word (联｜动). Break titles manually with `<br>` at a phrase boundary, or wrap units that must stay together in `<span style="white-space:nowrap">`. Never leave one character alone on the last line. Do not use `word-break: keep-all` for Chinese.
 - **Punctuation:** full-width （，。：；！？「」） in Chinese sentences; no final 。 in titles; half-width punctuation inside numbers and English names.
 - **Mixed CN/EN numbers:** one space between Chinese and Latin/digits (盘古之白): 「营收 €412m，拥有 11 个仓库」. No space between a number and %, or between a currency symbol and a number. Units may stay Latin (`€m`, `pts`) or become Chinese in the unit line (单位：百万欧元); be consistent per deck.
-- **Number scale:** for Chinese audiences prefer 万 / 亿 in prose (「4.12 亿欧元」) but keep table and chart values in one consistent scale with the unit in the header (`营收（百万欧元）`). Percentage-point changes: 「下降 6.1 个百分点」 in titles, `−6.1 pts` or `−6.1 个百分点` in charts.
+- **Number scale:** for Chinese audiences prefer 万 / 亿 in prose (「4.12 亿欧元」) but keep table and chart values in one consistent scale with the unit in the header (`营收（百万欧元）`). Percentage-point changes: write 「6.1 个百分点」 in titles, prose and callouts (「下降 6.1 个百分点」), and `pts` in table cells, chart annotations and figures (`−6.1 pts`), where width is scarce; use one style per place and never mix them in the same sentence or table. A change in a percentage that is not a percentage point (relative change) is written 「下降 12%」.
 - **Dates and periods:** `FY21–FY24`, `2025 年第二季度` or `2025Q2` — pick one style per deck.
 - **Tracker:** two- to four-character section names (摘要 / 诊断 / 方案 / 建议 / 路线图) at 20px fit the 196px segments; uppercase and tracking do not apply.
 
@@ -588,6 +616,6 @@ The system's authority comes from the serif title over a hairline and from order
 ## Known Gaps
 
 - Charts are hand-built HTML/CSS with inline `--v` values; there is no data binding. Change a value and its label together.
-- No line-chart component; for time series with many points, use the SVG line pattern from the Boardroom Quarterly template recoloured to the navy ladder.
+- No line-chart component in the demo deck. For a time series with many points (> 8), draw an inline SVG line chart in this system's own style (see "Line chart pattern" below). Up to 8 points, prefer columns.
 - No image archetype. If a photo or logo is unavoidable, place it in a body column with square corners and no border, never behind text.
 - The cover motif is decorative; do not turn it into a fake chart with invented values.

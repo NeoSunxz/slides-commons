@@ -1,0 +1,62 @@
+# Example CI for a company template repository (copy this repository's layout, then adjust).
+# On every pull request it checks out this repository next to slides-commons (pinned to a release
+# tag) and runs slides-commons' validation on your sources only. Validation checks the metadata,
+# design.md sections, the 3 screenshots, external requests (fonts only), size limits, TODO markers,
+# and that no slug collides with any template in slides-commons or another source.
+name: Validate templates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # Pin slides-commons to a release tag you have tested; bump it deliberately.
+  SLIDES_COMMONS_REPO: NeoSunxz/slides-commons
+  SLIDES_COMMONS_REF: v0.4.0
+  # The id of your source in sources.json.
+  SOURCE_ID: acme
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out this repository (the templates)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: company
+          persist-credentials: false
+
+      # Submodules: slides-commons keeps viewport-base.css (shared by every pack) in upstream/.
+      - name: Check out slides-commons
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.SLIDES_COMMONS_REPO }}
+          ref: ${{ env.SLIDES_COMMONS_REF }}
+          path: slides-commons
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: slides-commons/package-lock.json
+
+      - name: Install slides-commons dependencies
+        working-directory: slides-commons
+        run: npm ci
+
+      - name: Validate
+        working-directory: slides-commons
+        run: node scripts/validate.mjs --extra-sources ../company/sources.json --only-sources "$SOURCE_ID"
+
+      # Optional: build the site once to be sure it builds with the final data.
+      - name: Build (smoke test)
+        working-directory: slides-commons
+        run: node scripts/build.mjs --extra-sources ../company/sources.json --only-sources "$SOURCE_ID" --out "$RUNNER_TEMP/site"

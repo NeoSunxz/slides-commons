@@ -31,6 +31,9 @@ const kb = (n) => `${Math.round(n / 1024)} KB`;
 // A heading line (any level) matching `re`.
 const hasHeading = (md, re) => md.split(/\r?\n/).some((l) => /^#{1,6}\s/.test(l) && re.test(l));
 
+// Private (internal) sources: ctx.private. The quality rules stay (design.md sections, html size, screenshots,
+// no TODO); the open-source rules are relaxed: license list, author URL, LICENSE text and the
+// no-raster-images rule (a company template may carry its logo).
 // `ctx`: { t, rel, html, htmlFile, designMd, designPath, designFile, screenshots, assets,
 //          perTemplateLicense, licensePath, metaPath, metaExplicit }
 export function checkCollectionTemplate(ctx) {
@@ -39,19 +42,19 @@ export function checkCollectionTemplate(ctx) {
   const out = [];
 
   // --- metadata: credit and license ------------------------------------------------------
-  if (!Object.hasOwn(ALLOWED_LICENSES, t.license)) {
+  if (!ctx.private && !Object.hasOwn(ALLOWED_LICENSES, t.license)) {
     out.push(`${at} ${rel(ctx.metaPath)}: license "${t.license}" is not allowed for collection templates. Fix: set "license" to one of ${Object.keys(ALLOWED_LICENSES).join(', ')}.`);
   }
   if (ctx.perTemplateLicense) {
     if (!ctx.metaExplicit.authors) out.push(`${at} ${rel(ctx.metaPath)}: "authors" is required (this source credits each template's own author). Fix: add "authors": [{"name": "…", "url": "https://github.com/…"}].`);
     if (!ctx.metaExplicit.license) out.push(`${at} ${rel(ctx.metaPath)}: "license" is required (one of ${Object.keys(ALLOWED_LICENSES).join(', ')}).`);
   }
-  for (const a of t.authors ?? []) {
+  for (const a of ctx.private ? [] : (t.authors ?? [])) {
     if (!/^https?:\/\//.test(a.url ?? '')) out.push(`${at} ${rel(ctx.metaPath)}: author "${a.name}" has no "url". Fix: add a link to the author's profile or site ("url": "https://…").`);
   }
 
   // --- LICENSE file ------------------------------------------------------------------------
-  if (ctx.perTemplateLicense) {
+  if (ctx.perTemplateLicense && !ctx.private) {
     if (!fs.existsSync(ctx.licensePath)) {
       out.push(`${at} ${rel(ctx.licensePath)} is missing. Fix: add the full text of the ${t.license} license as ${path.basename(ctx.licensePath)} in the template directory.`);
     } else {
@@ -73,6 +76,7 @@ export function checkCollectionTemplate(ctx) {
   const htmlBytes = Buffer.byteLength(ctx.html);
   if (htmlBytes > LIMITS.htmlBytes) out.push(`${at} ${rel(ctx.htmlPath)} is ${kb(htmlBytes)}; the limit is ${kb(LIMITS.htmlBytes)}. Fix: remove embedded data or repeated markup.`);
   const bare = ctx.html.replace(/<!--[\s\S]*?-->/g, '');
+  if (!ctx.private) {
   if (/<img\b/i.test(bare)) out.push(`${at} ${rel(ctx.htmlPath)} uses <img>. Fix: collection templates use abstract shapes only (CSS, inline SVG); no photos or raster images.`);
   const rasterRef = new RegExp(`(?:url\\(\\s*|\\bsrc\\s*=\\s*|\\bsrcset\\s*=\\s*)["']?(?!data:)[^"')\\s>]*\\.(?:${RASTER_EXT})\\b`, 'i');
   if (rasterRef.test(bare)) out.push(`${at} ${rel(ctx.htmlPath)} references a raster image file. Fix: draw it with CSS or inline SVG instead.`);
@@ -81,6 +85,7 @@ export function checkCollectionTemplate(ctx) {
   if (rasterData > LIMITS.rasterDataUriBytes) out.push(`${at} ${rel(ctx.htmlPath)} embeds ${kb(rasterData)} of raster data: URIs; the limit is ${kb(LIMITS.rasterDataUriBytes)} in total. Fix: use CSS or inline SVG.`);
   for (const a of ctx.assets) {
     if (new RegExp(`\\.(?:${RASTER_EXT})$`, 'i').test(a)) out.push(`${at} asset ${a} is a raster image. Fix: remove it; collection templates use abstract shapes only.`);
+  }
   }
 
   // --- screenshots ----------------------------------------------------------------------------
@@ -103,7 +108,7 @@ export function checkCollectionTemplate(ctx) {
     [ctx.metaPath, fs.readFileSync(ctx.metaPath, 'utf8')],
     [ctx.designPath, md],
     [ctx.htmlPath, ctx.html],
-    ...(ctx.perTemplateLicense && fs.existsSync(ctx.licensePath) ? [[ctx.licensePath, fs.readFileSync(ctx.licensePath, 'utf8')]] : []),
+    ...(ctx.perTemplateLicense && !ctx.private && fs.existsSync(ctx.licensePath) ? [[ctx.licensePath, fs.readFileSync(ctx.licensePath, 'utf8')]] : []),
   ];
   for (const [p, text] of todoFiles) {
     const line = text.split(/\r?\n/).findIndex((l) => TODO_RE.test(l));

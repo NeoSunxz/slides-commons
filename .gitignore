@@ -30,3 +30,6 @@ tests/artifacts/
 test-results/
 playwright-report/
 tests/test-results/
+
+# Local private template sources (see docs/self-hosting.md)
+sources.local.json

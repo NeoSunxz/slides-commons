@@ -196,11 +196,16 @@ zip（以 `<slug>/` 为根）：
   - 验收（全新 agent，只给 soft-editorial 中文提示词，8 页）通过：断网，所有 CJK 来自嵌入字体；体积 0.3MB → 整分片 6.0MB → fonttools 裁剪后 880KB。其发现的问题已修进提示词。
   - 已知限制：运行时由 JS 生成的文字不会被扫描；没有 fonttools 时每个字重多出数 MB；脚本按整个文件规划字符、不按字体族分；grove 的 design.md 里「Noto Sans Mono CJK SC」不是真实 Google 字体族，仍走链接；Pages 部署产物约增 67MB。
   - 下一步：维护者审阅页面改版与 `tags.json` 分组 → v0.3.0 PR。
+- 2026-11-19：私有来源、Docker/GHCR 与转换工具包修复完成。私有来源（`--extra-sources` / `SC_EXTRA_SOURCES` / `sources.local.json`、`private: true`、`--only-sources`、`--no-kits`、`nameZh`、`new-template --source-dir`、`examples/private-source/`）；自托管文档 `docs/self-hosting(.zh).md`；Docker 镜像、compose 示例与 `docker.yml`（PR 冒烟、tag 推 GHCR）；转换工具包补 `embed-latin.mjs`、undefined 防护、提取字段与字体映射，设计图（背景、封面图）默认保留。`npm test` 1030 通过 4 跳过（Docker 测试需 `SC_DOCKER_TESTS=1`，本机已通过）。
+  - 待验证：默认基础镜像 `nginx:stable-bookworm` 未在本机拉取过，首次 CI 运行时验证。
+  - 下一步：v0.4.0 PR（dev→main），然后做「转换技能扩展」计划。
 - 下一步：合并 v0.2.0（PR #2）→ 打标签发 Release → 线上模拟验收（只给提示词，用一个商务模板）；之后自托管字体第二步（CJK 裁剪）或 M6。
 - 2026-11-18：页面改版移植完成（新首页 `src/home.*`、独立 `gallery/`、`src/tags.json` 12 个情绪大类、协议筛选、页头 GitHub 图标、页脚列出各来源作者/协议、详情页折叠描述/适用对比卡/色带/字体实样/署名卡）。新增 overlay 来源 guizang（歸藏 Guizang PPT Skill，AGPL-3.0，只读 submodule `upstream/guizang`，`scripts/overlay.mjs` + `sources-meta/guizang/`，2 个模板；卡片角标、详情页、PROMPT 顶部、zip README、致谢均带 AGPL 提示）；`upstream/html-ppt-skill`（lewislulu）仅作参考资料，不入画廊（CREDITS.md 已注明）。共 52 个模板 / 4 个来源，`npm test` 891 通过。提示词增加均衡密度选项与 CJK 换行提示；4 个商务模板修订。
   - 已知：guizang 滚轮翻页偶发失效（模板的流水线步骤所致）；file:// 下 `motion.min.js` 动态 import 失败时回退到 CDN。
   - 下一步：维护者审阅改版与 `tags.json` 分组 → v0.3.0 PR（dev→main）。
 - 2026-11-19：v0.3.0 已发布（PR #3 合并，db4de6e，已打标签并建 Release，Pages 线上核实，`fonts/cjk` 以 CORS `*` 提供）。v0.3.1 修复 iOS 上 ↗ 箭头被显示为 emoji（改用内联 SVG / CSS mask，✓/✕ 加 U+FE0E）。
+- 2026-11-19：线上验收（consulting-report，只给提示词）通过：72 个中文字体分片全部来自 Pages，成稿 760KB。转换工具包与技能集合完成：`kits/`、`scripts/kits.mjs`、`src/kits.mjs`、`src/kit-pages.mjs`；页面 `convert/`、`skills/`（中英）与页头链接；`convert-kit.zip`（pptx-extract、check-template、规范、字体映射、deck 提示词、embed-cjk）、`slides-commons-skills.zip`（deck / convert / cjk-fonts 三个技能）；用途为个人复用，本地转换、不上传。提示词与 consulting-report 按验收反馈修订，`embed-cjk` 按来源统计分片。`npm test` 952 通过。
+  - 下一步：.pptx 转换验收，然后做私有来源（见下方计划）。
 
 ### 页面改版（维护者 2026-11-18）：已完成
 - 已从 `design/pages-refresh` 移植到 dev（新首页、`gallery/`、作者署名 NeoSun、页脚致谢与精简声明、12 大类情绪标签、详情页改版），详见 2026-11-18 进度。
@@ -241,3 +246,45 @@ zip（以 `<slug>/` 为根）：
 - template.json 的 slide_count 与实际页数可能不符（neo-grid-bold 写 13，实际 12）→ 以实际渲染为准
 - ~~zip 时间戳固定化（可复现构建）~~ M1 已完成（默认 1980-01-01，支持 `SOURCE_DATE_EPOCH`）
 - ~~serve.mjs 默认监听所有网卡~~ M1 已改为默认 127.0.0.1（`HOST=0.0.0.0` 可对外）
+
+### 计划：私有模板来源（维护者 2026-11-19 确认）【已完成，2026-11-19】
+- 公司本地部署时，自有模板放在项目目录之外（如独立仓库 `acme-templates/`：`sources.json` + `templates/<slug>/` + `screenshots/`），项目文件不改，`git pull` 升级无冲突。
+- 构建挂载：`--extra-sources <file>` / `SC_EXTRA_SOURCES`，或根目录 `sources.local.json`（加入 `.gitignore`）自动读取；可多个。
+- 来源 `private: true`：卡片显示「内部」标签；不强制 GitHub 回链，协议可写内部；沿用 design.md 章节、截图、无外部请求等校验，放宽开源相关要求；slug 与已有模板重名直接报错。
+- 默认与公开模板一起显示；`--only-sources <id,...>` 可隐藏其他来源。
+- 私有模板素材包：公司仓库有 LICENSE 则放入，否则附「内部使用，请勿外传」说明。
+- 「转换」功能产出的模板文件夹可直接放进私有来源目录。
+
+### 待办：线上验收（2026-11-19，consulting-report，通过）后的修改（已完成，2026-11-19；仅「补充」中的私有来源相关项待做）
+- 提示词（等转换功能的 site-builder 完成后再改 src/prompt.mjs）：`span.cjk` 包裹会被模板里的后代 `span` 选择器误匹配、flex 容器里中文与数字间空格被吞 → 通用提醒；CJK 字重规则只作用于 CJK 文字，拉丁保持已加载字重；章节序号与页码规则措辞澄清；离线自检时 Google Fonts 请求失败属预期。
+- `src/embed-cjk.mjs`：摘要按来源（本站 / jsDelivr）统计分片数。
+- consulting-report 的 design.md / template.html 问题由 template-designer 修（跨模板引用、delta 标注重叠、字重块、字号下限、封面、百分点写法）。
+- 补充（维护者 2026-11-19）：自有模板继续放本仓库 `collections/`，不另建仓库；同事的模板放公司自己的项目管理，本地部署时用私有来源接入。需同时提供：
+  - 私有来源仓库样板（`examples/private-source/`：sources.json、一个示例模板、README、给公司仓库用的 CI 示例，CI 中检出 slides-commons 并用 `--extra-sources` 跑 validate）。
+  - `npm run new-template -- <slug> --source-dir <dir>` 支持在外部来源目录建模板。
+  - 自托管文档（中英，如 `docs/self-hosting.md`）：克隆两个仓库 → 构建参数 → 任意静态服务器内网部署 → 升级方式 → 模板更新后重新构建。
+
+### 计划：Docker 部署（维护者 2026-11-19 提出）【已完成，2026-11-19；待首次 CI 验证】
+- 一个镜像，启动时构建：`docker run -p 8080:80 -e SC_SITE_URL=http://slides.intra/ -v ./acme-templates:/templates:ro <image>`；入口脚本检测 `/templates/sources.json` 自动作为 `--extra-sources`，支持 `SC_ONLY_SOURCES`，构建到容器内目录后用 nginx（或零依赖 Node 静态服务）提供；模板更新 → 重启容器即重建。
+- 多阶段：构建阶段 `npm ci`（不装 Playwright 浏览器），submodule 内容随构建上下文进入；运行阶段只带构建所需文件与 node_modules 中的字体包。
+- 附 `docker-compose.yml` 示例与 docs/self-hosting 的 Docker 一节；CI 在 PR 上构建镜像并做冒烟测试（启动后 curl 首页/zip）。
+- 发布到 GHCR（维护者 2026-11-19 确认）：随 tag 自动推送 `ghcr.io/neosunxz/slides-commons:<version>` 与 `latest`，公开镜像；工作流权限仅 `packages: write`，Action 固定提交哈希。
+
+### 计划：转换技能扩展（维护者 2026-11-19 提出，v0.4.0 发布后实施）
+现有「转换」= PPT/图片 → **模板**（只取设计，不取内容）。新增三个把**内容**也带过来的转换，各做成一个技能，放进 `slides-commons-skills.zip`，共用 `convert-kit` 的工具；全部在本地完成，不上传。
+
+1. **pptx → slides**（HTML 幻灯片，技能 `slides-commons-pptx-to-deck`）
+   - 保留文字（按阅读顺序）、表格、图片、图表数据、演讲者备注；输出单文件 1920×1080，图片缩小后以 data URI 嵌入，字体用 embed-latin / embed-cjk 嵌入。
+   - 两种模式：还原原设计（默认）；或套用画廊里的某个模板（按其 design.md 重排）。
+   - 提取脚本需扩展：段落顺序与层级、表格单元格、`ppt/charts/*.xml` 图表数据、备注页、组合形状。
+2. **images / PDF → slides**（技能 `slides-commons-images-to-deck`）
+   - 截图、导出图、拍照的幻灯片，或 PDF（`pdftoppm` 转图）；agent 看图识别文字与版式，重建为可编辑的 HTML 幻灯片。
+   - 同样两种模式（还原 / 套模板）；识别不确定的文字在最终回复里列出待核对。
+3. **slides → pptx**（技能 `slides-commons-deck-to-pptx`）
+   - 图片模式：无头浏览器逐页截图，每页一张整页图片（外观完全一致、不可编辑）。
+   - 可编辑模式：在浏览器里读取每页 DOM 的位置、字号、颜色、字体，映射为 pptx 文本框、形状、图片、表格；SVG 图表转图片；演讲者备注写入备注页。
+   - 零依赖 pptx 写入器（复用构建里的 zip 写入），需要浏览器（Playwright 或本机 Chrome）；有 python-pptx 时可作备选。顺带提供 slides → PDF（浏览器打印）。
+- 测试：用 `tests/pptx-fixture.mjs` 生成样例；往返测试 pptx → slides → pptx 比对文字与页数；有 LibreOffice 时校验生成的 pptx 能打开并渲染。
+- 验收：维护者的登峰 PPT（仅本地 `.cache/`），全新 agent 只拿技能包完成。
+- 顺序：pptx → slides（复用提取脚本）→ images → slides → slides → pptx（工作量最大）。
+- 待定：slides → pptx 默认用可编辑模式还是图片模式；套模板模式是否在网站详情页提供入口。

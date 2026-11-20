@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-19
+
+### Added
+
+- Private template sources (planned for v0.4.0): `--extra-sources` / `SC_EXTRA_SOURCES` / `sources.local.json`, `private: true` sources with an internal-use prompt line and `NOTICE.txt`, `--only-sources`, `--no-kits`, `nameZh` and per-source `i18n/zh.json`, `new-template --source-dir`, and the starter repo `examples/private-source/`.
+- Self-hosting guide in English and Chinese (`docs/self-hosting.md`, `docs/self-hosting.zh.md`).
+- Docker image (builds the gallery at start-up, serves it with nginx), `docker-compose.example.yml`, and a workflow that smoke-tests PR builds and publishes to GHCR on tags.
+- Convert kit: `embed-latin.mjs`, richer extractor fields and font-map additions; design images (backgrounds, cover photos) are kept by default.
+- Tests for private sources, embed-latin, kits guard, rich pptx and Docker (opt-in via `SC_DOCKER_TESTS=1`); `SC_NO_LOCAL_SOURCES` for the Playwright config.
+- Convert kit and skills collection: pages `convert/` and `skills/` (EN and zh) with header links. `site/zip/convert-kit.zip` ships `pptx-extract.mjs`, `check-template.mjs`, spec, font map, deck prompts and `embed-cjk`; `site/zip/slides-commons-skills.zip` ships `slides-commons-deck`, `slides-commons-convert` and `slides-commons-cjk-fonts`. For personal reuse: turn your own PPT or images into a template locally, nothing is uploaded.
+- Tests for the kits (`tests/kits.spec.mjs`, `tests/pptx-fixture.mjs`).
+- Prompt: CJK span selector and flex-spacing pitfalls, CJK weights apply to CJK runs only, clearer section-number wording, note that Google Fonts failing offline is expected.
+- `embed-cjk.mjs` reports shard counts per download source.
+
+### Changed
+
+- Pages workflow zip count includes kits and checks the new pages.
+
+### Fixed
+
+- Home: mobile chapters are at least one screen tall (`svh`).
+- Style Presets / Consulting Report: no cross-template reference, own line-chart pattern, delta annotation gutter, CJK weights scoped to `.cjk`, Noto Serif SC 700 only, CJK labels at least 20px, cover omission rules, section ordinals, child span selectors, percentage-point style.
+
 ## [0.3.1] - 2026-11-19
 
 ### Fixed
@@ -110,7 +133,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.1.0...v0.2.0

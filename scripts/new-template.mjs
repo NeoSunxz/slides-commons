@@ -2,6 +2,12 @@
 // Scaffold a new template.
 //
 //   npm run new-template -- <slug> [--collection community] [--sources <file>]
+//   npm run new-template -- <slug> --source-dir <dir> [--collection <source id>]
+//
+// With --source-dir the template is created in an external (private) source directory, e.g. a
+// company repository next to this one. If <dir>/sources.json does not exist it is created with
+// defaults (one private source, license "Internal use only"); the script prints what to edit.
+// Validate with: npm run validate -- --extra-sources <dir>/sources.json
 //
 // Creates <collection>/templates/<slug>/ with template.json, design.md, template.html and
 // LICENSE. Every value you must decide is marked TODO; `npm run validate` fails until all
@@ -28,24 +34,57 @@ for (let k = 0; k < args.length; k++) {
 if (!slug) die('usage: npm run new-template -- <slug> [--collection community]');
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) die(`slug "${slug}" must be lowercase letters, digits and single hyphens (e.g. "neon-harbor")`);
 
-const sourcesFile = opt.sources ?? process.env.SC_SOURCES ?? path.join(ROOT, 'sources.json');
-const cfg = JSON.parse(fs.readFileSync(sourcesFile, 'utf8'));
-const collectionId = opt.collection ?? 'community';
-const src = cfg.sources.find((s) => s.id === collectionId);
-if (!src) die(`no source "${collectionId}" in ${path.relative(ROOT, sourcesFile)}`);
-if (!src.collection) die(`source "${collectionId}" is not an in-repo collection (collection: true)`);
+const repoSourcesFile = opt.sources || process.env.SC_SOURCES || path.join(ROOT, 'sources.json');
+const sourceDir = opt['source-dir'] ? path.resolve(opt['source-dir']) : null;
+if (opt['source-dir'] !== undefined && !sourceDir) die('--source-dir needs a directory');
+const readJson = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
+const sourceBlock = (cfg, base) => cfg.sources.map((s) => ({ s, base }));
+
+// The source the template goes into: { src, base } (base = what src.path resolves from).
+let target;
+let createdSourcesFile = false;
+const allSources = sourceBlock(readJson(repoSourcesFile), ROOT);
+const localFile = path.join(ROOT, 'sources.local.json');
+if (fs.existsSync(localFile)) allSources.push(...sourceBlock(readJson(localFile), path.dirname(localFile)));
+if (sourceDir) {
+  const file = path.join(sourceDir, 'sources.json');
+  if (!fs.existsSync(file)) {
+    const id = path.basename(sourceDir).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'private';
+    const name = id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({
+      schemaVersion: 1,
+      sources: [{ id, name: `${name} Templates`, author: name, license: 'Internal use only', private: true, path: '.' }],
+    }, null, 2) + '\n');
+    createdSourcesFile = true;
+  }
+  const cfg = readJson(file);
+  const mine = sourceBlock(cfg, sourceDir);
+  allSources.push(...mine);
+  const pick = opt.collection ? mine.find((x) => x.s.id === opt.collection) : mine.length === 1 ? mine[0] : null;
+  if (!pick) die(opt.collection ? `no source "${opt.collection}" in ${file}` : `${file} has several sources; choose one with --collection <id> (${mine.map((x) => x.s.id).join(', ')})`);
+  target = pick;
+} else {
+  const collectionId = opt.collection ?? 'community';
+  const pick = sourceBlock(readJson(repoSourcesFile), ROOT).find((x) => x.s.id === collectionId);
+  if (!pick) die(`no source "${collectionId}" in ${path.relative(ROOT, repoSourcesFile)}`);
+  if (!pick.s.collection) die(`source "${collectionId}" is not an in-repo collection (collection: true)`);
+  target = pick;
+}
+const src = target.s;
+const isPrivate = Boolean(src.private);
 
 // Slugs must be unique across every source.
-for (const s of cfg.sources) {
-  const d = path.join(ROOT, ...s.path.split('/'), ...(s.layout?.templatesDir ?? 'templates').split('/'), slug);
-  if (fs.existsSync(d)) die(`slug "${slug}" already exists: ${path.relative(ROOT, d)}`);
+for (const { s, base } of allSources) {
+  const d = path.resolve(base, s.path, ...(s.layout?.templatesDir ?? 'templates').split('/'), slug);
+  if (fs.existsSync(d)) die(`slug "${slug}" already exists: ${d}`);
 }
 
 const L = { templatesDir: 'templates', metaFile: 'template.json', htmlFile: 'template.html', designFile: 'design.md', licenseFile: 'LICENSE', ...(src.layout ?? {}) };
-const dir = path.join(ROOT, ...src.path.split('/'), ...L.templatesDir.split('/'), slug);
+const dir = path.resolve(target.base, src.path, ...L.templatesDir.split('/'), slug);
 
-const viewportPath = path.join(ROOT, ...(src.companion?.path ?? 'upstream/skill').split('/'), src.companion?.viewportBase ?? 'viewport-base.css');
-if (!fs.existsSync(viewportPath)) die(`viewport-base.css not found at ${path.relative(ROOT, viewportPath)} (run: git submodule update --init)`);
+const viewportPath = path.resolve(src.companion && isPrivate ? target.base : ROOT, ...(src.companion?.path ?? 'upstream/skill').split('/'), src.companion?.viewportBase ?? 'viewport-base.css');
+if (!fs.existsSync(viewportPath)) die(`viewport-base.css not found at ${viewportPath} (run: git submodule update --init)`);
 const viewport = fs.readFileSync(viewportPath, 'utf8').trim();
 
 const title = slug.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
@@ -76,8 +115,7 @@ const meta = {
   avoid_for: 'TODO where it does not work',
   slide_count: 3,
   navigation: 'inline script (arrow keys, space, PgUp/PgDn, Home/End, mouse wheel, click, swipe)',
-  authors: [{ name: 'TODO your name', url: 'TODO https://github.com/your-name' }],
-  license: 'MIT',
+  ...(isPrivate ? {} : { authors: [{ name: 'TODO your name', url: 'TODO https://github.com/your-name' }], license: 'MIT' }),
 };
 
 const design = `---
@@ -320,13 +358,27 @@ const files = [
 ];
 for (const [name, text] of files) fs.writeFileSync(path.join(dir, name), text);
 
-const relDir = path.relative(ROOT, dir);
+const shown = (p) => { const r = path.relative(ROOT, p); return r.startsWith('..') || path.isAbsolute(r) ? p : r; };
+const relDir = shown(dir);
 console.log(`created ${relDir}${path.sep}`);
 for (const [name] of files) console.log(`  ${name}`);
-console.log(`
+if (isPrivate) {
+  const sf = path.join(sourceDir, 'sources.json');
+  console.log(`
+${createdSourcesFile ? `Created ${sf} with defaults: edit "name", "author" and "license" in it (source "${src.id}", private: true).\n` : ''}Next:
+  1. Replace every TODO in those files (validation lists what is left). "authors" and "license" are
+     inherited from sources.json; the license text goes into a LICENSE file in the source directory
+     (or, without one, each pack gets a NOTICE.txt marking it for internal use only).
+  2. Design the deck in ${path.join(relDir, L.htmlFile)} and describe it in ${L.designFile}.
+  3. npm run screenshots -- --source-dir ${sourceDir} --only ${slug}
+  4. npm run validate -- --extra-sources ${sf}
+  See docs/self-hosting.md.`);
+} else {
+  console.log(`
 Next:
   1. Replace every TODO in those files (npm run validate lists what is left).
   2. Design the deck in ${path.join(relDir, L.htmlFile)} and describe it in ${L.designFile}.
   3. npm run screenshots -- --only ${slug}${opt.sources ? ` --sources ${opt.sources}` : ''}
   4. Add Chinese translations to src/i18n/zh.json, then npm run validate && npm test.
   See CONTRIBUTING.md.`);
+}
