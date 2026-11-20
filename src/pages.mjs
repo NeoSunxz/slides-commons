@@ -181,7 +181,8 @@ const STRINGS = {
     attrFacts: { author: 'Author', original: 'Original', license: 'License', source: 'Source' },
     attrTranslation: () => '',
     footerBy: (s, links, lang) => `Templates by ${srcAuthorLink(s, lang)} (${esc(s.license)}) · ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? 'some ' : ''}based on ${derivedLink(s.derivedFrom)} by ${derivedAuthor(s.derivedFrom)}` : ''}`,
-    footerIndependent: `${SITE_NAME} is an independent gallery, not affiliated with the original authors.`,
+    footerIndependent: 'Independent gallery, not affiliated with the template authors.',
+    footerTemplatesBy: 'Templates by',
     footerCredits: 'Credits &amp; licenses',
     creditsTitle: `Credits: ${SITE_NAME}`,
     creditsDescription: 'Template authors, sources and licenses.',
@@ -329,7 +330,8 @@ const STRINGS = {
       ? `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自本站为该模板编写的${link(enUrl, '英文介绍')}；译文由本项目提供，以英文原文为准。`
       : `本站中文页面上的介绍文字由 ${SITE_NAME} 翻译自上游的英文文本（上游为 ${esc(t.license)} 许可）；译文由本项目提供，以英文原文为准。`,
     footerBy: (s, links, lang) => `模板来自 ${srcAuthorLink(s, lang)}（${esc(s.license)}） · ${links}${s.derivedFrom ? ` · ${s.derivedFrom.slugs ? '部分' : ''}基于 ${derivedAuthor(s.derivedFrom)} 的 ${derivedLink(s.derivedFrom)}` : ''}`,
-    footerIndependent: `${SITE_NAME} 是独立画廊，与原作者无关联。`,
+    footerIndependent: '独立画廊，与原作者无关联。',
+    footerTemplatesBy: '模板作者',
     footerCredits: '致谢与许可证',
     creditsTitle: `致谢：${SITE_NAME}`,
     creditsDescription: '模板作者、来源与许可证。',
@@ -424,22 +426,25 @@ ${['assets/site.js', ...scripts].map((s) => `<script src="${root}${s}"></script>
 `;
 }
 
-// One compact line per source: author, license, repositories (and what it is based on). Every
-// author stays listed; the full credits are on the credits page.
+// Compact footer: brand + disclaimer on the left; "Templates by" with one inline entry per source
+// (author linked to its repo, licence tag) on the right. Repo details live on the credits page.
+// Private sources keep their full internal line (incl. the viewport-base.css companion credit).
 function footer(lang, home) {
   const S = STRINGS[lang];
-  const lines = footerSources.map((s) => {
+  const items = footerSources.map((s) => {
     if (s.private) return `<li>${S.footerInternal(s, s.repo ? link(s.repo, srcName(s, lang)) : esc(srcName(s, lang)), lang, s.companion)}</li>`;
-    const parts = [link(s.repo, repoName(s.repo))];
-    if (s.companion) parts.push(link(s.companion.repo, repoName(s.companion.repo)));
-    return `<li>${S.footerBy(s, parts.join(' · '), lang)}</li>`;
-  }).join('\n      ');
+    const who = s.repo ? link(s.repo, srcAuthor(s, lang)) : esc(srcAuthor(s, lang));
+    return `<li>${who} <span class="footer-license">${esc(s.license)}</span></li>`;
+  }).join('\n        ');
   return `<footer class="site-footer">
-  <div class="wrap">
-    <ul class="footer-credits">
-      ${lines}
-    </ul>
-    <p class="footer-note">${S.footerIndependent} <a href="${home}credits.html">${S.footerCredits}</a></p>
+  <div class="wrap footer-row">
+    <div class="footer-brand"><strong>${SITE_NAME}</strong><p class="footer-note">${S.footerIndependent}</p></div>
+    <div class="footer-authors"><span class="footer-label">${S.footerTemplatesBy}</span>
+      <ul class="footer-credits">
+        ${items}
+      </ul>
+      <a class="footer-more" href="${home}credits.html">${S.footerCredits}</a>
+    </div>
   </div>
 </footer>`;
 }
