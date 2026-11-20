@@ -5,15 +5,21 @@
 //
 //   node fonts/embed-latin.mjs <file.html>            embed (idempotent; re-run after changing the fonts)
 //   node fonts/embed-latin.mjs <file.html> --dry-run  plan and report only, change nothing
+//   node fonts/embed-latin.mjs <file.html> --site https://slides.example.com/   download from this site first
 //
 // What it does
 //   1. Reads the Google Fonts <link> / @import URLs of the file and takes every family with its weights
 //      and styles (CJK families are skipped: embed-cjk.mjs does them).
 //   2. Downloads, per family, weight and style, the "latin" and "latin-ext" woff2 files of the open
-//      Fontsource package from jsDelivr:
-//        https://cdn.jsdelivr.net/npm/@fontsource/<id>@5/files/<id>-latin-<weight>-normal.woff2
-//      (variable fonts: @fontsource-variable/<id>, file <id>-latin-wght-normal.woff2), then fastly.jsdelivr.net.
-//      No other host is contacted.
+//      Fontsource package. Sources, in this order:
+//        a. the slides-commons site this kit came from (so it works on an intranet / without internet):
+//           <siteBase>fonts/latin/static/<id>/<id>-latin-<weight>-normal.woff2
+//           (variable fonts: <siteBase>fonts/latin/variable/<id>/<id>-latin-wght-normal.woff2).
+//           <siteBase> is read from "siteBase" in the cjk-ranges.json next to this script (set by the
+//           site that built the kit), or given with --site <url> (or the SC_SITE_URL variable);
+//        b. jsDelivr: https://cdn.jsdelivr.net/npm/@fontsource/<id>@5/files/<id>-latin-<weight>-normal.woff2
+//           (variable: @fontsource-variable/<id>, <id>-latin-wght-normal.woff2), then fastly.jsdelivr.net.
+//      No other host is contacted. The summary says where the files came from.
 //   3. Writes them as @font-face rules (with the standard unicode-range of each subset) into one
 //      <style> block between two marker comments, just before </head>. The Google Fonts link stays as
 //      the fallback; the embedded rules come later in the file, so they win when they are available.
@@ -24,6 +30,8 @@
 //             embedded; retry once) | 4 no Google Fonts link with a Latin family found
 
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BEGIN = '<!-- sc-latin-fonts:begin (written by fonts/embed-latin.mjs; do not edit by hand) -->';
 const END = '<!-- sc-latin-fonts:end -->';
@@ -36,10 +44,20 @@ const CJK_FAMILY = /(^|\s)(SC|TC|HK|JP|KR|CJK)(\s|$)|WenKai|ZCOOL|Ma Shan Zheng|
 
 const args = process.argv.slice(2);
 const dry = args.includes('--dry-run');
-const file = args.find((a) => !a.startsWith('--'));
+const siteIdx = args.indexOf('--site');
+const siteArg = siteIdx >= 0 ? args[siteIdx + 1] : undefined;
+const file = args.find((a, i) => !a.startsWith('--') && !(siteIdx >= 0 && i === siteIdx + 1));
 if (!file || args.includes('--help')) {
-  console.error('usage: node fonts/embed-latin.mjs <file.html> [--dry-run]');
+  console.error('usage: node fonts/embed-latin.mjs <file.html> [--dry-run] [--site <url>]');
   process.exit(file ? 0 : 1);
+}
+// Site to try before jsDelivr: --site, SC_SITE_URL, or "siteBase" of the cjk-ranges.json beside this script.
+let siteBase = siteArg ?? process.env.SC_SITE_URL ?? null;
+if (!siteBase) {
+  try { siteBase = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'cjk-ranges.json'), 'utf8')).siteBase ?? null; } catch { /* no table */ }
+}
+if (siteBase) {
+  try { siteBase = new URL(siteBase.endsWith('/') ? siteBase : siteBase + '/').href; } catch { console.error(`ignoring invalid site URL: ${siteBase}`); siteBase = null; }
 }
 let source;
 try { source = fs.readFileSync(file, 'utf8'); } catch (e) { console.error(`cannot read ${file}: ${e.message}`); process.exit(1); }
@@ -79,16 +97,26 @@ if (!wanted.size) {
 }
 
 // --- 2. download ---------------------------------------------------------------------------------
-async function get(path) {
-  for (const host of HOSTS) {
+const sourceCounts = new Map(); // where each file came from: host -> count
+async function get(kind, id, base) {
+  // kind: 'static' (@fontsource) or 'variable' (@fontsource-variable); base: file name.
+  const urls = [];
+  if (siteBase) urls.push(`${siteBase}fonts/latin/${kind}/${id}/${base}`);
+  const pkg = kind === 'static' ? '@fontsource' : '@fontsource-variable';
+  for (const host of HOSTS) urls.push(`${host}/npm/${pkg}/${id}@5/files/${base}`);
+  for (const url of urls) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const res = await fetch(host + path, { signal: AbortSignal.timeout(30000) });
-        if (res.status === 404) break; // another host will not have it either, but cheap to ask once
+        const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+        if (res.status === 404) break; // not there; ask the next source
         if (!res.ok) continue;
         const buf = Buffer.from(await res.arrayBuffer());
-        if (buf.length > 100 && buf.toString('latin1', 0, 4) === 'wOF2') return buf;
-      } catch { /* retry, then next host */ }
+        if (buf.length > 100 && buf.toString('latin1', 0, 4) === 'wOF2') {
+          const h = new URL(url).host;
+          sourceCounts.set(h, (sourceCounts.get(h) ?? 0) + 1);
+          return buf;
+        }
+      } catch { /* retry, then next source */ }
     }
   }
   return null;
@@ -108,9 +136,9 @@ for (const [family, e] of wanted) {
     let any = false;
     for (const subset of Object.keys(RANGES)) {
       let data = null, usedVariable = false;
-      if (!isVar) data = await get(`/npm/@fontsource/${id}@5/files/${id}-${subset}-${w}-${style}.woff2`);
+      if (!isVar) data = await get('static', id, `${id}-${subset}-${w}-${style}.woff2`);
       if (!data && !gotVariable.has(`${style}:${subset}`)) {
-        data = await get(`/npm/@fontsource-variable/${id}@5/files/${id}-${subset}-wght-${style}.woff2`);
+        data = await get('variable', id, `${id}-${subset}-wght-${style}.woff2`);
         usedVariable = Boolean(data);
         if (usedVariable) gotVariable.set(`${style}:${subset}`, true);
       } else if (!data && gotVariable.has(`${style}:${subset}`)) {
@@ -134,6 +162,7 @@ for (const f of faces) {
 const total = faces.reduce((n, f) => n + f.data.length, 0);
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
 console.log(`${[...wanted.keys()].join(', ')}: ${rules.length} font file(s), ${kb(total)} (${kb(total * 4 / 3)} as base64)${dry ? ' [dry run: file not changed]' : ''}`);
+console.log(`Font files downloaded from: ${[...sourceCounts].map(([h, n]) => `${h} ${n}`).join(', ') || 'none'}.`);
 for (const p of problems) console.error(`not found on Fontsource / jsDelivr, or the download failed: ${p}. It stays on the Google Fonts link (works online only).`);
 
 if (!dry && rules.length) {

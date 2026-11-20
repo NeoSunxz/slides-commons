@@ -1290,6 +1290,57 @@ function hostCjk(e, weights) {
   if (e.license) writeFile(path.join(SITE, 'fonts', 'cjk', e.id, fontLicenseName({ license: e.license })), fs.readFileSync(e.license));
 }
 
+// Latin font files the convert kit's fonts/embed-latin.mjs may fetch from this site (only when
+// siteUrl is set; otherwise jsDelivr is the only source). Layout mirrors the script's requests:
+// fonts/latin/static/<id>/<id>-<subset>-<weight>-<style>.woff2 (@fontsource) and
+// fonts/latin/variable/<id>/<id>-<subset>-wght-<style>.woff2 (@fontsource-variable), latin + latin-ext.
+// Wanted: the families (and weights) the gallery's templates request plus the kit's font-map substitutes.
+const latinWanted = new Map(); // family -> Set('style|weight' | 'style|var')
+function wantLatin(families) {
+  for (const fam of families) {
+    if (isCjkFamily(fam.name)) continue;
+    const set = latinWanted.get(fam.name) ?? new Set();
+    latinWanted.set(fam.name, set);
+    for (const v of fam.variants) {
+      const style = v.ital ? 'italic' : 'normal';
+      set.add(v.wght[0] === v.wght[1] ? `${style}|${v.wght[0]}` : `${style}|var`);
+    }
+  }
+}
+function hostLatin(fontMapPath) {
+  const map = JSON.parse(fs.readFileSync(fontMapPath, 'utf8'));
+  for (const f of map.fonts) {
+    if (!f.google) continue;
+    for (const r of parseRequests(`https://fonts.googleapis.com/css2?family=${f.google}`)) wantLatin(r.families);
+  }
+  let bytes = 0, files = 0;
+  const copy = (src, kind, id, name) => {
+    const dest = path.join(SITE, 'fonts', 'latin', kind, id, name);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+    bytes += fs.statSync(src).size; files++;
+  };
+  for (const [name, keys] of [...latinWanted].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const r = FONT_STORE.lookup(name);
+    // A variable package also serves any weight range the script may ask for (a handful of families).
+    if (r.variable) for (const k of [...keys]) keys.add(`${k.split('|')[0]}|var`);
+    for (const key of keys) {
+      const [style, w] = key.split('|');
+      for (const subset of ['latin', 'latin-ext']) {
+        const st = r.static && w !== 'var' ? path.join(r.static, 'files', `${r.id}-${subset}-${w}-${style}.woff2`) : null;
+        const va = r.variable ? path.join(r.variable, 'files', `${r.id}-${subset}-wght-${style}.woff2`) : null;
+        if (st && fs.existsSync(st)) copy(st, 'static', r.id, path.basename(st));
+        else if (va && fs.existsSync(va)) copy(va, 'variable', r.id, path.basename(va));
+      }
+    }
+    for (const [kind, dir] of [['static', r.static], ['variable', r.variable]]) {
+      const lic = dir && path.join(dir, 'LICENSE');
+      if (lic && fs.existsSync(path.join(SITE, 'fonts', 'latin', kind, r.id)) && fs.existsSync(lic)) writeFile(path.join(SITE, 'fonts', 'latin', kind, r.id, fontLicenseName({ license: lic })), fs.readFileSync(lic));
+    }
+  }
+  return { files, bytes };
+}
+
 function main() {
   const started = Date.now();
   const { sources, templates, bySlug, problems, zh: zhData, siteUrl } = loadAndCheck({ strictScreenshots: false });
@@ -1489,6 +1540,7 @@ function main() {
     }, credits, SITE_NAME);
 
     if (siteUrl) for (const [, e] of info.cjk) hostCjk(e, info.cjkWeights.get(e.id));
+    if (siteUrl) for (const r of info.fontPlan.requests) wantLatin(r.families);
     const z = `${t.slug}/`;
     const entries = [
       { name: z },
@@ -1567,6 +1619,10 @@ function main() {
   const kits = usesDefaultSources && !NO_KITS && fs.existsSync(path.join(ROOT, 'kits', 'kits.json'))
     ? buildKits({ root: ROOT, site: SITE, siteUrl, makeZip, zipTime, writeFile, licenseName: fontLicenseName, cjkFamilyEntry, cjkRangesJson, fail })
     : null;
+  if (kits && siteUrl) {
+    const h = hostLatin(path.join(ROOT, 'kits', 'convert', 'spec', 'font-map.json'));
+    console.log(`hosted ${h.files} Latin font files (${(h.bytes / 1048576).toFixed(1)} MB) under fonts/latin/ for the convert kit`);
+  }
   if (kits) {
     // Sample slides of the kit's own example template (kits/kits.json "example"), if it is in this build.
     const exampleDir = readJson(path.join(ROOT, 'kits', 'kits.json')).example?.dir ?? '';
