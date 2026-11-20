@@ -17,8 +17,8 @@ const licenseOf = (slug) => {
 const groupsOf = (slug) => [...new Set(upstreamMeta(slug).mood.map((x) => GROUP_OF.get(x.toLowerCase())))];
 
 const LANG = {
-  en: { prefix: '', note: /not affiliated with the original authors/, official: /not the author's official site/, nav: ['Home', 'Gallery', 'Convert', 'Skills', 'Credits'], gallery: 'gallery/', clear: 'Clear filters' },
-  zh: { prefix: 'zh/', note: /与原作者无关联/, official: /不是原作者的官方站点/, nav: ['首页', '画廊', '转换', '技能', '致谢'], gallery: 'zh/gallery/', clear: '清除筛选' },
+  en: { prefix: '', note: /Independent gallery, not affiliated with the template authors\./, templatesBy: 'Templates by', credits: 'Credits & licenses', official: /not the author's official site/, nav: ['Home', 'Gallery', 'Convert', 'Skills', 'Credits'], gallery: 'gallery/', clear: 'Clear filters' },
+  zh: { prefix: 'zh/', note: /独立画廊，与原作者无关联。/, templatesBy: '模板作者', credits: '致谢与许可证', official: /不是原作者的官方站点/, nav: ['首页', '画廊', '转换', '技能', '致谢'], gallery: 'zh/gallery/', clear: '清除筛选' },
 };
 const PAGES = (lang) => {
   const p = LANG[lang].prefix;
@@ -62,33 +62,61 @@ for (const lang of ['en', 'zh']) {
     expect(await page.locator('header.site-header').evaluate((h) => Math.round(h.getBoundingClientRect().top))).toBe(0);
   });
 
-  test(`[${lang}] footer: one line per source with its author, license and repo link, on every page; disclaimer present`, async ({ page }) => {
+  test(`[${lang}] footer: compact row with brand, disclaimer, "Templates by" authors linked to their repos with licence tags, Credits link`, async ({ page }) => {
     for (const [name, url] of PAGES(lang)) {
       await page.goto(url);
-      const items = page.locator('footer.site-footer .footer-credits > li');
-      await expect(items, `${name}: footer lines`).toHaveCount(SOURCES.length);
+      const footer = page.locator('footer.site-footer');
+      await expect(footer.locator('.footer-brand strong'), `${name}: brand`).toHaveText('slides-commons');
+      await expect(footer.locator('.footer-note'), `${name}: disclaimer`).toHaveText(L.note);
+      await expect(footer.locator('.footer-label'), `${name}: label`).toHaveText(L.templatesBy);
+      const items = footer.locator('.footer-credits > li');
+      await expect(items, `${name}: one entry per source`).toHaveCount(SOURCES.length);
       for (let i = 0; i < SOURCES.length; i++) {
         const s = SOURCES[i];
         const li = items.nth(i);
-        const text = (await li.textContent()).replace(/\s+/g, ' ');
-        expect(text, `${name}: author of ${s.id}`).toContain(authorOf(s, lang));
-        expect(text, `${name}: license of ${s.id}`).toContain(s.license);
-        const hrefs = await li.locator('a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
-        expect(hrefs, `${name}: repo link of ${s.id}`).toContain(s.repo);
-        expect(hrefs, `${name}: author link of ${s.id}`).toContain(s.authorUrl ?? s.repo);
+        const a = li.locator('a');
+        await expect(a, `${name}: ${s.id} author link`).toHaveCount(1);
+        await expect(a, `${name}: ${s.id} author name`).toHaveText(authorOf(s, lang));
+        await expect(a, `${name}: ${s.id} links to its source repo`).toHaveAttribute('href', s.repo);
+        await expect(li.locator('.footer-license'), `${name}: ${s.id} licence tag`).toHaveText(s.license);
       }
-      // Wording the maintainer fixed: Zara Zhang, NeoSun, Guizang (AGPL-3.0).
-      const all = (await page.locator('footer.site-footer .footer-credits').textContent());
-      for (const w of ['Zara Zhang', 'NeoSun', lang === 'zh' ? '歸藏' : 'Guizang', 'AGPL-3.0', 'frontend-slides']) expect(all, `${name}: footer mentions ${w}`).toContain(w);
-      expect(all, `${name}: style presets derivation`).toMatch(lang === 'zh' ? /部分基于/ : /some based on/);
-      // Short disclaimer, with the credits link.
-      const note = page.locator('footer.site-footer .footer-note');
-      await expect(note).toHaveText(L.note);
-      await expect(note.locator('a')).toHaveAttribute('href', /credits\.html$/);
-      // No project name variants (CLAUDE.md naming rule) and no "official" claim anywhere in the footer.
-      const footer = await page.locator('footer.site-footer').textContent();
-      expect(footer).not.toMatch(/beautiful-html-templates\s+gallery|frontend-slides\s+gallery/i);
+      const all = await footer.locator('.footer-credits').textContent();
+      for (const w of ['Zara Zhang', 'NeoSun', lang === 'zh' ? '歸藏' : 'Guizang', 'AGPL-3.0']) expect(all, `${name}: footer mentions ${w}`).toContain(w);
+      const more = footer.locator('a.footer-more');
+      await expect(more, `${name}: credits link`).toHaveText(L.credits);
+      await expect(more).toHaveAttribute('href', /credits\.html$/);
+      expect((await more.evaluate((a) => a.href)), `${name}: credits link resolves`).toMatch(new RegExp(`${L.prefix}credits\\.html$`));
+      // Moved out of the footer: secondary repo links and the "some based on" line.
+      expect(await footer.locator('a[href*="frontend-slides"]').count(), `${name}: no frontend-slides link in footer`).toBe(0);
+      expect(await footer.textContent(), `${name}: no derivation line in footer`).not.toMatch(/some based on|部分基于|STYLE_PRESETS/);
+      // No project name variants and no "official" claim.
+      expect(await footer.textContent()).not.toMatch(/beautiful-html-templates\s+gallery|frontend-slides\s+gallery/i);
     }
+  });
+
+  test(`[${lang}] footer: no horizontal overflow at 390 wide on every page`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const [name, url] of PAGES(lang)) {
+      await page.goto(url);
+      await page.locator('footer.site-footer').scrollIntoViewIfNeeded();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), `${name}: page scrollWidth`).toBeLessThanOrEqual(0);
+      const over = await page.locator('footer.site-footer *').evaluateAll((els) => {
+        const vw = document.documentElement.clientWidth;
+        return els.filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > vw + 1 || r.left < -1); }).map((e) => `${e.tagName}.${e.className}`);
+      });
+      expect(over, `${name}: footer elements outside the viewport`).toEqual([]);
+    }
+  });
+
+  test(`[${lang}] credits page carries the frontend-slides and STYLE_PRESETS.md links and the "based on ... Zara Zhang" attribution`, async ({ page }) => {
+    await page.goto(`${L.prefix}credits.html`);
+    const main = page.locator('main');
+    const hrefs = await main.locator('a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    expect(hrefs).toContain('https://github.com/zarazhangrui/frontend-slides');
+    expect(hrefs).toContain('https://github.com/zarazhangrui/frontend-slides/blob/main/STYLE_PRESETS.md');
+    const text = (await main.innerText()).replace(/\s+/g, ' ');
+    expect(text).toContain('Zara Zhang');
+    expect(text).toMatch(lang === 'zh' ? /基于[^。]*STYLE_PRESETS[^。]*|基于[^。]*Zara Zhang/ : /based on[\s\S]{0,200}STYLE_PRESETS\.md[\s\S]{0,200}by Zara Zhang/);
   });
 
   test(`[${lang}] detail pages carry the attribution card with the "not the official site" disclaimer`, async ({ page }) => {

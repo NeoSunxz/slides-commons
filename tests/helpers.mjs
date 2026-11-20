@@ -101,7 +101,8 @@ export function monitor(page) {
   page.on('console', (m) => {
     if (m.type() === 'error') log.consoleErrors.push(`${m.text()} @ ${m.location()?.url ?? ''}`);
   });
-  page.on('pageerror', (e) => log.pageErrors.push(String(e?.stack || e)));
+  // Chromium aborts cross-document view transitions under load; that is browser behaviour, not an app error.
+  page.on('pageerror', (e) => { const t = String(e?.stack || e); if (!/Transition was aborted/.test(t)) log.pageErrors.push(t); });
   page.on('request', (r) => {
     let frameUrl = '';
     let isMain = true;
@@ -126,7 +127,7 @@ export function monitorContext(context) {
   context.on('console', (m) => {
     if (m.type() === 'error') log.consoleErrors.push(`${m.text()} @ ${m.location()?.url ?? ''}`);
   });
-  context.on('weberror', (e) => log.pageErrors.push(String(e.error()?.stack || e.error())));
+  context.on('weberror', (e) => { const t = String(e.error()?.stack || e.error()); if (!/Transition was aborted/.test(t)) log.pageErrors.push(t); });
   context.on('request', (r) => log.inflight.add(r));
   context.on('requestfinished', (r) => log.inflight.delete(r));
   context.on('requestfailed', (r) => {
