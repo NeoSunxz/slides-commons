@@ -249,6 +249,13 @@ export function fontSubstitutionMd(map) {
     'never ship them. Replace each with an **open** font that Google Fonts serves, as close in width, weight and',
     'feel as possible, and list every substitution in your final reply and under "Known Gaps" in `design.md`.',
     '',
+    '**Font stack for personal templates.** In CSS, list the source\'s original font names first (they are used when installed',
+    'on the visitor\'s machine), then the open replacement, then a generic family, for example',
+    '`font-family: "Microsoft YaHei", "HarmonyOS Sans SC", "Noto Sans SC", sans-serif;` (some fonts also register a localized family name: add it exactly as `fc-list` or the OS font list shows it), with weights set for the',
+    'replacement (HarmonyOS Sans SC Medium = 500). A machine with the original font shows it exactly; the others get the',
+    'embedded open font. `design.md` Typography lists both, and Known Gaps notes it. The embed scripts embed only the open',
+    'fonts; never ship the proprietary font files.',
+    '',
     'This table is generated from `font-map.json` (the same data `tools/pptx-extract.mjs` uses for its suggestions).',
     '',
     'How to use it:',
@@ -400,6 +407,8 @@ Follow the source's proportions; do not "improve" the design. Where the source b
 
 **Design images in ${c('template.html')}.** Use ${c('media[].usedBy')} in ${c('extract.json')} to find them. Keep (by default) every slide, layout or master background, full-bleed cover or section photo, and decorative texture or pattern; they are part of the design, and the user's own image (personal use). Do not keep content images (pictures inside a content slide that illustrate the user's subject, people or products): draw neutral placeholder blocks in the palette instead; the same for logos unless the user asked. How to embed a kept image: (1) downscale it locally to the size it is shown at (max 1920px wide for full-bleed): JPEG at about quality 80 for photos, PNG only for images that need alpha; use Python Pillow if available, else ${c('sips')} on macOS or ImageMagick (${c('magick')} / ${c('convert')}); if none is available, embed the original bytes and say so in the report. (2) Embed it in ${c('template.html')} as a ${c('data:')} URI, shown with CSS ${c('background-image')} or ${c('<img>')}. (3) Put any overlay the source had (for example a 71% black mask) as a separate layer above it, not baked into the picture. (4) Declare each kept image in ${c('design.md')} (in ${c('## Components')} or ${c('## Signature Treatments')}): role, where it is used, size shown, and that it is the user's own image for personal use. If the user chose to drop background images, use a drawn approximation (CSS or SVG) and list it in ${c('## Known Gaps')}.
 
+**Font stack: the original names first, then the open replacement.** This is the user's own deck, so every ${c('font-family')} lists the source's original font names first (they are used if installed on the machine; some fonts also register a localized family name, so add that name exactly as ${c('fc-list')} or the OS font list shows it), then the open replacement, then a generic family, for example ${c('font-family: "Microsoft YaHei", "HarmonyOS Sans SC", "Noto Sans SC", sans-serif;')}. A machine that has the original font shows it exactly; any other machine gets the embedded open font. Set weights for the replacement (for example HarmonyOS Sans SC Medium = 500). ${c('design.md')} Typography lists both the originals and the replacements, and "Known Gaps" notes it. The embed scripts still embed only the open fonts; **never ship proprietary font files**.
+
 **Fonts in ${c('template.html')}.** Latin: one Google Fonts ${c('<link>')} with exactly the families and weights used (the open substitutes), then embed them (optional, recommended, because the kit holds no Latin font files): ${latinEmbedBlock('en', K + 'fonts/embed-latin.mjs', { target: '"<slug>/template.html"', what: 'template' })} CJK: if the sample slides contain CJK text, add one Google Fonts ${c('<link>')} for the CJK families (trimmed to the weights used) and embed them: ${cjkEmbedBlock('en', K + 'fonts/embed-cjk.mjs', { short: true, target: '"<slug>/template.html"', what: 'template' })}`,
   `创建 ${c('<slug>/')}（在用户当前文件夹里），内含：
 
@@ -413,6 +422,8 @@ Follow the source's proportions; do not "improve" the design. Where the source b
 - ${c('screenshots/')}（可选，仅当有浏览器自动化工具时）：${c('<slug>-1.png')} … ${c('<slug>-3.png')}，1920×1080（封面、一页内容页、一页数据页或结束页）。
 
 **${c('template.html')} 里的设计图片。**用 ${c('extract.json')} 里的 ${c('media[].usedBy')} 找出它们。默认保留所有幻灯片 / 版式 / 母版背景、整幅封面或章节页照片，以及装饰纹理和图案：它们属于设计的一部分，也是用户自己的图片（个人使用）。不保留内容图片（内容页里用来说明用户主题、人物或产品的图片）：改画配色里的中性占位块；标志同理，除非用户要求保留。保留图片的嵌入方法：（1）在本地把它缩小到实际显示的尺寸（整幅图最宽 1920px）：照片用 JPEG、质量约 80，需要透明度的图片才用 PNG；有 Python Pillow 就用它，否则 macOS 用 ${c('sips')}，或用 ImageMagick（${c('magick')} / ${c('convert')}）；都没有就嵌入原始字节，并在报告里说明。（2）以 ${c('data:')} URI 嵌入 ${c('template.html')}，用 CSS ${c('background-image')} 或 ${c('<img>')} 显示。（3）源文件里的叠加层（例如 71% 黑色蒙版）作为独立图层放在图片之上，不要烧进图片里。（4）在 ${c('design.md')}（${c('## Components')} 或 ${c('## Signature Treatments')}）里逐一声明保留的图片：用途、使用位置、显示尺寸，并注明这是用户自己的图片、仅限个人使用。如果用户选择不要背景图片，就改用绘制的近似效果（CSS 或 SVG），并写进 ${c('## Known Gaps')}。
+
+**字体栈：先写原字体，再写开源替代。**这是用户自己的幻灯片，所以每个 ${c('font-family')} 先列出源文件的原字体名（按本机已安装字体使用，中英文名都写），再列开源替代字体，最后是通用族，例如 ${c('font-family: "Microsoft YaHei", "微软雅黑", "HarmonyOS Sans SC", "Noto Sans SC", sans-serif;')}。有原字体的电脑会精确显示原字体，没有的电脑显示嵌入的开源字体。字重按替代字体写（例如 HarmonyOS Sans SC Medium 用 500）。${c('design.md')} 的 Typography 同时列出原字体和替代字体，“Known Gaps” 注明这一点。嵌入脚本仍只嵌开源字体；**绝不附带专有字体文件**。
 
 **${c('template.html')} 里的字体。**拉丁字体：一条 Google Fonts ${c('<link>')}，恰好包含用到的字体族和字重（开源替代字体），然后嵌入它们（可选，推荐，因为工具包里没有拉丁字体文件）：${latinEmbedBlock('zh', K + 'fonts/embed-latin.mjs', { target: '"<slug>/template.html"', what: 'template' })} CJK：如果示例页含 CJK 文字，添加一条 CJK 字体族的 Google Fonts ${c('<link>')}（精简到用到的字重）并嵌入：${cjkEmbedBlock('zh', K + 'fonts/embed-cjk.mjs', { short: true, target: '"<slug>/template.html"', what: 'template' })}`));
   L.push('');
