@@ -13,7 +13,7 @@ it. A personal template needs exactly these 15 fields (plain JSON, UTF-8, no com
 | `tone` | string[] | 3-5 single-word tones of voice (`precise`, `warm`, `bold`). At least one. |
 | `formality` | enum | `low`, `medium-low`, `medium`, `medium-high` or `high`. |
 | `density` | enum | How much content a slide carries: `low` (one idea, big type), `medium-low`, `medium`, `medium-high`, `high` (dense, reading deck). |
-| `palette` | object | Colour name to `"#rrggbb"`, at least one entry, same names as the `colors` in `design.md`. One optional extra key `description`: a sentence on how the colours are used. |
+| `palette` | object | Colour name to `"#rrggbb"`, at least one entry, names taken from the `colors` in `design.md` (a subset is fine: list the main colours, not necessarily all of them). One optional extra key `description`: a sentence on how the colours are used. |
 | `typography` | object | Role to font family name (`display`, `body`, plus `mono` etc. if used), at least one entry. Optional key `style`: a sentence on the type system. Use the **open** family names that the template really loads. |
 | `scheme` | enum | `light`, `dark` or `mixed` (both light and dark slides). |
 | `best_for` | string | What it is best for, one or two sentences. |

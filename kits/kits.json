@@ -5,8 +5,18 @@
   "projectLicense": "LICENSE",
   "example": {
     "dir": "collections/style-presets/templates/minimal-pitch",
-    "files": ["design.md", "template.json", "template.html"],
-    "license": "collections/style-presets/LICENSE"
+    "files": [
+      "design.md",
+      "template.json",
+      "template.html"
+    ],
+    "license": "collections/style-presets/LICENSE",
+    "note": "dir identifies the gallery template: the zip takes its files, and its screenshots are the Convert page thumbnails."
   },
-  "cjkFamilies": ["Noto Sans SC", "Noto Serif SC", "LXGW WenKai TC", "Noto Sans JP"]
+  "cjkFamilies": [
+    "Noto Sans SC",
+    "Noto Serif SC",
+    "LXGW WenKai TC",
+    "Noto Sans JP"
+  ]
 }

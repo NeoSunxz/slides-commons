@@ -47,7 +47,7 @@ const TEXT = {
       detailsTitle: 'Privacy and use',
       details: [
         'Nothing is uploaded by this site or the kit. Your coding agent is software you choose; if it runs in the cloud, it reads your files like anything else you give it.',
-        'For your own use. The template drops logos, photos and confidential text and swaps proprietary fonts for open ones. Do not publish it without the original owner’s permission.',
+        'For your own use. The template keeps the design images, logo and wordmark, turns content photos into stand-ins (you can choose to keep them), drops confidential text and swaps proprietary fonts for open ones. Do not publish it without the original owner’s permission.',
       ],
       kitLink: KIT_DOWNLOAD_LABEL.en,
       skillsHint: ['Prefer a skill?', 'The same workflow ships as slides-commons-convert.', 'See the skills'],
@@ -80,7 +80,7 @@ const TEXT = {
       tabHints: ['For all your projects (Claude Code).', 'For all your projects (Claude Code).', 'Run it inside the project folder.', 'Any agent can follow a SKILL.md. Add this to its AGENTS.md and point it at the folders.'],
       copyCode: 'Copy',
       copiedCode: 'Copied',
-      afterInstall: 'Then start a new session and just ask for what you want.',
+      afterInstall: 'Then start a new session and just ask for what you want. No unzip? Use python3 -m zipfile -e slides-commons-skills.zip .',
       detailsTitle: 'Details',
       details: [
         'Nothing is uploaded. The skills are instructions and a few local Node 18+ scripts. Your agent may be a cloud service.',
@@ -129,7 +129,7 @@ const TEXT = {
       detailsTitle: '隐私与使用',
       details: [
         '本网站和工具包都不会上传任何东西。你的 coding agent 是你自己选的软件；如果它运行在云端，它读取你的文件就和你交给它的其他东西一样。',
-        '仅供你自己使用。模板会去掉标志、照片和机密文字，并把专有字体换成开源字体。没有原所有者许可，不要公开发布。',
+        '仅供你自己使用。模板会保留设计图片、标志和字标，把内容照片换成占位（你也可以选择保留），去掉机密文字，并把专有字体换成开源字体。没有原所有者许可，不要公开发布。',
       ],
       kitLink: KIT_DOWNLOAD_LABEL.zh,
       skillsHint: ['想用技能？', '同样的流程以 slides-commons-convert 技能提供。', '查看技能'],
@@ -162,7 +162,7 @@ const TEXT = {
       tabHints: ['对所有项目生效（Claude Code）。', '对所有项目生效（Claude Code）。', '在项目文件夹里运行。', '任何 agent 都能照着 SKILL.md 做。把下面这段加进它的 AGENTS.md，并指向这些文件夹。'],
       copyCode: '复制',
       copiedCode: '已复制',
-      afterInstall: '之后开启新会话，直接说出你想做的事。',
+      afterInstall: '之后开启新会话，直接说出你想做的事。没有 unzip？用 python3 -m zipfile -e slides-commons-skills.zip .',
       detailsTitle: '详情',
       details: [
         '不会上传任何东西。技能只是说明和几个本地的 Node 18+ 脚本。你的 agent 可能是云服务。',
