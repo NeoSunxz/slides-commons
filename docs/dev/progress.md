@@ -225,3 +225,5 @@ zip（以 `<slug>/` 为根）：
   - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
 - 2026-11-20：封面覆盖：没有第 1 页截图的模板（soft-editorial 的卡片曾显示内容页）可在 `sources/meta/covers/<source>/<slug>.png` 放渲染好的封面，`scripts/cover-override.mjs` 在构建与 `npm run screenshots` 中使用；新增 `tests/cover-override.spec.mjs`，相关规格 83/83 通过。
   - 下一步：维护者审阅 → v0.4.1 PR（dev→main，草稿 PR #6）。
+- 2026-11-23：v0.4.2：转换工具包增加图片规范（`kits/convert/spec/images.md`）、默认保留 logo、可选保留照片，并修正 check-template；字体映射加入 Inter Tight（`@fontsource/inter-tight`）；中文稿里的拉丁展示词加标记以保留字距（提示词），4 个商务集合模板的 CJK 字距重置改为限定范围；删除 `kits/convert/example/`。验收：网站截图转换为模板（保留照片）通过。`npm test` 1153 通过（2 个失败已修或重跑通过：font-map 重复、Fontshare 网络抖动；Docker 4 项可选）。
+  - 下一步：维护者审阅 → v0.4.2 PR（dev→main）。

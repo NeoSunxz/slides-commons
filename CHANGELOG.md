@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-23
+
+### Added
+
+- Convert kit: `spec/images.md` (how images are handled), logos kept by default, and a keep-photos option for converted templates.
+- `@fontsource/inter-tight` and an Inter Tight entry in the convert kit's font map.
+- Prompt: Latin display words in Chinese decks are marked so they keep their tracking.
+- Tests for convert kit updates and Latin tracking in zh copies.
+
+### Changed
+
+- Removed `kits/convert/example/`.
+
+### Fixed
+
+- `check-template` fixes in the convert kit.
+- Style presets (boardroom-quarterly, consulting-report, minimal-pitch, tech-blue-business): the CJK letter-spacing reset is now scoped so marked Latin runs keep their tracking.
+
+### Verification
+
+- Acceptance test: website screenshots converted to a template with photos kept.
+- `npm test`: 1153 passed; the two failures (a font-map duplicate, a Fontshare network flake) were fixed or passed on re-run. 4 Docker tests are opt-in and skipped.
+
 ## [0.4.1] - 2026-11-20
 
 ### Added
@@ -158,7 +181,8 @@ First public release (milestones M1 to M3): a static gallery of 34 HTML slide te
 - Preview no longer breaks when the site is opened by double-clicking (`file://`); directory links resolve to `index.html`.
 - Test suite is deterministic: Google Fonts responses are cached and fixed waits were replaced by condition-based waits.
 
-[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/NeoSunxz/slides-commons/compare/v0.3.0...v0.3.1
