@@ -458,13 +458,16 @@ Latin first, so Latin words and **all digits** keep Plus Jakarta Sans / Plex Mon
 Put `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
-:lang(zh) .head h2 { letter-spacing: 0; line-height: 1.25; }
-:lang(zh) .s-cover h1, :lang(zh) .s-close h2 { letter-spacing: 0; line-height: 1.22; font-weight: 900; }
+:lang(zh) .head h2 { line-height: 1.25; }
+:lang(zh) .s-cover h1, :lang(zh) .s-close h2 { line-height: 1.22; font-weight: 900; }
 :lang(zh) :is(.section, .label, .cover-meta span, .agenda .pg, .facts-list dt, .caps .code, .callout .src, .imetric span,
               .steps .meta, .tags span, .story h4, .bar-row span, .gantt .mh, .gantt .rl small, .gantt .ms,
               .matrix thead th small, .s-close .band-label, .arch .t-layer, .arch .t-sub, .arch .t-mono) { font-size: 20px; text-transform: none; }
-/* CJK letter-spacing is 0 everywhere, including SVG text */
-:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+/* CJK letter-spacing is 0 everywhere, including SVG text; Latin runs marked lang="en" or .latin are skipped here and must declare their own tracking */
+:lang(zh) .slide :not(:lang(en), .latin, .latin *), :lang(zh) .slide { letter-spacing: 0 !important; }
+/* Marked Latin runs are skipped by the reset above and must declare their own tracking (otherwise they inherit the heading's 0) */
+:lang(zh) :is(.latin, [lang|="en"]) { letter-spacing: var(--latin-tracking, -0.025em); }
+:lang(zh) .s-cover h1, :lang(zh) .s-close h2 { --latin-tracking: -0.035em; }
 :lang(zh) .lede, :lang(zh) .body, :lang(zh) .small { line-height: 1.75; }
 :lang(zh) .small { font-size: 22px; }
 ```
@@ -474,7 +477,7 @@ Weight 800 has no exact Noto Sans SC match (it ships 100–900 in the variable f
 ### Universal CJK Adjustments
 
 - **Line-height:** titles 1.2–1.3; hero 1.2; body 1.7–1.8; table cells 1.4. Raise row heights in tables and cards if two-line Chinese cells appear.
-- **Tracking:** 0 on every Chinese run, including mono-style labels and the footer (uppercase has no effect).
+- **Tracking:** 0 on every Chinese run, including mono-style labels and the footer (uppercase has no effect). Latin display words in a Chinese deck (product names, `Q3 FY27`, English labels) are marked `lang="en"` or `.latin`; the reset above skips those elements, but a marked run keeps Latin tracking only if it declares its own `letter-spacing` (for example `.latin { letter-spacing: var(--latin-tracking, -0.025em) }`, the `.head h2` tracking; the CJK block above sets `--latin-tracking` to -0.035em on `.s-cover h1`, `.s-close h2`), because otherwise it inherits the heading's 0.
 - **Sizes:** Chinese descriptions ≥ 22px (raise `.small` from 20px); table text 22–24px; mono labels, meta, axis and Gantt text 20px. Only the footer line stays 18px.
 - **Title length:** the head title must stay on one line — ≤ 16 Chinese characters at 60px with a lead, ≤ 24 without. Card titles ≤ 10 characters; agenda titles ≤ 8.
 - **Punctuation:** full-width （，。：；！？「」）; no period at the end of titles, card titles or table cells.

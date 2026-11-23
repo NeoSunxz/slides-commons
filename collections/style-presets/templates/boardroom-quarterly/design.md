@@ -485,15 +485,19 @@ Latin letters and all digits render in Hanken Grotesk (tabular), Chinese falls t
 Set `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
-:lang(zh) .title             { line-height: 1.3; letter-spacing: 0; }
-:lang(zh) .s-cover .h1b      { line-height: 1.3; letter-spacing: 0; }
+:lang(zh) .title             { line-height: 1.3; }
+:lang(zh) .s-cover .h1b      { line-height: 1.3; }
 :lang(zh) .slide             { line-height: 1.6; }
 :lang(zh) .wn li, :lang(zh) .small, :lang(zh) .decide li p { line-height: 1.65; }
 :lang(zh) :is(.label, .kicker, table.fin th, table.heat th, table.agenda th, .chip, .rag, .rid, .heat-key b,
               .sections li) { font-size: 20px; font-weight: 500; text-transform: none; }
 :lang(zh) :is(.sub, .small, .delta, .chart-legend, .decide li p) { font-size: 20px; }
-/* CJK letter-spacing is 0 everywhere */
-:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+/* CJK letter-spacing is 0 everywhere; Latin runs marked lang="en" or .latin are skipped here and must declare their own tracking */
+:lang(zh) .slide :not(:lang(en), .latin, .latin *), :lang(zh) .slide { letter-spacing: 0 !important; }
+/* Marked Latin runs are skipped by the reset above and must declare their own tracking (otherwise they inherit the heading's 0) */
+:lang(zh) :is(.latin, [lang|="en"]) { letter-spacing: var(--latin-tracking, -0.012em); }
+:lang(zh) .s-cover h1 { --latin-tracking: -0.035em; }
+:lang(zh) .s-cover .h1b { --latin-tracking: -0.015em; }
 ```
 
 - **Weights:** Noto Sans SC 700 for headlines and bold leads, 500 for labels and pills, 400 for body and tables. Avoid 300 and below on projected slides.
@@ -511,7 +515,7 @@ Set `lang="zh-CN"` on `<html>`. `template.html` already contains this block (ina
 
 ### Aesthetic Notes for This System
 
-The system's calm comes from slate type, generous hairline structure and disciplined colour; all of it carries over. Chinese headlines in Noto Sans SC 700 are visually heavier than Latin at the same size — keep 44px; letter-spacing is 0 for every Chinese run. Chinese text is shorter per idea, so the "What went well / Needs attention" panels hold four items comfortably; do not add a fifth to fill space.
+The system's calm comes from slate type, generous hairline structure and disciplined colour; all of it carries over. Chinese headlines in Noto Sans SC 700 are visually heavier than Latin at the same size — keep 44px; letter-spacing is 0 for every Chinese run. Latin display words in a Chinese deck (product names, `Q3 FY27`, English labels) are marked `lang="en"` or `.latin`; the reset above skips those elements, but a marked run keeps Latin tracking only if it declares its own `letter-spacing` (for example `.latin { letter-spacing: var(--latin-tracking, -0.012em) }`, the `.title` tracking; the CJK block above sets `--latin-tracking` to -0.035em on `.s-cover h1`, -0.015em on `.s-cover .h1b`), because otherwise it inherits the heading's 0. Chinese text is shorter per idea, so the "What went well / Needs attention" panels hold four items comfortably; do not add a fifth to fill space.
 
 ### Known CJK Gap
 

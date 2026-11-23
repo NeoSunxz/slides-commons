@@ -259,7 +259,10 @@ h1, h2, h3, h4 { font-weight: 700; text-wrap: balance; }
 :lang(zh) :is(.section, .label, .cover-meta span, .agenda .pg, .facts-list dt, .caps .code, .callout .src, .imetric span,
               .steps .meta, .tags span, .story h4, .bar-row span, .gantt .mh, .gantt .rl small, .gantt .ms,
               .matrix thead th small, .s-close .band-label, .arch .t-layer, .arch .t-sub, .arch .t-mono) { font-size: 20px; text-transform: none; }
-:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+:lang(zh) .slide :not(:lang(en), .latin, .latin *), :lang(zh) .slide { letter-spacing: 0 !important; }
+/* Marked Latin runs are skipped by the reset above and must declare their own tracking (otherwise they inherit the heading's 0) */
+:lang(zh) :is(.latin, [lang|="en"]) { letter-spacing: var(--latin-tracking, -0.025em); }
+:lang(zh) .s-cover h1, :lang(zh) .s-close h2 { --latin-tracking: -0.035em; }
 
 /* ===========================================
    FRAME — 12 columns, 1696 x 622 px, 32px gutters

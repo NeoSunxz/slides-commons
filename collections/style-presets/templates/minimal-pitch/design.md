@@ -388,12 +388,17 @@ One stack, Latin first, so Latin words and **all digits stay in Manrope** (Manro
 Put `lang="zh-CN"` on `<html>`. `template.html` already contains this block (inactive while `<html lang="en">`); copy it as is:
 
 ```css
-:lang(zh) h1, :lang(zh) h2, :lang(zh) .stat-xl { font-weight: 700; letter-spacing: 0; line-height: 1.2; }
+:lang(zh) h1, :lang(zh) h2, :lang(zh) .stat-xl { font-weight: 700; line-height: 1.2; }
 :lang(zh) .t-hero { line-height: 1.15; }
 :lang(zh) :is(.section, .label, .yaxis, .xaxis, .notes .n) { font-size: 20px; font-weight: 500; text-transform: none; }
 :lang(zh) .small { font-size: 24px; }
-/* CJK letter-spacing is 0 everywhere, including SVG text */
-:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+/* CJK letter-spacing is 0 everywhere, including SVG text; Latin runs marked lang="en" or .latin are skipped here and must declare their own tracking */
+:lang(zh) .slide :not(:lang(en), .latin, .latin *), :lang(zh) .slide { letter-spacing: 0 !important; }
+/* Marked Latin runs are skipped by the reset above and must declare their own tracking (otherwise they inherit the heading's 0) */
+:lang(zh) :is(.latin, [lang|="en"]) { letter-spacing: var(--latin-tracking, -0.035em); }
+:lang(zh) .t-hero { --latin-tracking: -0.045em; }
+:lang(zh) .t-display { --latin-tracking: -0.04em; }
+:lang(zh) .t-sub { --latin-tracking: -0.025em; }
 :lang(zh) .body, :lang(zh) .small, :lang(zh) .lede { line-height: 1.75; }
 ```
 
@@ -402,7 +407,7 @@ Manrope 700 exists, so Latin words inside a 700 Chinese headline render with a t
 ### Universal CJK Adjustments
 
 - **Line-height:** headlines 1.15–1.25 (the Latin 0.98–1.08 makes Chinese lines touch); body 1.7–1.8; captions 1.6.
-- **Tracking:** 0 on Chinese headlines and body (drop the −0.03 to −0.045em tracking); labels and the chrome too: 0 for every Chinese run. `text-transform: uppercase` has no effect on Chinese.
+- **Tracking:** 0 on Chinese headlines and body (drop the −0.03 to −0.045em tracking); labels and the chrome too: 0 for every Chinese run. `text-transform: uppercase` has no effect on Chinese. Latin display words in a Chinese deck (product names, `Q3 FY27`, English labels) are marked `lang="en"` or `.latin`; the reset above skips those elements, but a marked run keeps Latin tracking only if it declares its own `letter-spacing` (for example `.latin { letter-spacing: var(--latin-tracking, -0.035em) }`, the `.t-title` tracking; the CJK block above sets `--latin-tracking` to -0.045em on `.t-hero`, -0.04em on `.t-display`, -0.025em on `.t-sub`), because otherwise it inherits the heading's 0.
 - **Length:** a Chinese headline of 8–14 characters fills the space of a 20–30 character English one. `hero` holds 2 lines of ≤ 7 characters; `display` 2 lines of ≤ 12; `title` 2 lines of ≤ 14 in a 5-column cell.
 - **Punctuation:** full-width （，。：；！？「」）. Chinese statement headlines end **without** a period; drop the accent-period treatment and use an accent phrase instead.
 - **Spacing (盘古之白):** a space between Chinese and Latin words or numbers: `融资 4500 万元`, `使用 Mise 的餐厅`.
