@@ -724,7 +724,10 @@ table.opts .hb + span { margin-left: 14px; font-size: 20px; color: var(--muted);
 /* 18px/19px items are raised to 20px for Chinese (source line and footer stay 18px) */
 :lang(zh) :is(.legend, .seg, .scr-row .fig > span, .reco-figs > div > span, table.opts th p,
               .mx-y > span, .mx-x, .wf .xlab > span) { font-size: 20px; }
-:lang(zh) .slide, :lang(zh) .slide * { letter-spacing: 0 !important; }
+:lang(zh) .slide :not(:lang(en), .latin, .latin *), :lang(zh) .slide { letter-spacing: 0 !important; }
+/* Marked Latin runs are skipped by the reset above and must declare their own tracking (otherwise they inherit the heading's 0) */
+:lang(zh) :is(.latin, [lang|="en"]) { letter-spacing: var(--latin-tracking, -0.005em); }
+:lang(zh) .s-cover h1 { --latin-tracking: -0.012em; }
 
 /* ===========================================
    MOTION: quiet fade + chart growth on the active slide

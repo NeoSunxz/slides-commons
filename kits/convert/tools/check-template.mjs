@@ -13,6 +13,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Unfinished-text markers only: TODO / TBD, "lorem ipsum" and a bracketed [PLACEHOLDER] token. The word
+// "placeholder" on its own is fine (CSS class names, prose about photo slots).
+const LEFTOVER = /\b(?:TODO|TBD)\b|lorem ipsum|[\[<{]{1,2}\s*placeholder\s*[\]>}]{1,2}/i;
+
 const dir = process.argv[2];
 if (!dir || dir.startsWith('-')) { console.error('usage: node tools/check-template.mjs <template-folder>'); process.exit(2); }
 if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) { console.error(`not a folder: ${dir}`); process.exit(2); }
@@ -73,6 +77,13 @@ if (design !== null) {
     const end = lines.indexOf('---', 1);
     const fm = end > 0 ? lines.slice(1, end).join('\n') : '';
     for (const k of ['name', 'description', 'colors', 'typography']) if (!new RegExp(`^${k}:`, 'm').test(fm)) err(`design.md front matter has no "${k}:"`);
+    const deco = /^decorative-colors:\s*\[([^\]]*)\]/m.exec(fm);
+    if (deco) {
+      const names = deco[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+      const colorsBlock = /^colors:\s*\n((?:[ \t]+.*\n?|\s*\n)*)/m.exec(fm)?.[1] ?? '';
+      const unknown = names.filter((n) => !new RegExp(`^\\s+["']?${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']?\\s*:`, 'm').test(colorsBlock));
+      if (unknown.length) warn(`design.md decorative-colors names colours that are not in "colors:": ${unknown.join(', ')}`);
+    }
     if (meta?.palette) {
       const hexes = new Set([...fm.matchAll(/#[0-9a-f]{6}\b/gi)].map((m) => m[0].toLowerCase()));
       const missing = Object.entries(meta.palette).filter(([k, v]) => k !== 'description' && /^#[0-9a-f]{6}$/i.test(v) && !hexes.has(v.toLowerCase()));
@@ -85,8 +96,8 @@ if (design !== null) {
   for (const [name, re] of [['Overview', /overview/i], ['Colors', /colou?rs/i], ['Typography', /typography/i], ['Layout', /layout/i], ['Components', /components/i], ['Slide Archetypes', /archetypes/i], ["Do's and Don'ts", /do['’]?s/i], ['Iteration Guide', /iteration/i], ['Known Gaps', /known gaps/i]]) {
     if (!has(re)) warn(`design.md has no "${name}" section (see spec/design-md.md)`);
   }
-  const todo = lines.findIndex((l) => /\b(TODO|TBD|PLACEHOLDER|lorem ipsum)\b/i.test(l));
-  if (todo >= 0) err(`design.md line ${todo + 1}: leftover placeholder text`);
+  const todo = lines.findIndex((l) => LEFTOVER.test(l));
+  if (todo >= 0) err(`design.md line ${todo + 1}: leftover placeholder text (${LEFTOVER.exec(lines[todo])[0]}); finish it or remove it`);
 }
 
 // --- template.html -----------------------------------------------------------------------------
@@ -119,9 +130,10 @@ if (html !== null) {
   if (media) warn(`template.html has ${media} @media rule(s); slides must not reflow: use only the stage scaling from viewport-base.css`);
   const slideCss = [...bare.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n').replace(base ?? '', '');
   if (/\b\d+(\.\d+)?v[wh]\b/.test(slideCss)) warn('template.html uses vw / vh units in its CSS (outside viewport-base.css); use px on the 1920x1080 stage');
-  if (/\b(TODO|TBD|PLACEHOLDER|lorem ipsum)\b/i.test(bare)) err('template.html contains placeholder text (TODO / TBD / PLACEHOLDER / lorem ipsum)');
+  const leftover = LEFTOVER.exec(bare.replace(/data:[a-z/+.-]+;base64,[A-Za-z0-9+/=]+/g, ''));
+  if (leftover) err(`template.html contains leftover placeholder text (${leftover[0]}); write real sample content (the word "placeholder" itself is fine in a class name or for a photo slot)`);
   const bytes = Buffer.byteLength(html);
-  if (bytes > 1.5 * 1024 * 1024) warn(`template.html is ${(bytes / 1024 / 1024).toFixed(1)} MB; downscale embedded images or fonts`);
+  if (bytes > 3 * 1024 * 1024) warn(`template.html is ${(bytes / 1024 / 1024).toFixed(1)} MB (above 3 MB); downscale the embedded images harder`);
 }
 
 for (const e of errors) console.log(`ERROR   ${e}`);

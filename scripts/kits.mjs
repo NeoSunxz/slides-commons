@@ -36,7 +36,7 @@ function withDirs(root, files) {
 export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, licenseName, cjkFamilyEntry, cjkRangesJson, fail }) {
   const cfg = JSON.parse(read(path.join(root, 'kits', 'kits.json')));
   const at = (p) => path.join(root, ...p.split('/'));
-  for (const p of [cfg.viewportBase, cfg.viewportBaseLicense, cfg.projectLicense, cfg.example.license, ...cfg.example.files.map((f) => `${cfg.example.dir}/${f}`)]) {
+  for (const p of [cfg.viewportBase, cfg.viewportBaseLicense, cfg.projectLicense, cfg.example.license, ...cfg.example.files.map((f) => `${cfg.example.filesDir ?? cfg.example.dir}/${f}`)]) {
     if (!fs.existsSync(at(p))) fail(`kits/kits.json: ${p} does not exist (is the upstream submodule checked out?)`);
   }
   const url = (name) => (siteUrl ? new URL(`zip/${name}.zip`, siteUrl).href : null);
@@ -44,7 +44,7 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
   // ---- shared pieces -----------------------------------------------------------------------
   const convertDir = path.join(root, 'kits', 'convert');
   const fontMap = JSON.parse(read(path.join(convertDir, 'spec', 'font-map.json')));
-  const specDocs = ['design-md.md', 'template-json.md', 'extractor.md'];
+  const specDocs = ['design-md.md', 'template-json.md', 'extractor.md', 'images.md'];
   // Guard against drift: the template.json reference must mention every schema field.
   const schema = JSON.parse(read(path.join(root, 'src', 'schema', 'template.schema.json')));
   const refText = read(path.join(convertDir, 'spec', 'template-json.md')).toString('utf8');
@@ -75,7 +75,7 @@ export function buildKits({ root, site, siteUrl, makeZip, zipTime, writeFile, li
     out.push({ name: `${prefix}spec/font-map.json`, data: read(path.join(convertDir, 'spec', 'font-map.json')) });
     out.push(text(`${prefix}spec/font-substitution.md`, fontSubstitutionMd(fontMap) + '\n'));
     for (const d of specDocs) out.push({ name: `${prefix}spec/${d}`, data: read(path.join(convertDir, 'spec', d)) });
-    for (const f of cfg.example.files) out.push({ name: `${prefix}spec/example/${f}`, data: read(at(`${cfg.example.dir}/${f}`)) });
+    for (const f of cfg.example.files) out.push({ name: `${prefix}spec/example/${f}`, data: read(at(`${cfg.example.filesDir ?? cfg.example.dir}/${f}`)) });
     out.push({ name: `${prefix}spec/example/LICENSE`, data: read(at(cfg.example.license)) });
     out.push(text(`${prefix}deck/PROMPT.md`, deckPrompt('en')));
     out.push(text(`${prefix}deck/PROMPT.zh.md`, deckPrompt('zh')));

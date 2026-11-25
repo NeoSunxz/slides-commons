@@ -258,7 +258,7 @@ ${netEn}
 - **The user's density choice wins** over any density guidance in ${code('design.md')}. For low and balanced density, keep the system's grid and panel vocabulary but use fewer, larger panels (one idea per slide for low density, 2–4 content blocks for balanced); fill any spare panels with the system's own ornaments, never invented ones. If content does not fit, split it across more slides; never shrink text below the sizes in ${code('design.md')} and never let it overflow.
 - **Minimum text size for projected decks (speaker-led and balanced):** the smallest label tokens in ${code('design.md')} (often 14–16px at 1920×1080) shrink to about 9–10px on a 1280px-wide screen and are unreadable when projected. For every projected deck, whatever its density (speaker-led or balanced), raise any body or label text below 20px (at the 1920×1080 stage) to at least 20px, keeping the token's other properties (font, tracking, case); only source and footnote lines may go down to 18px. Reading-first decks keep the ${code('design.md')} sizes. This is the one place where the user's density choice overrides the sizes in ${code('design.md')}.
 - **Keep emphasis legible:** highlights and emphasis (marks, accent-colored text, accent fills) must contrast with the panel they sit on. Never put accent on accent, such as an accent highlight or accent-colored text on an accent panel; use another emphasis treatment from the system there.
-- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0; use the exact CJK line-heights from ${code('design.md')}, or about 1.75 for body and 1.2 for display if it gives none; never apply ${code('text-transform: uppercase')} to CJK runs; don't force monospace fonts onto CJK; use full-width punctuation and put a space between CJK and Latin text.
+- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0; use the exact CJK line-heights from ${code('design.md')}, or about 1.75 for body and 1.2 for display if it gives none; never apply ${code('text-transform: uppercase')} to CJK runs; don't force monospace fonts onto CJK; use full-width punctuation and put a space between CJK and Latin text. In a Chinese deck, Latin display words (product names, English labels, numbers with letters such as ${code('Q3 FY27')}) are marked ${code('lang="en"')} (or ${code('class="latin"')}) and keep the template's Latin tracking: the CJK letter-spacing reset must skip them, and a marked run keeps its tracking only if it declares its own ${code('letter-spacing')} (for example from a ${code('.latin')} rule), because otherwise it inherits the heading's 0.
 - **CJK line breaks:** for CJK text, don't limit width by character count (${code('ch')} units or a ${code('max-width')} in characters); that produces one-character last lines. Use ${code('text-wrap: pretty')} (and ${code('text-wrap: balance')} for short headlines) with ${code('line-break: strict')}.
 - **Labels in CJK decks:** write labels and chrome (section labels, captions, page tags) in the deck language. Monospace, uppercase and wide tracking apply to Latin letters and digits only; CJK characters in labels use the CJK face with letter-spacing 0.
 
@@ -490,7 +490,7 @@ ${netZh}
 - **以用户选择的密度为准**，它优先于 ${code('design.md')} 中任何关于密度的说法。低密度和均衡型保留设计系统的网格和面板语汇，但使用更少、更大的面板（低密度一页一个观点，均衡型每页 2–4 个内容块）；空余面板用设计系统自己的装饰填充，绝不自创装饰。内容放不下就拆成更多页；字号不得小于 ${code('design.md')} 的规定，也绝不允许溢出。
 - **投影型幻灯片（演讲型和均衡型）的最小字号**：${code('design.md')} 中最小的标签 token（通常在 1920×1080 下为 14–16px）在 1280px 宽的屏幕上只有约 9–10px，投影时根本看不清。凡是要投影的幻灯片，无论演讲型还是均衡型，凡是在 1920×1080 画布上小于 20px 的正文和标签文字，一律提高到至少 20px，保留该 token 的其他属性（字体、字距、大小写）；只有来源和脚注行可以降到 18px。阅读型幻灯片保持 ${code('design.md')} 的字号。这是用户的密度选择唯一优先于 ${code('design.md')} 字号的地方。
 - **强调必须清晰可读**：高亮与强调（标记、强调色文字、强调色填充）必须与所在面板形成对比。绝不在强调色上叠强调色，比如强调色面板上的强调色高亮或强调色文字；这种位置改用设计系统里的其他强调方式。
-- **CJK 文字（中文、日文、韩文）**：字间距为 0；行高使用 ${code('design.md')} 给出的 CJK 精确取值，若没有给出，正文约 1.75、标题约 1.2；绝不对 CJK 文字使用 ${code('text-transform: uppercase')}；不要强制 CJK 使用等宽字体；使用全角标点，CJK 与拉丁文字之间加空格。
+- **CJK 文字（中文、日文、韩文）**：字间距为 0；行高使用 ${code('design.md')} 给出的 CJK 精确取值，若没有给出，正文约 1.75、标题约 1.2；绝不对 CJK 文字使用 ${code('text-transform: uppercase')}；不要强制 CJK 使用等宽字体；使用全角标点，CJK 与拉丁文字之间加空格。 中文幻灯片里的拉丁展示词（产品名、英文标签、带字母的数字如 ${code('Q3 FY27')}）要标上 ${code('lang="en"')}（或 ${code('class="latin"')}），并保持模板的拉丁字间距：CJK 字间距归零的规则必须跳过它们；被标记的文字只有自己声明了 ${code('letter-spacing')}（例如来自 ${code('.latin')} 规则）才会保留字间距，否则会继承标题的 0。
 - **CJK 换行**：CJK 文字不要按字符数限制宽度（${code('ch')} 单位或以字符数计的 ${code('max-width')}），那会产生只剩一个字的末行。使用 ${code('text-wrap: pretty')}（短标题用 ${code('text-wrap: balance')}）并配合 ${code('line-break: strict')}。
 - **CJK 幻灯片中的标签**：标签和页面框架文字（章节标签、说明文字、页码标签）使用幻灯片的语言书写。等宽、大写和加宽字距只作用于拉丁字母和数字；标签中的 CJK 字符使用 CJK 字体，字间距为 0。
 
@@ -650,7 +650,7 @@ ${L.join('\n')}
 - **No internal labels on slides.** Never show the template name (${name} / ${slug}), the author's or sponsors' names, the words "template" or "preview", file names, paths or notes about the user's requirements. Visible chrome is real deck content only.
 - **The user's density choice wins** over the author's density guidance: fewer, larger blocks for low density. If content does not fit, split it across more slides; never shrink text below the author's size floors and never let it overflow.
 - **Keep emphasis legible:** accent colors need contrast with the surface they sit on; never put accent on accent. Use the author's accent text variables.
-- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0 and no uppercase on CJK runs; use the template's CJK families and line-heights; full-width punctuation and a space between CJK and Latin text; no one-character last lines (${code('text-wrap: pretty')} / ${code('balance')}, ${code('line-break: strict')}; don't limit widths in ${code('ch')} units).
+- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0 and no uppercase on CJK runs; use the template's CJK families and line-heights; full-width punctuation and a space between CJK and Latin text; no one-character last lines (${code('text-wrap: pretty')} / ${code('balance')}, ${code('line-break: strict')}; don't limit widths in ${code('ch')} units). In a Chinese deck, Latin display words (product names, English labels, numbers with letters such as ${code('Q3 FY27')}) are marked ${code('lang="en"')} (or ${code('class="latin"')}) and keep the template's Latin tracking: the CJK letter-spacing reset must skip them, and a marked run keeps its tracking only if it declares its own ${code('letter-spacing')} (for example from a ${code('.latin')} rule), because otherwise it inherits the heading's 0.
 
 ## 6. Self-check, then deliver
 
@@ -767,7 +767,7 @@ ${L.join('\n')}
 - **页面上不出现内部标签。** 绝不显示模板名（${name} / ${slug}）、作者或赞助方的名字、"template"/"模板"或"preview"/"预览"字样、文件名、路径，或关于用户需求的备注。页面上可见的框架文字只能是真实内容。
 - **以用户选择的密度为准**，它优先于作者关于密度的说法：低密度用更少、更大的内容块。内容放不下就拆成更多页；字号不得小于作者的字号下限，也绝不允许溢出。
 - **强调必须清晰可读**：强调色必须与所在表面形成对比，绝不在强调色上叠强调色；使用作者提供的强调色文字变量。
-- **CJK 文字（中文、日文、韩文）**：CJK 文字字间距为 0、不用大写转换；使用模板的 CJK 字体族和行高；使用全角标点，CJK 与拉丁文字之间加空格；不要出现只剩一个字的末行（${code('text-wrap: pretty')} / ${code('balance')}，${code('line-break: strict')}；不要用 ${code('ch')} 单位限制宽度）。
+- **CJK 文字（中文、日文、韩文）**：CJK 文字字间距为 0、不用大写转换；使用模板的 CJK 字体族和行高；使用全角标点，CJK 与拉丁文字之间加空格；不要出现只剩一个字的末行（${code('text-wrap: pretty')} / ${code('balance')}，${code('line-break: strict')}；不要用 ${code('ch')} 单位限制宽度）。 中文幻灯片里的拉丁展示词（产品名、英文标签、带字母的数字如 ${code('Q3 FY27')}）要标上 ${code('lang="en"')}（或 ${code('class="latin"')}），并保持模板的拉丁字间距：CJK 字间距归零的规则必须跳过它们；被标记的文字只有自己声明了 ${code('letter-spacing')}（例如来自 ${code('.latin')} 规则）才会保留字间距，否则会继承标题的 0。
 
 ## 6. 自检，然后交付
 
@@ -944,7 +944,7 @@ ${L.join('\n')}
 - **No internal labels on slides.** Never show the deck or template name (${name} / ${slug}), the author's name or handle, the words "template", "preview" or "html-ppt", file names, paths or notes about the user's requirements. Visible chrome is real deck content only.
 - **The user's density choice wins**: fewer, larger blocks for low density. If content does not fit, split it across more slides; never shrink text below the sizes the example deck uses for the same role and never let it overflow or clip.
 - **Keep emphasis legible:** text on an accent fill uses the accent-ink variable; accent colors need contrast with the surface they sit on; never put accent on accent.
-- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0 and no uppercase on CJK runs; use the deck's CJK font family and line-heights; full-width punctuation and a space between CJK and Latin text; no one-character last lines (${code('text-wrap: pretty')} / ${code('balance')}, ${code('line-break: strict')}; don't limit widths in ${code('ch')} units).
+- **CJK text (Chinese, Japanese, Korean):** letter-spacing 0 and no uppercase on CJK runs; use the deck's CJK font family and line-heights; full-width punctuation and a space between CJK and Latin text; no one-character last lines (${code('text-wrap: pretty')} / ${code('balance')}, ${code('line-break: strict')}; don't limit widths in ${code('ch')} units). In a Chinese deck, Latin display words (product names, English labels, numbers with letters such as ${code('Q3 FY27')}) are marked ${code('lang="en"')} (or ${code('class="latin"')}) and keep the template's Latin tracking: the CJK letter-spacing reset must skip them, and a marked run keeps its tracking only if it declares its own ${code('letter-spacing')} (for example from a ${code('.latin')} rule), because otherwise it inherits the heading's 0.
 
 ## 6. Self-check, then deliver
 
@@ -1064,7 +1064,7 @@ ${L.join('\n')}
 - **页面上不出现内部标签。** 绝不显示这套幻灯片或模板的名字（${name} / ${slug}）、作者的名字或账号、"template"/"模板"、"preview"/"预览"或 "html-ppt" 字样、文件名、路径，或关于用户需求的备注。页面上可见的框架文字只能是真实内容。
 - **以用户选择的密度为准**：低密度用更少、更大的内容块。内容放不下就拆成更多页；字号不得小于示例幻灯片里同类角色所用的字号，也绝不允许溢出或被裁切。
 - **强调必须清晰可读**：强调色填充上的文字用 accent-ink 变量；强调色必须与所在表面形成对比，绝不在强调色上叠强调色。
-- **CJK 文字（中文、日文、韩文）**：CJK 文字字间距为 0、不用大写转换；使用这套幻灯片的 CJK 字体族和行高；使用全角标点，CJK 与拉丁文字之间加空格；不要出现只剩一个字的末行（${code('text-wrap: pretty')} / ${code('balance')}，${code('line-break: strict')}；不要用 ${code('ch')} 单位限制宽度）。
+- **CJK 文字（中文、日文、韩文）**：CJK 文字字间距为 0、不用大写转换；使用这套幻灯片的 CJK 字体族和行高；使用全角标点，CJK 与拉丁文字之间加空格；不要出现只剩一个字的末行（${code('text-wrap: pretty')} / ${code('balance')}，${code('line-break: strict')}；不要用 ${code('ch')} 单位限制宽度）。 中文幻灯片里的拉丁展示词（产品名、英文标签、带字母的数字如 ${code('Q3 FY27')}）要标上 ${code('lang="en"')}（或 ${code('class="latin"')}），并保持模板的拉丁字间距：CJK 字间距归零的规则必须跳过它们；被标记的文字只有自己声明了 ${code('letter-spacing')}（例如来自 ${code('.latin')} 规则）才会保留字间距，否则会继承标题的 0。
 
 ## 6. 自检，然后交付
 
